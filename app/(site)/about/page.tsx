@@ -90,7 +90,7 @@ export default function AboutPage() {
                   <span className="text-sm text-gray-500 dark:text-gray-400">{exp.period}</span>
                 </div>
                 <ul className="space-y-2 text-gray-700 dark:text-gray-300 border-l-2 border-black/20 dark:border-white/20 pl-4">
-                  {exp.bullets.map((bullet) => (
+                  {exp.bullets?.map((bullet) => (
                     <li key={bullet}>{bullet}</li>
                   ))}
                 </ul>
