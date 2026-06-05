@@ -123,7 +123,7 @@ export function SkillClient({ repos }: { repos: GitHubRepo[] }) {
         </p>
 
         {/* Table - Desktop */}
-        <div className="hidden md:block bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
+        <div className="hidden md:block bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm transition-shadow hover:shadow-md">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -155,7 +155,8 @@ export function SkillClient({ repos }: { repos: GitHubRepo[] }) {
                           alt={repo.owner.login}
                           width={24}
                           height={24}
-                          className="rounded-full"
+                          className="rounded-full ring-2 ring-gray-200 dark:ring-gray-600"
+                          unoptimized
                         />
                         <div>
                           <a
@@ -221,7 +222,8 @@ export function SkillClient({ repos }: { repos: GitHubRepo[] }) {
                     alt={repo.owner.login}
                     width={20}
                     height={20}
-                    className="rounded-full shrink-0"
+                    className="rounded-full shrink-0 ring-2 ring-gray-200 dark:ring-gray-600"
+                    unoptimized
                   />
                   <a
                     href={repo.html_url}

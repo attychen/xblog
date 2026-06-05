@@ -1,7 +1,8 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/provider/ThemeProvider";
 import Navbar from "@/components/layout/Navbar";
+import Footer from "@/components/layout/Footer";
 import ObservabilityClient from "@/components/ui/ObservabilityClient";
 import localFont from "next/font/local";
 
@@ -53,15 +54,77 @@ const zenMaruGothicFont = localFont({
   display: 'swap',
 });
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fff4e6" },
+    { media: "(prefers-color-scheme: dark)", color: "#1a0f00" },
+  ],
+};
+
 export const metadata: Metadata = {
-  title: "法舟记",
-  description: "法舟记",
-  icons: {
-    icon: [
-      { url: '/logo.JPG', type: 'image/jpg' },
+  metadataBase: new URL("https://fazhouji.vercel.app"),
+  title: {
+    default: "法舟记 — 技术与思考的笔记",
+    template: "%s | 法舟记",
+  },
+  description:
+    "法舟记是一个关于编程、AI、开源与独立思考的技术博客。记录学习笔记、项目实践与前沿技术洞察。",
+  keywords: [
+    "技术博客", "编程", "AI", "人工智能", "开源", "前端开发",
+    "React", "Next.js", "TypeScript", "DeepSeek", "LLM",
+    "法舟记", "技术笔记", "代码实践", "独立开发",
+  ],
+  authors: [{ name: "法舟记", url: "https://github.com/attychen" }],
+  creator: "法舟记",
+  publisher: "法舟记",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  openGraph: {
+    type: "website",
+    locale: "zh_CN",
+    url: "https://fazhouji.vercel.app",
+    siteName: "法舟记",
+    title: "法舟记 — 技术与思考的笔记",
+    description:
+      "一个关于编程、AI、开源与独立思考的技术博客。记录学习笔记、项目实践与前沿技术洞察。",
+    images: [
+      {
+        url: "/logo.JPG",
+        width: 512,
+        height: 512,
+        alt: "法舟记 Logo",
+      },
     ],
-    shortcut: '/logo.JPG',
-    apple: '/logo.JPG',
+  },
+  twitter: {
+    card: "summary",
+    title: "法舟记",
+    description: "技术与思考的笔记",
+    images: ["/logo.JPG"],
+  },
+  icons: {
+    icon: [{ url: "/logo.JPG", type: "image/jpg" }],
+    shortcut: "/logo.JPG",
+    apple: "/logo.JPG",
+  },
+  alternates: {
+    types: {
+      "application/rss+xml": "/rss.xml",
+    },
+  },
+  verification: {
+    // 后续可添加 Google Search Console / Bing Webmaster 验证码
   },
 };
 
@@ -71,16 +134,38 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="zh-CN" suppressHydrationWarning>
+      <head>
+        {/* JSON-LD 结构化数据，帮助搜索引擎理解站点 */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Blog",
+              name: "法舟记",
+              description: "一个关于编程、AI、开源与独立思考的技术博客",
+              url: "https://fazhouji.vercel.app",
+              author: {
+                "@type": "Person",
+                name: "法舟记",
+                url: "https://github.com/attychen",
+              },
+              inLanguage: "zh-CN",
+            }),
+          }}
+        />
+      </head>
       <body
-        className={`${bitcountFont.variable} ${zenMaruGothicFont.variable} ${monoFont.variable} bg-gradient-bg antialiased container-custom`}
+        className={`${bitcountFont.variable} ${zenMaruGothicFont.variable} ${monoFont.variable} bg-gradient-bg antialiased container-custom min-h-screen flex flex-col`}
       >
         <ThemeProvider>
           <ObservabilityClient />
           <Navbar />
-          <div className="pt-6">
+          <main className="flex-1 pt-6">
             {children}
-          </div>
+          </main>
+          <Footer />
         </ThemeProvider>
       </body>
     </html>
