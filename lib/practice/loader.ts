@@ -5,8 +5,8 @@
  */
 import fs from "fs";
 import path from "path";
-import { PracticeManifestSchema } from "./schema";
-import type { PracticeProblem, PracticeProblemMeta } from "./types";
+import { PracticeManifestSchema } from "./schema.ts";
+import type { PracticeProblem, PracticeProblemMeta } from "./types.ts";
 
 /** 博客仓库内 practice git submodule 默认路径 */
 const DEFAULT_PRACTICE_ROOT = path.join(/*turbopackIgnore: true*/ process.cwd(), "practice");
