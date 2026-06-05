@@ -1,22 +1,20 @@
-import type { PracticeCategory } from './types';
-
 /** 分类 → 侧栏与详情页展示的中文标签 */
-export const CATEGORY_LABELS: Record<PracticeCategory, string> = {
+export const CATEGORY_LABELS = {
   array: '数组与索引',
   function: '函数与闭包',
   async: '异步编程',
   react: 'React 相关',
   oop: '面向对象',
-};
+} as const;
 
 /** 侧栏分组顺序（与 manifest 内题目顺序无关） */
-export const CATEGORY_ORDER: PracticeCategory[] = [
+export const CATEGORY_ORDER = [
   'array',
   'function',
   'oop',
   'async',
   'react',
-];
+] as const;
 
 /** 难度 → 详情页徽章文案 */
 export const DIFFICULTY_LABELS = {

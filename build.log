@@ -1,0 +1,36 @@
+$ next build
+▲ Next.js 16.2.7 (Turbopack)
+- Experiments (use with caution):
+  ✓ mdxRs
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 6.3s
+  Running TypeScript ...
+  Finished TypeScript in 4.2s ...
+  Collecting page data using 3 workers ...
+  Generating static pages using 3 workers (0/21) ...
+  Generating static pages using 3 workers (5/21) 
+  Generating static pages using 3 workers (10/21) 
+  Generating static pages using 3 workers (15/21) 
+✓ Generating static pages using 3 workers (21/21) in 1753ms
+  Finalizing page optimization ...
+
+Route (app)                                                                                         Revalidate  Expire
+┌ ○ /
+├ ○ /_not-found
+├ ○ /about
+├ ƒ /api/telemetry
+├ ○ /blog                                                                                                   1h      1y
+├ ● /blog/[...slug]                                                                                         1h      1y
+│ ├ /blog/auto/2026-06-05-are-ai-chatbots-making-us-lose-control-of-our-brains                              1h      1y
+│ ├ /blog/auto/2026-06-05-from-cow-milking-robots-to-weed-zapping-lasers-farmers-are-embracing-a-i          1h      1y
+│ ├ /blog/auto/2026-06-05-hot-i-p-o-summer-what-is-a-i-doing-to-math-hatgpt                                 1h      1y
+│ └ [+10 more paths]
+├ ƒ /blog/category/[category]
+└ ○ /skill                                                                                                  1d      1y
+
+
+○  (Static)   prerendered as static content
+●  (SSG)      prerendered as static HTML (uses generateStaticParams)
+ƒ  (Dynamic)  server-rendered on demand
+
