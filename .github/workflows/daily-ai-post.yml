@@ -22,6 +22,8 @@ jobs:
       - name: Run AI fetch script
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          SUMMARY_API_URL: ${{ secrets.SUMMARY_API_URL }}
+          SUMMARY_API_KEY: ${{ secrets.SUMMARY_API_KEY }}
           RSS_FEEDS: ${{ secrets.RSS_FEEDS }}
         run: |
           node scripts/fetch-ai-posts.mjs

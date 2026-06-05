@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 import fs from 'fs/promises';
 import { execSync } from 'child_process';
-import { parse } from 'fast-xml-parser';
+import pkg from 'fast-xml-parser';
+const { XMLParser } = pkg;
 
 const DEFAULT_FEEDS = [
   'http://export.arxiv.org/rss/cs.AI',
@@ -24,7 +25,8 @@ async function fetchText(url) {
 }
 
 function parseItemsFromXml(xml) {
-  const obj = parse(xml, { ignoreAttributes: false, attributeNamePrefix: '' });
+  const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '' });
+  const obj = parser.parse(xml);
   // try common rss/channel/item path
   const items = [];
   try {
@@ -80,6 +82,33 @@ async function summarizeWithOpenAI(apiKey, text, link, title) {
   }
   // fallback: simple heuristic
   return { summary: txt.slice(0, 300), keywords: [], suggested_title: title };
+}
+
+async function summarizeWithExternal(apiUrl, apiKey, text, link, title) {
+  try {
+    const res = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: apiKey ? `Bearer ${apiKey}` : undefined,
+      },
+      body: JSON.stringify({ title, link, text }),
+    });
+
+    if (!res.ok) {
+      const t = await res.text();
+      throw new Error(`External summary API error: ${res.status} ${t}`);
+    }
+
+    const data = await res.json();
+    // Expecting { summary, keywords, suggested_title }
+    const summary = data.summary || data.text || data.result || '';
+    const keywords = data.keywords || data.tags || [];
+    const suggested_title = data.suggested_title || data.title || title;
+    return { summary, keywords, suggested_title };
+  } catch (e) {
+    throw e;
+  }
 }
 
 async function main() {
@@ -141,7 +170,19 @@ async function main() {
       let keywords = [];
       let suggested_title = item.title;
 
-      if (process.env.OPENAI_API_KEY) {
+      // Prefer external summary service (e.g., DeepSeek) if configured
+      const summaryApiUrl = process.env.SUMMARY_API_URL;
+      const summaryApiKey = process.env.SUMMARY_API_KEY;
+      if (summaryApiUrl) {
+        try {
+          const out = await summarizeWithExternal(summaryApiUrl, summaryApiKey, item.description, item.link, item.title);
+          summary = out.summary || summary;
+          keywords = out.keywords || keywords;
+          suggested_title = out.suggested_title || suggested_title;
+        } catch (e) {
+          console.warn('External summary service failed:', e.message);
+        }
+      } else if (process.env.OPENAI_API_KEY) {
         try {
           const out = await summarizeWithOpenAI(process.env.OPENAI_API_KEY, item.description, item.link, item.title);
           summary = out.summary || summary;
