@@ -17,7 +17,7 @@ export default function Footer() {
               法舟记
             </Link>
             <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
-              编程、区块链与折腾记录
+              汇聚AI前沿自留地
             </p>
           </div>
 

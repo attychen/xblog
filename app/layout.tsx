@@ -70,7 +70,7 @@ export const metadata: Metadata = {
     template: "%s | 法舟记",
   },
   description:
-    "法舟记 — 编程、区块链与折腾记录。记录技术学习、项目实践与独立开发的心得。",
+    "法舟记 — 汇聚AI前沿自留地。记录技术学习、项目实践与独立开发的心得。",
   keywords: [
     "技术博客", "编程", "区块链", "开源", "前端开发",
     "React", "Next.js", "TypeScript", "独立开发", "技术笔记",
@@ -97,7 +97,7 @@ export const metadata: Metadata = {
     siteName: "法舟记",
     title: "法舟记 — 技术与思考的笔记",
     description:
-      "编程、区块链与折腾记录。记录技术学习、项目实践与独立开发的心得。",
+      "汇聚AI前沿自留地。记录技术学习、项目实践与独立开发的心得。",
     images: [
       {
         url: "/logo.JPG",
