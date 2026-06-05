@@ -15,10 +15,10 @@ export default function SelfCard({ postCount = 0, categoryCount = 0 }: SelfCardP
             <span>{PROFILE.name}&apos;s notes</span>
           </div>
           <h1 className="text-2xl font-bold tracking-tight md:text-4xl">
-            前端、Web3、AI 与工程实践记录
+            AI 大模型、智能体与前沿探索
           </h1>
           <p className="mt-3 max-w-xl text-sm leading-relaxed text-gray-600 dark:text-gray-400 md:text-base">
-            这里更像一间持续整理中的技术工作台：记录问题、方案、复盘，以及一些正在学习中的想法。
+            记录大语言模型、AI Agent、开源模型的最新进展与深度思考。持续关注技术前沿，保持好奇。
           </p>
         </div>
 

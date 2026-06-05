@@ -2,11 +2,13 @@
 import SelfCard from "@/components/card/SelfCard";
 import ArticleList from "@/components/card/ArticleList";
 import CategoryCard from "@/components/card/CategoryCard";
+import ModelsLeaderboard from "@/components/card/ModelsLeaderboard";
 import Link from "next/link";
 import { getDynamicCategories } from "@/constant";
 import type { Post } from "@/types";
+import type { HFModel } from "@/lib/hf-models";
 
-export default function HomeClient({ posts }: { posts: Post[] }) {
+export default function HomeClient({ posts, models }: { posts: Post[]; models: HFModel[] }) {
   const dynamicCategories = getDynamicCategories(posts);
   const categoryEntries = Object.entries(dynamicCategories);
 
@@ -44,7 +46,7 @@ export default function HomeClient({ posts }: { posts: Post[] }) {
                 最新文章
               </h2>
               <p className="text-gray-600 dark:text-gray-400">
-                探索 Web 开发和区块链的见解、教程和思考
+                大模型、AI Agent 与智能体前沿洞察
               </p>
             </div>
             <div className="max-h-[50vh] overflow-y-auto pr-2 hide-scrollbar fade-bottom pb-6 overscroll-contain">
@@ -57,6 +59,19 @@ export default function HomeClient({ posts }: { posts: Post[] }) {
             <CategoryCard posts={posts} />
           </div>
         </div>
+      </div>
+
+      {/* 开源大模型排行榜 */}
+      <div className="max-w-7xl mx-auto px-4 mt-12">
+        <div className="mb-6">
+          <h2 className="text-xl md:text-3xl font-bold text-black mb-2 dark:text-white">
+            🤖 开源大模型排行榜
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 text-sm">
+            Hugging Face 全球开源文本生成模型 Top 20 · 按热度排序 · 每日刷新
+          </p>
+        </div>
+        <ModelsLeaderboard models={models} />
       </div>
     </div>
   );

@@ -128,21 +128,34 @@ async function generateChineseArticle(apiKey, content, title, link, provider = '
     : 'https://api.openai.com/v1/chat/completions';
   const model = isDeepseek ? 'deepseek-chat' : 'gpt-4o-mini';
 
-  const prompt = `你是一个专业的技术编辑。请根据以下英文/中文文章内容，完成以下任务：
+  const prompt = `你是一位资深中文科技编辑。请根据以下原文撰写一篇高质量中文技术文章。
 
-1. 先完整理解原文的核心观点、论据和结论。
-2. 用中文撰写一篇完整的文章（800-1500字），要求：
-   - 开头用引人入胜的方式引出话题
-   - 分 3-5 个小节，每节有清晰的标题
-   - 每节内容充实，有具体细节和数据支撑，不要只列大纲
-   - 结尾有总结或展望
-   - 语言流畅自然，适合中文读者阅读
-3. 提取 3-5 个中文关键词（数组格式）
-4. 生成一个简洁有力的中文标题（10-20字）
+【硬性要求】
+- 事实准确，不编造数据。不确定的信息标注「据原文」。
+- 文笔轻松有趣但不失严谨，像和朋友聊天一样讲清楚技术话题。
+- 逻辑清晰：先讲是什么、为什么重要，再讲怎么做、有什么影响。
+- 不拖泥带水，每句话都有信息量。
+- 小节标题用序号（1. 2. 3.），层次分明不跳号。
 
-严格返回 JSON（不要 markdown 代码块）：
-{"title":"...","keywords":["..."],"sections":[{"heading":"...","content":"..."}]}
-其中 sections 是文章主体，每项的 heading 是小节标题，content 是该节的完整段落内容。`;
+【输出结构】
+返回严格 JSON（不要 markdown 代码块）：
+{
+  "title": "中文标题（12-20字，抓人眼球但不标题党）",
+  "category": "文章分类，从以下选一个最贴切的：ai-tools / programming / startup / crypto / hardware / science / design / policy / mobile / gaming",
+  "tags": ["标签1", "标签2", "标签3", "标签4", "标签5"],
+  "sections": [
+    {"heading": "1. 小节标题", "content": "该节完整段落（不少于150字，有细节有观点）"},
+    {"heading": "2. 小节标题", "content": "该节完整段落"},
+    {"heading": "3. 小节标题", "content": "该节完整段落"}
+  ]
+}
+
+【写作指南】
+- sections 至少 3 节，至多 6 节，每节 content 不少于 120 字。
+- 第一节做引入（为什么这个话题值得关注），最后一节做总结/展望。
+- 中间各节围绕原文核心展开，每节一个明确观点。
+- tags 要精准多元：包含技术名词、应用领域、趋势关键词，不用泛词如"科技""技术"。
+- category 选最贴切的一个，不要总是 tech。`;
 
   const res = await fetch(apiUrl, {
     method: 'POST',
@@ -150,8 +163,8 @@ async function generateChineseArticle(apiKey, content, title, link, provider = '
     body: JSON.stringify({
       model,
       messages: [
-        { role: 'system', content: '你是专业的中文技术编辑，回复必须为严格 JSON，文章内容要完整充实，切勿只写大纲。' },
-        { role: 'user', content: `${prompt}\n\n原文标题：${title}\n原文链接：${link}\n文章内容：\n${content.slice(0, 15000)}` },
+        { role: 'system', content: '你是资深中文科技编辑，行文轻松有趣、逻辑清晰、事实准确。回复必须为严格 JSON。' },
+        { role: 'user', content: `${prompt}\n\n原文标题：${title}\n原文链接：${link}\n原文内容：\n${content.slice(0, 15000)}` },
       ],
       max_tokens: 3000,
       temperature: 0.5,
@@ -171,7 +184,8 @@ async function generateChineseArticle(apiKey, content, title, link, provider = '
       const p = JSON.parse(m[0]);
       return {
         title: p.title || title,
-        keywords: p.keywords || [],
+        category: p.category || 'tech',
+        tags: p.tags || p.keywords || [],
         sections: p.sections || [],
       };
     } catch (_) { /* fallthrough */ }
@@ -179,7 +193,8 @@ async function generateChineseArticle(apiKey, content, title, link, provider = '
   // Fallback: use raw text
   return {
     title,
-    keywords: [],
+    category: 'tech',
+    tags: [],
     sections: [{ heading: '', content: txt.slice(0, 2000) }],
   };
 }
@@ -188,11 +203,12 @@ async function generateChineseArticle(apiKey, content, title, link, provider = '
 // 生成 MDX
 // ============================================================
 function buildMdx(item, article, date) {
-  const { title, keywords, sections } = article;
+  const { title, category, tags, sections } = article;
   const safeTitle = String(title || item.title).replace(/"/g, '\\"');
   const firstSection = sections[0]?.content || '';
   const safeExcerpt = String(firstSection).replace(/"/g, '\\"').replace(/\n/g, ' ').slice(0, 200);
   const safeLink = String(item.link || '').replace(/"/g, '\\"');
+  const safeCategory = category || 'tech';
 
   const body = sections.map(s => {
     if (s.heading) {
@@ -205,8 +221,8 @@ function buildMdx(item, article, date) {
 title: "${safeTitle}"
 date: "${date}"
 excerpt: "${safeExcerpt}"
-category: "tech"
-tags: ${JSON.stringify(keywords)}
+category: "${safeCategory}"
+tags: ${JSON.stringify(tags)}
 original: "${safeLink}"
 draft: false
 ---
@@ -317,7 +333,8 @@ async function main() {
         // 完全无 AI 时的回退
         article = {
           title: item.title,
-          keywords: [],
+          category: 'tech',
+          tags: [],
           sections: [{ heading: '', content: item.description || '暂无内容' }],
         };
       }
