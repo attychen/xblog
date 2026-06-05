@@ -38,9 +38,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   // 文章页面
   const postRoutes: MetadataRoute.Sitemap = posts.map((post) => ({
     url: `${baseUrl}/blog/${post.slug}`,
-    lastModified: post.frontmatter.date
-      ? new Date(post.frontmatter.date)
-      : new Date(),
+    lastModified: post.date ? new Date(post.date) : new Date(),
     changeFrequency: "weekly" as const,
     priority: 0.7,
   }));
