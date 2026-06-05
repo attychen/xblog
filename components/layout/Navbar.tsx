@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { SunIcon, MoonIcon, GithubIcon, MenuIcon, XIcon, ChevronDown } from "lucide-react";
 import { useTheme } from "next-themes";
 
-const NAV_LINKS = [
+const NAV_LINKS: { label: string; href: string; children?: { label: string; href: string }[] }[] = [
   { 
     label: "博客文章", 
     href: "/blog",
@@ -59,11 +59,11 @@ export default function Navbar() {
                 }`}
               >
                 {link.label}
-                {link.children && <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${hoveredMenu === link.href ? 'rotate-180' : ''}`} />}
+                {Array.isArray(link.children) && <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${hoveredMenu === link.href ? 'rotate-180' : ''}`} />}
               </Link>
               
               {/* Desktop Dropdown */}
-              {link.children && (
+              {Array.isArray(link.children) && (
                 <AnimatePresence>
                   {hoveredMenu === link.href && (
                     <motion.div
@@ -74,7 +74,7 @@ export default function Navbar() {
                       className="absolute top-full left-1/2 -translate-x-1/2 pt-2 min-w-32"
                     >
                       <div className="flex flex-col bg-white/90 dark:bg-gray-900/90 backdrop-blur-md rounded-xl shadow-xl border border-gray-200 dark:border-gray-800 overflow-hidden py-2">
-                        {link.children.map((child) => (
+                        {link.children?.map((child) => (
                           <Link
                             key={child.href}
                             href={child.href}
@@ -196,7 +196,7 @@ export default function Navbar() {
                         {link.label}
                       </Link>
                       
-                      {link.children && (
+                      {Array.isArray(link.children) && (
                         <button 
                           onClick={() => handleMobileMenuToggle(link.href)}
                           className="p-2 -mr-2"
@@ -207,7 +207,7 @@ export default function Navbar() {
                     </div>
                     
                     {/* Mobile Accordion */}
-                    {link.children && (
+                    {Array.isArray(link.children) && (
                       <AnimatePresence>
                         {expandedMobileMenu === link.href && (
                           <motion.div
@@ -218,7 +218,7 @@ export default function Navbar() {
                             className="bg-gray-50 dark:bg-gray-900/50 overflow-hidden"
                           >
                             <div className="px-6 py-2 flex flex-col gap-2">
-                              {link.children.map((child) => (
+                              {link.children?.map((child) => (
                                 <Link
                                   key={child.href}
                                   href={child.href}
