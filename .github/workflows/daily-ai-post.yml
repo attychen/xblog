@@ -1,0 +1,39 @@
+name: Daily AI Post
+
+on:
+  schedule:
+    - cron: '0 8 * * *' # every day at 08:00 UTC
+  workflow_dispatch: {}
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Run AI fetch script
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          RSS_FEEDS: ${{ secrets.RSS_FEEDS }}
+        run: |
+          node scripts/fetch-ai-posts.mjs
+
+      - name: Commit & Push (if changes)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if [ -n "$(git status --porcelain)" ]; then
+            git add -A
+            git commit -m "chore: add auto ai post (workflow)" || echo "no commit"
+            git push
+          else
+            echo "no changes"
+          fi
