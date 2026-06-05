@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import fs from 'fs/promises';
 import { execSync } from 'child_process';
-import pkg from 'fast-xml-parser';
-const { XMLParser } = pkg;
+// dynamic import of fast-xml-parser (some runners may not have it installed)
+// we'll try to load it when parsing XML; if unavailable, fall back to a simple regex parser
 
 const DEFAULT_FEEDS = [
   'http://export.arxiv.org/rss/cs.AI',
@@ -24,9 +24,19 @@ async function fetchText(url) {
   return res.text();
 }
 
-function parseItemsFromXml(xml) {
-  const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '' });
-  const obj = parser.parse(xml);
+async function parseItemsFromXml(xml) {
+  // try to use fast-xml-parser if available
+  let XMLParser = null;
+  try {
+    const pkg = await import('fast-xml-parser');
+    XMLParser = pkg.XMLParser || pkg.default?.XMLParser || pkg.default || pkg;
+  } catch (e) {
+    // module not available, will use fallback
+  }
+
+  if (XMLParser) {
+    const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '' });
+    const obj = parser.parse(xml);
   // try common rss/channel/item path
   const items = [];
   try {
@@ -43,6 +53,31 @@ function parseItemsFromXml(xml) {
   } catch (e) {
     // fallback: empty
   }
+    return items;
+  }
+
+  // Fallback simple parser: extract <item> or <entry> blocks via regex
+  const items = [];
+  try {
+    const blocks = xml.match(/<(?:item|entry)[\s\S]*?<\/(?:item|entry)>/gi) || [];
+    for (const block of blocks) {
+      const titleMatch = block.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+      const linkHrefMatch = block.match(/<link[^>]+href=["']([^"']+)["'][^>]*>/i);
+      const linkInnerMatch = block.match(/<link[^>]*>([\s\S]*?)<\/link>/i);
+      const descMatch = block.match(/<(?:description|summary)[^>]*>([\s\S]*?)<\/(?:description|summary)>/i);
+      const pubMatch = block.match(/<(?:pubDate|published|updated)[^>]*>([\s\S]*?)<\/(?:pubDate|published|updated)>/i);
+
+      const title = (titleMatch && titleMatch[1]) ? titleMatch[1].replace(/<[^>]+>/g, '').trim() : '';
+      const link = (linkHrefMatch && linkHrefMatch[1]) ? linkHrefMatch[1].trim() : (linkInnerMatch && linkInnerMatch[1]) ? linkInnerMatch[1].replace(/<[^>]+>/g, '').trim() : '';
+      const description = descMatch && descMatch[1] ? descMatch[1].replace(/<[^>]+>/g, '').trim() : '';
+      const pubDate = pubMatch && pubMatch[1] ? pubMatch[1].trim() : new Date().toISOString();
+
+      items.push({ title: String(title).replace(/\n/g, ' ').trim(), link: String(link).trim(), description: String(description).trim(), pubDate });
+    }
+  } catch (e) {
+    // fallback: empty
+  }
+
   return items;
 }
 
@@ -120,7 +155,7 @@ async function main() {
     const allItems = [];
     for (const xml of xmls) {
       if (!xml) continue;
-      const items = parseItemsFromXml(xml);
+      const items = await parseItemsFromXml(xml);
       if (items && items.length) {
         allItems.push(...items);
       }
