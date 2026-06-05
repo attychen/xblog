@@ -43,6 +43,7 @@ jobs:
           if [ -n "$(git status --porcelain)" ]; then
             git add -A
             git commit -m "chore: add auto ai post (workflow)" --no-verify || echo "no commit"
+            git pull --rebase origin main
             git push
           else
             echo "no changes"
