@@ -30,4 +30,4 @@ export const DIFFICULTY_LABELS = {
 
 /** 练习仓 GitHub 根 URL，用于「在 GitHub 查看源码」链接 */
 export const PRACTICE_REPO_URL =
-  "https://github.com/404ll/elemen-handwriting-practice";
+  "https://github.com/attychen/xblog";

@@ -23,8 +23,21 @@ function langFromEntry(entry: string): "javascript" | "jsx" {
 /** 读取并校验 manifest.json */
 export function loadManifest(rootDir?: string) {
   const root = resolvePracticeRoot(rootDir);
-  const raw = fs.readFileSync(path.join(root, "manifest.json"), "utf8");
-  return PracticeManifestSchema.parse(JSON.parse(raw));
+  const manifestPath = path.join(root, "manifest.json");
+  if (!fs.existsSync(manifestPath)) {
+    // practice 子模块缺失或未初始化时，返回空 manifest，避免构建失败
+    return { problems: [] } as const;
+  }
+
+  try {
+    const raw = fs.readFileSync(manifestPath, "utf8");
+    return PracticeManifestSchema.parse(JSON.parse(raw));
+  } catch (err) {
+    // 若 manifest 格式异常或解析失败，记日志并返回空列表以继续构建
+    // eslint-disable-next-line no-console
+    console.warn("practice manifest parse error:", err);
+    return { problems: [] } as const;
+  }
 }
 
 /**

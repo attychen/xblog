@@ -85,7 +85,7 @@ git push -u origin main
 
 ```bash
 cd /Users/elemen/Myself/Elemen-blog
-git submodule add https://github.com/404ll/elemen-handwriting-practice.git practice
+git submodule add https://github.com/attychen/xblog.git practice
 git submodule update --init --recursive
 ```
 
@@ -310,7 +310,7 @@ jobs:
         env:
           TOKEN: ${{ secrets.BLOG_REPO_TOKEN }}
         run: |
-          git clone https://x-access-token:${TOKEN}@github.com/404ll/Elemen-blog.git blog
+          git clone https://x-access-token:${TOKEN}@github.com/attychen/xblog.git blog
           cd blog
           git submodule update --init practice
           cd practice && git fetch origin main && git checkout origin/main && cd ..
