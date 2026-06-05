@@ -2,12 +2,12 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { PracticeManifestSchema } from "../lib/practice/schema";
+import { PracticeManifestSchema } from "../lib/practice/schema.ts";
 import {
   getAllProblems,
   getProblemById,
   loadManifest,
-} from "../lib/practice/loader";
+} from "../lib/practice/loader.ts";
 
 const fixtureRoot = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
