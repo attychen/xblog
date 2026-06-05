@@ -34,7 +34,6 @@ export function loadManifest(rootDir?: string) {
     return PracticeManifestSchema.parse(JSON.parse(raw));
   } catch (err) {
     // 若 manifest 格式异常或解析失败，记日志并返回空列表以继续构建
-    // eslint-disable-next-line no-console
     console.warn("practice manifest parse error:", err);
     return { problems: [] } as const;
   }

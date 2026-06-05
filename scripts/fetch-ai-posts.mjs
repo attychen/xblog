@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import fs from 'fs/promises';
 import { execSync } from 'child_process';
 // dynamic import of fast-xml-parser (some runners may not have it installed)
