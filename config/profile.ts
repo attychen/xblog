@@ -9,7 +9,7 @@ export const PROFILE = {
     { label: '技术笔记', color: 'bg-blue-100   dark:bg-blue-900/50   dark:text-blue-300' },
   ],
 
-  experiences: [],
+  experiences: [] as { company: string; role: string; period?: string; bullets?: string[] }[],
 
-  skills: [],
-} as const;
+  skills: [] as string[],
+};
