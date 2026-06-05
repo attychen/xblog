@@ -2,8 +2,12 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import fs from 'fs/promises';
 import { execSync } from 'child_process';
-// dynamic import of fast-xml-parser (some runners may not have it installed)
-// we'll try to load it when parsing XML; if unavailable, fall back to a simple regex parser
+
+// ============================================================
+// 配置
+// ============================================================
+const DEEPSEEK_API = 'https://api.deepseek.com/chat/completions';
+const DEEPSEEK_MODEL = 'deepseek-chat';
 
 const DEFAULT_FEEDS = [
   'http://export.arxiv.org/rss/cs.AI',
@@ -11,6 +15,9 @@ const DEFAULT_FEEDS = [
   'https://www.technologyreview.com/feed/',
 ];
 
+// ============================================================
+// 工具函数
+// ============================================================
 function slugify(s) {
   return s
     .toString()
@@ -20,236 +27,326 @@ function slugify(s) {
 }
 
 async function fetchText(url) {
-  const res = await fetch(url, { headers: { 'User-Agent': 'fetch-ai-posts/1.0' } });
-  if (!res.ok) throw new Error(`Failed to fetch ${url}: ${res.status}`);
+  const res = await fetch(url, {
+    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; FazhoujiBot/2.0)' },
+  });
+  if (!res.ok) throw new Error(`${url} → ${res.status}`);
   return res.text();
 }
 
+// ============================================================
+// RSS/Atom 解析
+// ============================================================
 async function parseItemsFromXml(xml) {
-  // try to use fast-xml-parser if available
   let XMLParser = null;
   try {
     const pkg = await import('fast-xml-parser');
     XMLParser = pkg.XMLParser || pkg.default?.XMLParser || pkg.default || pkg;
-  } catch (e) {
-    // module not available, will use fallback
-  }
+  } catch (_) { /* 回退 */ }
 
   if (XMLParser) {
-    const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '' });
-    const obj = parser.parse(xml);
-  // try common rss/channel/item path
+    try {
+      const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '' });
+      const obj = parser.parse(xml);
+      const channel = obj.rss?.channel || obj.feed || obj;
+      let rawItems = channel?.item || channel?.entry || [];
+      if (!Array.isArray(rawItems)) rawItems = [rawItems];
+      return rawItems.map(it => ({
+        title: extractText(it.title, ''),
+        link: extractLink(it.link, ''),
+        description: extractText(it.description || it.summary, ''),
+        pubDate: it.pubDate || it.published || it.updated || new Date().toISOString(),
+      }));
+    } catch (_) { /* 回退 */ }
+  }
+
+  // 正则回退
   const items = [];
-  try {
-    const channel = obj.rss?.channel || obj.feed || obj;
-    let rawItems = channel?.item || channel?.entry || [];
-    if (!Array.isArray(rawItems)) rawItems = [rawItems];
-    for (const it of rawItems) {
-      const title = (it.title && (typeof it.title === 'object' ? it.title['#text'] || it.title : it.title)) || '';
-      const link = it.link && (typeof it.link === 'object' ? it.link.href || it.link['#text'] || it.link : it.link) || '';
-      const description = (it.description && (typeof it.description === 'object' ? it.description['#text'] || it.description : it.description)) || it.summary || '';
-      const pubDate = it.pubDate || it.published || it.updated || new Date().toISOString();
-      items.push({ title: String(title).replace(/\n/g, ' ').trim(), link: String(link).trim(), description: String(description).trim(), pubDate });
-    }
-  } catch (e) {
-    // fallback: empty
+  const blocks = xml.match(/<(?:item|entry)[\s\S]*?<\/(?:item|entry)>/gi) || [];
+  for (const block of blocks) {
+    const title = (block.match(/<title[^>]*>([\s\S]*?)<\/title>/i) || [])[1] || '';
+    const link = (block.match(/<link[^>]+href=["']([^"']+)["']/i) || [])[1]
+      || (block.match(/<link[^>]*>([\s\S]*?)<\/link>/i) || [])[1] || '';
+    const desc = (block.match(/<(?:description|summary)[^>]*>([\s\S]*?)<\/(?:description|summary)>/i) || [])[1] || '';
+    const pub = (block.match(/<(?:pubDate|published|updated)[^>]*>([\s\S]*?)<\/(?:pubDate|published|updated)>/i) || [])[1] || new Date().toISOString();
+    items.push({
+      title: stripHtml(title).replace(/\n/g, ' ').trim(),
+      link: link.trim(),
+      description: stripHtml(desc).trim(),
+      pubDate: pub.trim(),
+    });
   }
-    return items;
-  }
-
-  // Fallback simple parser: extract <item> or <entry> blocks via regex
-  const items = [];
-  try {
-    const blocks = xml.match(/<(?:item|entry)[\s\S]*?<\/(?:item|entry)>/gi) || [];
-    for (const block of blocks) {
-      const titleMatch = block.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
-      const linkHrefMatch = block.match(/<link[^>]+href=["']([^"']+)["'][^>]*>/i);
-      const linkInnerMatch = block.match(/<link[^>]*>([\s\S]*?)<\/link>/i);
-      const descMatch = block.match(/<(?:description|summary)[^>]*>([\s\S]*?)<\/(?:description|summary)>/i);
-      const pubMatch = block.match(/<(?:pubDate|published|updated)[^>]*>([\s\S]*?)<\/(?:pubDate|published|updated)>/i);
-
-      const title = (titleMatch && titleMatch[1]) ? titleMatch[1].replace(/<[^>]+>/g, '').trim() : '';
-      const link = (linkHrefMatch && linkHrefMatch[1]) ? linkHrefMatch[1].trim() : (linkInnerMatch && linkInnerMatch[1]) ? linkInnerMatch[1].replace(/<[^>]+>/g, '').trim() : '';
-      const description = descMatch && descMatch[1] ? descMatch[1].replace(/<[^>]+>/g, '').trim() : '';
-      const pubDate = pubMatch && pubMatch[1] ? pubMatch[1].trim() : new Date().toISOString();
-
-      items.push({ title: String(title).replace(/\n/g, ' ').trim(), link: String(link).trim(), description: String(description).trim(), pubDate });
-    }
-  } catch (e) {
-    // fallback: empty
-  }
-
   return items;
 }
 
-async function summarizeWithOpenAI(apiKey, text, link, title) {
-  const prompt = `Please generate a short 3-4 sentence summary, 5 concise keywords, and a suggested short title for the article. Return a JSON object with keys: summary, keywords (array), suggested_title.`;
+function extractText(val, fallback) {
+  if (!val) return fallback;
+  if (typeof val === 'string') return stripHtml(val);
+  if (typeof val === 'object') return stripHtml(val['#text'] || val._ || JSON.stringify(val));
+  return String(val);
+}
 
-  const body = {
-    model: 'gpt-4o-mini',
-    messages: [
-      { role: 'system', content: 'You are a helpful assistant that summarizes technical articles concisely.' },
-      { role: 'user', content: `${prompt}\n\nArticle title: ${title}\nArticle link: ${link}\nArticle excerpt or description: ${text}` },
-    ],
-    max_tokens: 400,
-    temperature: 0.2,
-  };
+function extractLink(val, fallback) {
+  if (!val) return fallback;
+  if (typeof val === 'string') return val.trim();
+  if (typeof val === 'object') return (val.href || val['#text'] || '').trim();
+  return String(val);
+}
 
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+function stripHtml(s) {
+  return String(s).replace(/<[^>]+>/g, ' ').replace(/&[a-z]+;/gi, ' ').replace(/\s+/g, ' ').trim();
+}
+
+// ============================================================
+// 抓取文章全文
+// ============================================================
+async function scrapeFullContent(url) {
+  try {
+    const html = await fetchText(url);
+    const body = (html.match(/<body[^>]*>([\s\S]*?)<\/body>/i) || [])[1] || html;
+    const cleaned = body
+      .replace(/<script[\s\S]*?<\/script>/gi, '')
+      .replace(/<style[\s\S]*?<\/style>/gi, '')
+      .replace(/<nav[\s\S]*?<\/nav>/gi, '')
+      .replace(/<footer[\s\S]*?<\/footer>/gi, '')
+      .replace(/<header[\s\S]*?<\/header>/gi, '')
+      .replace(/<aside[\s\S]*?<\/aside>/gi, '');
+    const text = stripHtml(cleaned);
+    return text.slice(0, 12000);
+  } catch (_) {
+    return null;
+  }
+}
+
+// ============================================================
+// DeepSeek 中文摘要（OpenAI 兼容接口）
+// ============================================================
+async function summarizeWithDeepSeek(apiKey, content, title, link) {
+  const prompt = `你是一个专业的技术文章中文摘要助手。请根据以下文章内容完成以下任务：
+
+1. **中文摘要**：生成 4-6 句精炼的中文摘要，抓住文章核心观点、创新点和结论。翻译要准确流畅。
+2. **中文关键词**：提取 5 个最核心的中文关键词（数组形式）。
+3. **中文标题**：为文章生成一个简洁有力的中文标题。
+4. **目录**：如果文章结构清晰，生成一个 3-6 条的中文目录（数组，如 ["1. 引言", "2. 方法", "3. 实验"]），内容较短可为空数组。
+
+请严格返回 JSON（不要 markdown 代码块）：
+{"summary": "...", "keywords": ["...", "..."], "suggested_title": "...", "toc": ["1. ...", "2. ..."]}`;
+
+  const res = await fetch(DEEPSEEK_API, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify(body),
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify({
+      model: DEEPSEEK_MODEL,
+      messages: [
+        { role: 'system', content: '你是专业的技术翻译和摘要助手，回复必须为严格 JSON。' },
+        { role: 'user', content: `${prompt}\n\n原文标题：${title}\n原文链接：${link}\n文章内容：\n${content.slice(0, 8000)}` },
+      ],
+      max_tokens: 1200,
+      temperature: 0.3,
+    }),
   });
 
   if (!res.ok) {
     const t = await res.text();
-    throw new Error(`OpenAI error: ${res.status} ${t}`);
+    throw new Error(`DeepSeek ${res.status}: ${t.slice(0, 200)}`);
   }
 
   const data = await res.json();
-  const txt = data.choices?.[0]?.message?.content || data.choices?.[0]?.text || '';
-  // try to extract JSON from text
-  const jsonMatch = txt.match(/\{[\s\S]*\}/);
-  if (jsonMatch) {
-    try { return JSON.parse(jsonMatch[0]); } catch (e) { /* fallthrough */ }
+  const txt = data.choices?.[0]?.message?.content || '';
+  const m = txt.match(/\{[\s\S]*\}/);
+  if (m) {
+    try {
+      const p = JSON.parse(m[0]);
+      return { summary: p.summary || '', keywords: p.keywords || [], suggested_title: p.suggested_title || title, toc: p.toc || [] };
+    } catch (_) { /* fallthrough */ }
   }
-  // fallback: simple heuristic
-  return { summary: txt.slice(0, 300), keywords: [], suggested_title: title };
+  return { summary: txt.slice(0, 400), keywords: [], suggested_title: title, toc: [] };
 }
 
-async function summarizeWithExternal(apiUrl, apiKey, text, link, title) {
-  try {
-    const res = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: apiKey ? `Bearer ${apiKey}` : undefined,
-      },
-      body: JSON.stringify({ title, link, text }),
-    });
+// ============================================================
+// OpenAI 回退摘要
+// ============================================================
+async function summarizeWithOpenAI(apiKey, content, title, link) {
+  const prompt = `你是一个专业的技术文章中文摘要助手。请生成：1.中文摘要(4-6句) 2.中文关键词(5个) 3.中文标题 4.中文目录(3-6条)。严格返回JSON: {"summary":"...","keywords":["..."],"suggested_title":"...","toc":["1. ..."]}`;
 
-    if (!res.ok) {
-      const t = await res.text();
-      throw new Error(`External summary API error: ${res.status} ${t}`);
-    }
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: '你是专业的技术翻译和摘要助手，回复必须为严格 JSON。' },
+        { role: 'user', content: `${prompt}\n\n原文标题：${title}\n原文链接：${link}\n文章内容：\n${content.slice(0, 8000)}` },
+      ],
+      max_tokens: 1200,
+      temperature: 0.3,
+    }),
+  });
 
-    const data = await res.json();
-    // Expecting { summary, keywords, suggested_title }
-    const summary = data.summary || data.text || data.result || '';
-    const keywords = data.keywords || data.tags || [];
-    const suggested_title = data.suggested_title || data.title || title;
-    return { summary, keywords, suggested_title };
-  } catch (e) {
-    throw e;
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error(`OpenAI ${res.status}: ${t.slice(0, 200)}`);
   }
+
+  const data = await res.json();
+  const txt = data.choices?.[0]?.message?.content || '';
+  const m = txt.match(/\{[\s\S]*\}/);
+  if (m) {
+    try {
+      const p = JSON.parse(m[0]);
+      return { summary: p.summary || '', keywords: p.keywords || [], suggested_title: p.suggested_title || title, toc: p.toc || [] };
+    } catch (_) { /* fallthrough */ }
+  }
+  return { summary: txt.slice(0, 400), keywords: [], suggested_title: title, toc: [] };
 }
 
+// ============================================================
+// 生成 MDX
+// ============================================================
+function buildMdx(item, aiResult, date) {
+  const { summary, keywords, suggested_title, toc } = aiResult;
+  const safeTitle = String(suggested_title || item.title).replace(/"/g, '\\"');
+  const safeExcerpt = String(summary || '').replace(/"/g, '\\"').replace(/\n/g, ' ');
+  const safeLink = String(item.link || '').replace(/"/g, '\\"');
+
+  const tocSection = (toc && toc.length > 0)
+    ? `\n## 📑 目录\n\n${toc.map(line => `- ${line}`).join('\n')}\n`
+    : '';
+
+  return `---
+title: "${safeTitle}"
+date: "${date}"
+excerpt: "${safeExcerpt}"
+category: "ai-news"
+tags: ${JSON.stringify(keywords)}
+original: "${safeLink}"
+draft: false
+---
+
+# ${safeTitle}
+
+> 📌 原文链接：[${safeLink}](${safeLink})
+
+## 📝 摘要
+
+${summary || '暂无摘要'}
+
+${tocSection}
+
+---
+
+*本文由 AI 自动生成，内容仅供参考。*
+`;
+}
+
+// ============================================================
+// 主流程
+// ============================================================
 async function main() {
   try {
     const feeds = (process.env.RSS_FEEDS || DEFAULT_FEEDS.join(',')).split(',').map(s => s.trim()).filter(Boolean);
 
-    // Parallel fetch all feeds
-    const xmls = await Promise.all(feeds.map(f => fetchText(f).catch(err => { console.warn('feed fetch error', f, err.message); return null; })));
+    console.log(`📡 抓取 ${feeds.length} 个 RSS 源...`);
+    const xmls = await Promise.all(feeds.map(f =>
+      fetchText(f).catch(err => { console.warn(`  ⚠️  ${f}: ${err.message}`); return null; })
+    ));
+
     const allItems = [];
     for (const xml of xmls) {
       if (!xml) continue;
       const items = await parseItemsFromXml(xml);
-      if (items && items.length) {
-        allItems.push(...items);
-      }
+      if (items?.length) allItems.push(...items);
     }
 
-    if (allItems.length === 0) {
-      console.log('No feed items found. Exiting.');
-      return;
-    }
+    if (allItems.length === 0) { console.log('❌ 没有抓取到任何文章。'); return; }
+    console.log(`📰 抓取到 ${allItems.length} 篇文章`);
 
-    // dedupe against existing posts in content/auto
+    // 去重
     const dir = 'content/auto';
     await fs.mkdir(dir, { recursive: true });
-    const existingFiles = (await fs.readdir(dir)).filter(f => f.endsWith('.mdx'));
+    const existingFiles = (await fs.readdir(dir).catch(() => [])).filter(f => f.endsWith('.mdx'));
     const existingOriginals = new Set();
     for (const f of existingFiles) {
       try {
         const txt = await fs.readFile(`${dir}/${f}`, 'utf8');
         const m = txt.match(/original:\s*"([^"]+)"/i);
         if (m) existingOriginals.add(m[1]);
-      } catch (e) { /* ignore */ }
+      } catch (_) { /* ignore */ }
     }
 
-    // sort items by pubDate desc, try to add up to N new posts
     const N = Number(process.env.MAX_NEW_POSTS || 3);
+    allItems.sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
     const uniq = [];
     const seenLinks = new Set();
-    allItems.sort((a,b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
     for (const it of allItems) {
       if (uniq.length >= N) break;
       if (!it.link && !it.title) continue;
-      if (existingOriginals.has(it.link)) continue;
-      if (seenLinks.has(it.link)) continue;
+      if (existingOriginals.has(it.link) || seenLinks.has(it.link)) continue;
       seenLinks.add(it.link);
       uniq.push(it);
     }
 
-    if (uniq.length === 0) {
-      console.log('No new items to add.');
-      return;
-    }
+    if (uniq.length === 0) { console.log('✅ 没有新文章。'); return; }
+
+    const deepseekKey = process.env.DEEPSEEK_API_KEY || process.env.SUMMARY_API_KEY;
+    const openaiKey = process.env.OPENAI_API_KEY;
+    if (!deepseekKey && !openaiKey) console.log('⚠️  未配置 API Key，使用原始摘要。');
 
     for (const item of uniq) {
-      const date = new Date(item.pubDate).toISOString().slice(0,10);
+      const date = new Date(item.pubDate).toISOString().slice(0, 10);
       const slug = slugify(item.title || item.link || date);
-      let summary = item.description || '';
-      let keywords = [];
-      let suggested_title = item.title;
+      console.log(`\n📝 ${item.title.slice(0, 60)}...`);
 
-      // Prefer external summary service (e.g., DeepSeek) if configured
-      const summaryApiUrl = process.env.SUMMARY_API_URL;
-      const summaryApiKey = process.env.SUMMARY_API_KEY;
-      if (summaryApiUrl) {
+      let fullContent = item.description || '';
+      console.log('  🔍 抓取全文...');
+      const scraped = await scrapeFullContent(item.link);
+      if (scraped && scraped.length > fullContent.length) {
+        fullContent = scraped;
+        console.log(`  ✅ 获取 ${fullContent.length} 字符`);
+      } else {
+        console.log(`  ℹ️  使用摘要 (${fullContent.length} 字符)`);
+      }
+
+      let aiResult = { summary: fullContent.slice(0, 300), keywords: [], suggested_title: item.title, toc: [] };
+
+      if (deepseekKey) {
         try {
-          const out = await summarizeWithExternal(summaryApiUrl, summaryApiKey, item.description, item.link, item.title);
-          summary = out.summary || summary;
-          keywords = out.keywords || keywords;
-          suggested_title = out.suggested_title || suggested_title;
+          console.log('  🤖 DeepSeek 摘要...');
+          aiResult = await summarizeWithDeepSeek(deepseekKey, fullContent, item.title, item.link);
+          console.log(`  ✅ ${aiResult.summary.slice(0, 50)}...`);
         } catch (e) {
-          console.warn('External summary service failed:', e.message);
+          console.warn(`  ⚠️  DeepSeek 失败: ${e.message}`);
         }
-      } else if (process.env.OPENAI_API_KEY) {
+      }
+
+      if (!aiResult.summary && openaiKey) {
         try {
-          const out = await summarizeWithOpenAI(process.env.OPENAI_API_KEY, item.description, item.link, item.title);
-          summary = out.summary || summary;
-          keywords = out.keywords || keywords;
-          suggested_title = out.suggested_title || suggested_title;
+          console.log('  🤖 OpenAI 回退...');
+          aiResult = await summarizeWithOpenAI(openaiKey, fullContent, item.title, item.link);
         } catch (e) {
-          console.warn('OpenAI summary failed:', e.message);
+          console.warn(`  ⚠️  OpenAI 失败: ${e.message}`);
         }
       }
 
       const filename = `${dir}/${date}-${slug}.mdx`;
-      const front = `---\ntitle: "${String(suggested_title).replace(/"/g, '\\"')}"\ndate: "${date}"\nexcerpt: "${String(summary || '').replace(/"/g, '\\"')}"\ncategory: "ai-news"\ntags: ${JSON.stringify(keywords)}\noriginal: "${item.link}"\ndraft: false\n---\n\n`;
-      const body = `${front}来源： ${item.link}\n\n${summary}\n\n> 原文链接： ${item.link}\n`;
-      await fs.writeFile(filename, body, 'utf8');
-      console.log('Wrote', filename);
+      await fs.writeFile(filename, buildMdx(item, aiResult, date), 'utf8');
+      console.log(`  💾 ${filename}`);
     }
 
-    // commit & push if token provided via env (workflow will handle commit too)
+    // Git 提交
     const canPush = process.env.GITHUB_TOKEN || process.env.GITHUB_PAT;
     if (canPush) {
       try {
         execSync('git add --all', { stdio: 'inherit' });
-        execSync(`git commit -m "chore: add auto ai posts" || true`, { stdio: 'inherit' });
+        execSync('git commit -m "chore: AI 自动生成文章" --no-verify || true', { stdio: 'inherit' });
         execSync('git push || true', { stdio: 'inherit' });
-        console.log('Attempted to push changes.');
+        console.log('\n🚀 已推送。');
       } catch (e) {
-        console.warn('Git commit/push failed:', e.message);
+        console.warn('Git 失败:', e.message);
       }
     }
   } catch (err) {
-    console.error('error', err);
+    console.error('❌ 错误:', err);
     process.exit(1);
   }
 }

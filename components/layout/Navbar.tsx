@@ -10,25 +10,10 @@ const NAV_LINKS = [
   { 
     label: "博客文章", 
     href: "/blog",
-    children: [
-      { label: "前端开发", href: "/blog/frontend" },
-      { label: "后端技术", href: "/blog/backend" },
-      { label: "算法结构", href: "/blog/algorithm" },
-      { label: "AI与探索", href: "/blog/ai" },
-      { label: "Web3/其他", href: "/blog/web3" }
-    ]
   },
   { 
-    label: "代码练习", 
-    href: "/practice" 
-  },
-  { 
-    label: "资源分享", 
-    href: "/resource",
-    children: [
-      { label: "工具推荐", href: "/resource/tools" },
-      { label: "教程文档", href: "/resource/tutorials" },
-    ]
+    label: "技能榜单", 
+    href: "/skill" 
   },
   { label: "关于我", href: "/about" },
 ];

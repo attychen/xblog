@@ -30,30 +30,27 @@ export const getColorStyle = (color: string | undefined, type: 'badge' | 'card')
   return COLOR_STYLES[key][type];
 };
 
-export const CATEGORIES = {
-  frontend: {
-    name: 'Frontend',
-    color: 'blue' as ColorKey,
-  },
-  backend: {
-    name: 'Backend',
-    color: 'green' as ColorKey,
-  },
-  web3: {
-    name: 'Web3',
-    description: 'Web3 development is the practice of creating decentralized applications.',
-    color: 'purple' as ColorKey,
-  },
-  note: {
-    name: 'Note',
-    color: 'gray' as ColorKey,
-  },
-  algorithm: {
-    name: 'Algorithm',
-    color: 'orange' as ColorKey,
-  },
-  ai: {
-    name: 'AI',
-    color: 'purple' as ColorKey,
-  },
-} as const;
+// 分类颜色轮换（按出现顺序分配）
+const CATEGORY_COLORS: ColorKey[] = ['blue', 'green', 'purple', 'orange', 'gray'];
+
+// 从文章列表动态生成分类映射
+export function getDynamicCategories(posts: { category?: string }[]): Record<string, { name: string; color: ColorKey }> {
+  const catSet = new Map<string, number>();
+  const result: Record<string, { name: string; color: ColorKey }> = {};
+
+  for (const post of posts) {
+    const cat = post.category?.trim();
+    if (cat && !catSet.has(cat)) {
+      catSet.set(cat, catSet.size);
+    }
+  }
+
+  for (const [cat, idx] of catSet) {
+    result[cat] = {
+      name: cat,
+      color: CATEGORY_COLORS[idx % CATEGORY_COLORS.length],
+    };
+  }
+
+  return result;
+}

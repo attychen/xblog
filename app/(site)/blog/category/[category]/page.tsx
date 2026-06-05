@@ -1,10 +1,8 @@
 import ArticleList from "@/components/card/ArticleList";
-import { CATEGORIES } from "@/constant";
+import { getDynamicCategories } from "@/constant";
 import { getAllPosts } from "@/lib/post";
 import { notFound } from "next/navigation";
 
-
-// 辅助函数：按分类获取文章
 function getPostsByCategory(category: string) {
   return getAllPosts().filter((post) => post.category === category);
 }
@@ -15,7 +13,9 @@ export default async function BlogCategoryPage({
   params: Promise<{ category: string }>;
 }) {
   const { category: categoryKey } = await params;
-  const meta = CATEGORIES[categoryKey as keyof typeof CATEGORIES];
+  const allPosts = getAllPosts();
+  const categories = getDynamicCategories(allPosts);
+  const meta = categories[categoryKey];
 
   if (!meta) {
     return notFound();

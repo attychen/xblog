@@ -73,33 +73,6 @@ export default function AboutPage() {
         </div>
 
 
-        {/* 工作经历 */}
-        <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-8 shadow-lg">
-          <h2 className="text-2xl font-bold text-black dark:text-white mb-6 flex items-center gap-2">
-            <span>💼</span>
-            <span>实习经历</span>
-          </h2>
-          <div className="space-y-6">
-            {PROFILE.experiences.map((exp, i) => (
-              <div key={exp.company} className={i > 0 ? 'border-t border-gray-200 dark:border-gray-700 pt-6' : ''}>
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <h3 className="text-lg font-semibold text-black dark:text-white">{exp.company}</h3>
-                    <p className="text-gray-600 dark:text-gray-400">{exp.role}</p>
-                  </div>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">{exp.period}</span>
-                </div>
-                <ul className="space-y-2 text-gray-700 dark:text-gray-300 border-l-2 border-black/20 dark:border-white/20 pl-4">
-                  {exp.bullets?.map((bullet) => (
-                    <li key={bullet}>{bullet}</li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </div>
-
-
         {/* 职业技能 */}
         <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-8 shadow-lg">
           <h2 className="text-2xl font-bold text-black dark:text-white mb-6 flex items-center gap-2">

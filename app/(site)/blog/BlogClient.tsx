@@ -1,6 +1,6 @@
 'use client';
 import ArticleList from "@/components/card/ArticleList";
-import { CATEGORIES, getColorStyle } from "@/constant";
+import { getDynamicCategories, getColorStyle } from "@/constant";
 import Link from "next/link";
 import { useState, useMemo } from "react";
 import Fuse from "fuse.js";
@@ -9,18 +9,19 @@ import type { Post } from "@/types";
 export default function BlogClient({ posts }: { posts: Post[] }) {
   const [searchTerm, setSearchTerm] = useState("");
 
-  // 创建 Fuse 实例用于模糊搜索
   const fuse = useMemo(() => new Fuse(posts, {
     keys: ['title', 'subtitle', 'excerpt', 'category'],
-    threshold: 0.3, // 模糊匹配阈值，越小越精确
-    ignoreLocation: true, // 忽略位置，全文搜索
+    threshold: 0.3,
+    ignoreLocation: true,
   }), [posts]);
 
-  // 根据搜索词过滤文章
   const filteredPosts = useMemo(() => {
     if (!searchTerm.trim()) return posts;
     return fuse.search(searchTerm).map(result => result.item);
   }, [searchTerm, fuse, posts]);
+
+  // 动态分类：只展示有文章的分类
+  const dynamicCategories = useMemo(() => getDynamicCategories(posts), [posts]);
 
   return (
     <div className="pt-20 pb-16">
@@ -30,18 +31,20 @@ export default function BlogClient({ posts }: { posts: Post[] }) {
           <p className="text-gray-600 dark:text-gray-400 transition-colors">
             技术、区块链与折腾记录。
           </p>
-          <div className="flex flex-wrap gap-2 pt-2">
-            {Object.entries(CATEGORIES).map(([key, meta]) => (
-              <Link
-                key={key}
-                href={`/blog/${key}`}
-                className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${getColorStyle(meta.color, 'badge')}`}
-              >
-                <span>{meta.name}</span>
-                <span className="text-gray-500 dark:text-gray-400">→</span>
-              </Link>
-            ))}
-          </div>
+          {Object.keys(dynamicCategories).length > 0 && (
+            <div className="flex flex-wrap gap-2 pt-2">
+              {Object.entries(dynamicCategories).map(([key, meta]) => (
+                <Link
+                  key={key}
+                  href={`/blog/${key}`}
+                  className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${getColorStyle(meta.color, 'badge')}`}
+                >
+                  <span>{meta.name}</span>
+                  <span className="text-gray-500 dark:text-gray-400">→</span>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* 搜索框 */}
@@ -75,7 +78,6 @@ export default function BlogClient({ posts }: { posts: Post[] }) {
           )}
         </div>
 
-        {/* 搜索结果计数 */}
         {searchTerm && (
           <p className="text-sm text-gray-500 dark:text-gray-400">
             找到 {filteredPosts.length} 篇文章

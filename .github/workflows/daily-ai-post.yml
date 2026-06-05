@@ -28,10 +28,11 @@ jobs:
 
       - name: Run AI fetch script
         env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          SUMMARY_API_URL: ${{ secrets.SUMMARY_API_URL }}
-          SUMMARY_API_KEY: ${{ secrets.SUMMARY_API_KEY }}
           RSS_FEEDS: ${{ secrets.RSS_FEEDS }}
+          MAX_NEW_POSTS: ${{ secrets.MAX_NEW_POSTS }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           node scripts/fetch-ai-posts.mjs
 
