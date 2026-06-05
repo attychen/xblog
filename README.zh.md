@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>🧩 Elemen — 技术博客</h1>
+  <h1>🧩 法舟记 — 技术博客</h1>
   <p><strong>前端 × Web3 · 像素美学 · MDX 驱动</strong></p>
   
   <p>
@@ -73,8 +73,8 @@ scripts/               # 开发脚本 (new-post CLI)
 ## 🚀 快速开始
 
 ```bash
-git clone --recurse-submodules https://github.com/404ll/Elemen-blog.git
-cd Elemen-blog
+git clone <your-repo-url>
+cd <your-repo-folder>
 pnpm install
 pnpm dev
 ```

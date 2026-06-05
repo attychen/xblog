@@ -38,7 +38,7 @@ export default function AboutPage() {
           <div className="flex items-center gap-4 mb-6">
             <Image
               src="/logo.png"
-              alt="Elemen"
+              alt="法舟记"
               width={80}
               height={80}
               className="w-16 h-16 p-2"
@@ -46,8 +46,10 @@ export default function AboutPage() {
             <div>
               <h1 className="text-2xl font-bold text-black dark:text-white mb-2">{PROFILE.name}</h1>
               <div className="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
-                <span>📍 {PROFILE.location}</span>
-                <a href={`mailto:${PROFILE.email}`} className="hover:text-blue-600 dark:hover:text-blue-400">✉️ {PROFILE.email}</a>
+                {PROFILE.location && <span>📍 {PROFILE.location}</span>}
+                {PROFILE.email && (
+                  <a href={`mailto:${PROFILE.email}`} className="hover:text-blue-600 dark:hover:text-blue-400">✉️ {PROFILE.email}</a>
+                )}
               </div>
             </div>
           </div>

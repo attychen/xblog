@@ -53,7 +53,7 @@ export default function Navbar() {
       <nav className="w-full flex items-center justify-between p-4 text-black dark:text-white fixed top-0 left-0 right-0 z-50 backdrop-blur-sm bg-[#fff4e6]/80 dark:bg-[#1a0f00]/80 border-b border-orange-200/60 dark:border-orange-900/40 transition-colors duration-300">
         {/* 左侧：Logo */}
         <Link href="/" className="flex items-center">
-          <div className="font-bitcount text-xl md:text-3xl font-semibold">Elemen&#39;s Blog</div>
+          <div className="font-bitcount text-xl md:text-3xl font-semibold">法舟记</div>
         </Link>
 
         {/* 中间：桌面端导航链接（移动端隐藏） */}
@@ -113,7 +113,7 @@ export default function Navbar() {
         <div className="flex items-center gap-2">
           {/* GitHub 桌面端显示，移动端隐藏 */}
           <Link
-            href="https://github.com/404ll/Elemen-blog"
+            href="#"
             target="_blank"
             className="hidden md:flex hover:opacity-70 transition-opacity text-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#38bdf8]/50 focus:ring-offset-2 rounded-lg p-2"
           >
@@ -256,7 +256,7 @@ export default function Navbar() {
                 ))}
                 
                 <Link
-                  href="https://github.com/404ll/Elemen-blog"
+                  href="#"
                   target="_blank"
                   onClick={() => setDrawerOpen(false)}
                   className="px-6 py-4 text-lg font-semibold font-zenmaru text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center gap-2"

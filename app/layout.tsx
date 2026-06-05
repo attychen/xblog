@@ -54,8 +54,8 @@ const zenMaruGothicFont = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Elemen's Blog",
-  description: "Elemen's Blog",
+  title: "法舟记",
+  description: "法舟记",
   icons: {
     icon: [
       { url: '/logo.JPG', type: 'image/jpg' },

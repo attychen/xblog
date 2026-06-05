@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>🧩 Elemen — Pixel Web Tech Blog</h1>
+  <h1>🧩 法舟记 — Pixel Web Tech Blog</h1>
   <p><strong>Frontend × Web3 · Pixel Aesthetics · MDX Powered</strong></p>
   
   <p>
@@ -73,8 +73,8 @@ scripts/               # Dev scripts (new-post CLI)
 ## 🚀 Getting Started
 
 ```bash
-git clone --recurse-submodules https://github.com/404ll/Elemen-blog.git
-cd Elemen-blog
+git clone <your-repo-url>
+cd <your-repo-folder>
 pnpm install
 pnpm dev
 ```
