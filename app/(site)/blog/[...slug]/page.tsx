@@ -8,7 +8,7 @@ import ReadingEnhancements from "@/components/ui/ReadingEnhancements";
 import CodeCopyButton from "@/components/ui/CodeCopyButton";
 import { extractHeadingsFromMdx } from "@/lib/headings";
 import ArticleList from "@/components/card/ArticleList";
-import { CATEGORIES } from "@/constant";
+import { getDynamicCategories } from "@/constant";
 
 export const revalidate = 3600;
 
@@ -24,7 +24,9 @@ async function resolveSlug(paramsPromise: BlogPageProps["params"]) {
 
 function getCategoryMeta(slug: string | null) {
   if (!slug || slug.includes("/")) return null;
-  return CATEGORIES[slug as keyof typeof CATEGORIES] ?? null;
+  const allPosts = getAllPosts();
+  const categories = getDynamicCategories(allPosts);
+  return categories[slug] ?? null;
 }
 
 function getPostsByCategory(category: string) {
@@ -45,7 +47,8 @@ export async function generateStaticParams() {
   const postParams = posts.map((post) => ({
     slug: post.slug.split("/"),
   }));
-  const categoryParams = Object.keys(CATEGORIES).map((category) => ({
+  const categories = getDynamicCategories(posts);
+  const categoryParams = Object.keys(categories).map((category) => ({
     slug: [category],
   }));
 

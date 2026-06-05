@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Post } from "@/types";
 import Image from "next/image";
-import { CATEGORIES, getColorStyle } from "@/constant";
+import { getColorStyle } from "@/constant";
 
 interface ArticleCardProps {
   post: Post;
@@ -12,9 +12,8 @@ export default function ArticleCard({ post }: ArticleCardProps) {
   
   // 生成文章链接
   const href = `/blog/${slug}`;
-  const categoryMeta = category ? CATEGORIES[category as keyof typeof CATEGORIES] : null;
-  const categoryLabel = categoryMeta?.name ?? category ?? "随笔";
-  const badgeClassName = getColorStyle(categoryMeta?.color, 'badge');
+  const categoryLabel = category || "随笔";
+  const badgeClassName = getColorStyle(undefined, 'badge');
 
   const displayDate = date
     ? new Date(date).toLocaleDateString("zh-CN", {
