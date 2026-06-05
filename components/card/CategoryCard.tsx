@@ -1,6 +1,6 @@
 'use client';
 import Link from "next/link";
-import { getDynamicCategories, getColorStyle } from "@/constant";
+import { getDynamicCategories } from "@/constant";
 import type { Post } from "@/types";
 
 interface CategoryCardProps {

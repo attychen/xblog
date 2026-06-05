@@ -1,9 +1,8 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import Link from 'next/link';
 import Image from 'next/image';
-import { Star, GitFork, ExternalLink, Code, Calendar } from 'lucide-react';
+import { Star, GitFork, ExternalLink, Calendar } from 'lucide-react';
 
 interface GitHubRepo {
   id: number;
@@ -130,7 +129,7 @@ export function SkillClient({ repos }: { repos: GitHubRepo[] }) {
                 <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
                   <th className="text-left px-4 py-3 font-semibold text-gray-700 dark:text-gray-300 w-12">#</th>
                   <th className="text-left px-4 py-3 font-semibold text-gray-700 dark:text-gray-300">项目</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700 dark:text-gray-300 hidden lg:table-cell">描述</th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-700 dark:text-gray-300 hidden md:table-cell">一句话简介</th>
                   <th className="text-center px-4 py-3 font-semibold text-gray-700 dark:text-gray-300 w-20">
                     <Star className="w-4 h-4 inline" />
                   </th>
@@ -170,8 +169,10 @@ export function SkillClient({ repos }: { repos: GitHubRepo[] }) {
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-400 hidden lg:table-cell max-w-xs truncate">
-                      {repo.description || '-'}
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-400 hidden md:table-cell max-w-xs">
+                      <span className="text-xs leading-relaxed line-clamp-2" title={repo.description || ''}>
+                        {repo.description || '暂无简介'}
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-center font-mono text-gray-700 dark:text-gray-300">
                       {formatNum(repo.stargazers_count)}
@@ -244,8 +245,13 @@ export function SkillClient({ repos }: { repos: GitHubRepo[] }) {
                 </a>
               </div>
 
-              {repo.description && (
-                <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">{repo.description}</p>
+              {repo.description ? (
+                <div className="bg-gray-50 dark:bg-gray-700/30 rounded-lg px-3 py-2">
+                  <span className="text-[10px] font-semibold text-orange-500 dark:text-orange-400 uppercase tracking-wide">简介</span>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5 leading-relaxed">{repo.description}</p>
+                </div>
+              ) : (
+                <p className="text-xs text-gray-400 dark:text-gray-500 italic">暂无项目简介</p>
               )}
 
               <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 flex-wrap">

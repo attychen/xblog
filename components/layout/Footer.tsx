@@ -17,7 +17,7 @@ export default function Footer() {
               法舟记
             </Link>
             <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
-              技术与思考的笔记 · 记录编程、AI 与开源探索
+              编程、区块链与折腾记录
             </p>
           </div>
 
@@ -49,12 +49,12 @@ export default function Footer() {
               >
                 GitHub 仓库
               </a>
-              <a
+              <Link
                 href="/blog"
                 className="text-sm text-gray-500 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
               >
                 全部文章
-              </a>
+              </Link>
             </div>
           </div>
         </div>

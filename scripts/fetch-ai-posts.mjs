@@ -119,36 +119,48 @@ async function scrapeFullContent(url) {
 }
 
 // ============================================================
-// DeepSeek 中文摘要（OpenAI 兼容接口）
+// DeepSeek 完整中文文章生成（OpenAI 兼容接口）
 // ============================================================
-async function summarizeWithDeepSeek(apiKey, content, title, link) {
-  const prompt = `你是一个专业的技术文章中文摘要助手。请根据以下文章内容完成以下任务：
+async function generateChineseArticle(apiKey, content, title, link, provider = 'deepseek') {
+  const isDeepseek = provider === 'deepseek';
+  const apiUrl = isDeepseek
+    ? 'https://api.deepseek.com/chat/completions'
+    : 'https://api.openai.com/v1/chat/completions';
+  const model = isDeepseek ? 'deepseek-chat' : 'gpt-4o-mini';
 
-1. **中文摘要**：生成 4-6 句精炼的中文摘要，抓住文章核心观点、创新点和结论。翻译要准确流畅。
-2. **中文关键词**：提取 5 个最核心的中文关键词（数组形式）。
-3. **中文标题**：为文章生成一个简洁有力的中文标题。
-4. **目录**：如果文章结构清晰，生成一个 3-6 条的中文目录（数组，如 ["1. 引言", "2. 方法", "3. 实验"]），内容较短可为空数组。
+  const prompt = `你是一个专业的技术编辑。请根据以下英文/中文文章内容，完成以下任务：
 
-请严格返回 JSON（不要 markdown 代码块）：
-{"summary": "...", "keywords": ["...", "..."], "suggested_title": "...", "toc": ["1. ...", "2. ..."]}`;
+1. 先完整理解原文的核心观点、论据和结论。
+2. 用中文撰写一篇完整的文章（800-1500字），要求：
+   - 开头用引人入胜的方式引出话题
+   - 分 3-5 个小节，每节有清晰的标题
+   - 每节内容充实，有具体细节和数据支撑，不要只列大纲
+   - 结尾有总结或展望
+   - 语言流畅自然，适合中文读者阅读
+3. 提取 3-5 个中文关键词（数组格式）
+4. 生成一个简洁有力的中文标题（10-20字）
 
-  const res = await fetch(DEEPSEEK_API, {
+严格返回 JSON（不要 markdown 代码块）：
+{"title":"...","keywords":["..."],"sections":[{"heading":"...","content":"..."}]}
+其中 sections 是文章主体，每项的 heading 是小节标题，content 是该节的完整段落内容。`;
+
+  const res = await fetch(apiUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({
-      model: DEEPSEEK_MODEL,
+      model,
       messages: [
-        { role: 'system', content: '你是专业的技术翻译和摘要助手，回复必须为严格 JSON。' },
-        { role: 'user', content: `${prompt}\n\n原文标题：${title}\n原文链接：${link}\n文章内容：\n${content.slice(0, 8000)}` },
+        { role: 'system', content: '你是专业的中文技术编辑，回复必须为严格 JSON，文章内容要完整充实，切勿只写大纲。' },
+        { role: 'user', content: `${prompt}\n\n原文标题：${title}\n原文链接：${link}\n文章内容：\n${content.slice(0, 15000)}` },
       ],
-      max_tokens: 1200,
-      temperature: 0.3,
+      max_tokens: 3000,
+      temperature: 0.5,
     }),
   });
 
   if (!res.ok) {
     const t = await res.text();
-    throw new Error(`DeepSeek ${res.status}: ${t.slice(0, 200)}`);
+    throw new Error(`${provider} ${res.status}: ${t.slice(0, 200)}`);
   }
 
   const data = await res.json();
@@ -157,67 +169,43 @@ async function summarizeWithDeepSeek(apiKey, content, title, link) {
   if (m) {
     try {
       const p = JSON.parse(m[0]);
-      return { summary: p.summary || '', keywords: p.keywords || [], suggested_title: p.suggested_title || title, toc: p.toc || [] };
+      return {
+        title: p.title || title,
+        keywords: p.keywords || [],
+        sections: p.sections || [],
+      };
     } catch (_) { /* fallthrough */ }
   }
-  return { summary: txt.slice(0, 400), keywords: [], suggested_title: title, toc: [] };
-}
-
-// ============================================================
-// OpenAI 回退摘要
-// ============================================================
-async function summarizeWithOpenAI(apiKey, content, title, link) {
-  const prompt = `你是一个专业的技术文章中文摘要助手。请生成：1.中文摘要(4-6句) 2.中文关键词(5个) 3.中文标题 4.中文目录(3-6条)。严格返回JSON: {"summary":"...","keywords":["..."],"suggested_title":"...","toc":["1. ..."]}`;
-
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: '你是专业的技术翻译和摘要助手，回复必须为严格 JSON。' },
-        { role: 'user', content: `${prompt}\n\n原文标题：${title}\n原文链接：${link}\n文章内容：\n${content.slice(0, 8000)}` },
-      ],
-      max_tokens: 1200,
-      temperature: 0.3,
-    }),
-  });
-
-  if (!res.ok) {
-    const t = await res.text();
-    throw new Error(`OpenAI ${res.status}: ${t.slice(0, 200)}`);
-  }
-
-  const data = await res.json();
-  const txt = data.choices?.[0]?.message?.content || '';
-  const m = txt.match(/\{[\s\S]*\}/);
-  if (m) {
-    try {
-      const p = JSON.parse(m[0]);
-      return { summary: p.summary || '', keywords: p.keywords || [], suggested_title: p.suggested_title || title, toc: p.toc || [] };
-    } catch (_) { /* fallthrough */ }
-  }
-  return { summary: txt.slice(0, 400), keywords: [], suggested_title: title, toc: [] };
+  // Fallback: use raw text
+  return {
+    title,
+    keywords: [],
+    sections: [{ heading: '', content: txt.slice(0, 2000) }],
+  };
 }
 
 // ============================================================
 // 生成 MDX
 // ============================================================
-function buildMdx(item, aiResult, date) {
-  const { summary, keywords, suggested_title, toc } = aiResult;
-  const safeTitle = String(suggested_title || item.title).replace(/"/g, '\\"');
-  const safeExcerpt = String(summary || '').replace(/"/g, '\\"').replace(/\n/g, ' ');
+function buildMdx(item, article, date) {
+  const { title, keywords, sections } = article;
+  const safeTitle = String(title || item.title).replace(/"/g, '\\"');
+  const firstSection = sections[0]?.content || '';
+  const safeExcerpt = String(firstSection).replace(/"/g, '\\"').replace(/\n/g, ' ').slice(0, 200);
   const safeLink = String(item.link || '').replace(/"/g, '\\"');
 
-  const tocSection = (toc && toc.length > 0)
-    ? `\n## 📑 目录\n\n${toc.map(line => `- ${line}`).join('\n')}\n`
-    : '';
+  const body = sections.map(s => {
+    if (s.heading) {
+      return `## ${s.heading}\n\n${s.content}`;
+    }
+    return s.content;
+  }).join('\n\n');
 
   return `---
 title: "${safeTitle}"
 date: "${date}"
 excerpt: "${safeExcerpt}"
-category: "ai-news"
+category: "tech"
 tags: ${JSON.stringify(keywords)}
 original: "${safeLink}"
 draft: false
@@ -225,17 +213,13 @@ draft: false
 
 # ${safeTitle}
 
-> 📌 原文链接：[${safeLink}](${safeLink})
+> 原文：[${safeLink}](${safeLink})
 
-## 📝 摘要
-
-${summary || '暂无摘要'}
-
-${tocSection}
+${body}
 
 ---
 
-*本文由 AI 自动生成，内容仅供参考。*
+*本文由 AI 辅助生成，内容经整理后发布。*
 `;
 }
 
@@ -307,29 +291,39 @@ async function main() {
         console.log(`  ℹ️  使用摘要 (${fullContent.length} 字符)`);
       }
 
-      let aiResult = { summary: fullContent.slice(0, 300), keywords: [], suggested_title: item.title, toc: [] };
+      let article = null;
 
       if (deepseekKey) {
         try {
-          console.log('  🤖 DeepSeek 摘要...');
-          aiResult = await summarizeWithDeepSeek(deepseekKey, fullContent, item.title, item.link);
-          console.log(`  ✅ ${aiResult.summary.slice(0, 50)}...`);
+          console.log('  🤖 DeepSeek 生成完整中文文章...');
+          article = await generateChineseArticle(deepseekKey, fullContent, item.title, item.link, 'deepseek');
+          console.log(`  ✅ ${article.title?.slice(0, 40)}...`);
         } catch (e) {
           console.warn(`  ⚠️  DeepSeek 失败: ${e.message}`);
         }
       }
 
-      if (!aiResult.summary && openaiKey) {
+      if (!article && openaiKey) {
         try {
           console.log('  🤖 OpenAI 回退...');
-          aiResult = await summarizeWithOpenAI(openaiKey, fullContent, item.title, item.link);
+          article = await generateChineseArticle(openaiKey, fullContent, item.title, item.link, 'openai');
+          console.log(`  ✅ ${article.title?.slice(0, 40)}...`);
         } catch (e) {
           console.warn(`  ⚠️  OpenAI 失败: ${e.message}`);
         }
       }
 
+      if (!article) {
+        // 完全无 AI 时的回退
+        article = {
+          title: item.title,
+          keywords: [],
+          sections: [{ heading: '', content: item.description || '暂无内容' }],
+        };
+      }
+
       const filename = `${dir}/${date}-${slug}.mdx`;
-      await fs.writeFile(filename, buildMdx(item, aiResult, date), 'utf8');
+      await fs.writeFile(filename, buildMdx(item, article, date), 'utf8');
       console.log(`  💾 ${filename}`);
     }
 

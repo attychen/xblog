@@ -1,13 +1,21 @@
 // shiki 代码高亮（纯动态导入，兼容 shiki v1/v3）
-let highlighter: any = null;
+interface ShikiHighlighter {
+  codeToHtml(code: string, options: Record<string, unknown>): string;
+}
 
-async function ensureHighlighter(): Promise<any> {
+let highlighter: ShikiHighlighter | null = null;
+
+async function ensureHighlighter(): Promise<ShikiHighlighter> {
   if (highlighter) return highlighter;
+
   const shiki = await import('shiki');
+  const shikiModule = shiki as Record<string, unknown>;
 
   // shiki v3+: createHighlighter
-  if (typeof (shiki as any).createHighlighter === 'function') {
-    highlighter = await (shiki as any).createHighlighter({
+  if (typeof shikiModule.createHighlighter === 'function') {
+    highlighter = await (
+      shikiModule.createHighlighter as (opts: Record<string, unknown>) => Promise<ShikiHighlighter>
+    )({
       themes: ['nord'],
       langs: ['javascript', 'jsx', 'typescript', 'tsx', 'bash', 'json', 'css', 'html'],
     });
@@ -15,8 +23,10 @@ async function ensureHighlighter(): Promise<any> {
   }
 
   // shiki v1: getHighlighter
-  if (typeof (shiki as any).getHighlighter === 'function') {
-    highlighter = await (shiki as any).getHighlighter({ theme: 'nord' });
+  if (typeof shikiModule.getHighlighter === 'function') {
+    highlighter = await (
+      shikiModule.getHighlighter as (opts: Record<string, unknown>) => Promise<ShikiHighlighter>
+    )({ theme: 'nord' });
     return highlighter;
   }
 
