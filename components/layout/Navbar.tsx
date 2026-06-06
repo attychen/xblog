@@ -161,29 +161,26 @@ export default function Navbar() {
       </nav>
 
       {/* 移动端抽屉菜单 */}
-      <AnimatePresence>
-        {drawerOpen && (
-          <>
-            {/* 背景遮罩，点击关闭 */}
-            <motion.div
-              key="overlay"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="fixed inset-0 z-40 bg-black/30 md:hidden"
-              onClick={() => setDrawerOpen(false)}
-            />
+      {drawerOpen && (
+        <>
+          {/* 背景遮罩 */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-40 bg-black/30 md:hidden"
+            onClick={() => setDrawerOpen(false)}
+          />
 
-            {/* 抽屉本体，从顶部 navbar 下方滑入 */}
-            <motion.div
-              key="drawer"
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2 }}
-              className="fixed top-[73px] left-0 right-0 z-40 md:hidden bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 shadow-xl max-h-[80vh] overflow-y-auto"
-            >
+          {/* 抽屉本体 */}
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className="fixed top-[57px] left-0 right-0 z-40 md:hidden bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 shadow-xl max-h-[80vh] overflow-y-auto"
+          >
               <div className="flex flex-col py-2">
                 {NAV_LINKS.map((link) => (
                   <div key={link.href} className="border-b border-gray-100 dark:border-gray-800 last:border-0">
@@ -257,7 +254,6 @@ export default function Navbar() {
             </motion.div>
           </>
         )}
-      </AnimatePresence>
-    </>
-  );
+      </>
+    );
 }
