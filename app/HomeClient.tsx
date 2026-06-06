@@ -47,9 +47,7 @@ export default function HomeClient({ posts }: { posts: Post[] }) {
                 每天 8:00 UTC 自动更新 · AI 大模型与智能体前沿动态
               </p>
             </div>
-            <div className="max-h-[50vh] overflow-y-auto pr-2 hide-scrollbar fade-bottom pb-6 overscroll-contain">
-              <ArticleList posts={posts} />
-            </div>
+            <ArticleList posts={posts} />
           </div>
 
           {/* 右侧：侧边栏（移动端隐藏） */}
