@@ -84,6 +84,11 @@ export default function AboutPage() {
               <li key={skill}>{skill}</li>
             ))}
           </ul>
+          <p className="mt-6 text-sm text-gray-500 dark:text-gray-400 font-mono tracking-wider text-right">
+            ALL IN AI .<span className="text-gray-300 dark:text-gray-600"> </span>
+            <span className="text-gray-300 dark:text-gray-600">_______</span>
+            <span className="text-gray-500 dark:text-gray-400"> @attychen</span>
+          </p>
         </div>
       </div>
     </div>
