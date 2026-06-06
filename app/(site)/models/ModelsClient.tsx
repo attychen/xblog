@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { Star, GitFork, ExternalLink } from 'lucide-react';
 import type { HFModel } from '@/lib/hf-models';
-import { PIPELINE_LABELS, getModelCategory } from '@/lib/hf-models';
+import { getModelCategory } from '@/lib/hf-models';
 
 function formatNum(n: number): string {
   if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
