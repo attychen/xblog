@@ -1,0 +1,112 @@
+---
+title: "X OS：为AI时代从头构建的x86_64微内核操作系统"
+date: "2026-06-06"
+excerpt: "X OS 是一个从头构建的 x86_64 微内核操作系统。它没有 POSIX 包袱，没有遗留的 Unix 假设。内核保持最小化：调度、内存管理、IPC 端口和硬件抽象。其他所有内容（显示服务器、文件系统、Shell）都运行在 ring-3 用户空间，并通过消息传递进行通信。"
+category: "programming"
+tags: ["微内核","操作系统","x86_64","AI时代","开源"]
+original: "https://github.com/valivalivali/x-os"
+draft: false
+---
+
+## 1. 项目概述
+
+X OS 是一个从头构建的 x86_64 微内核操作系统。它没有 POSIX 包袱，没有遗留的 Unix 假设。内核保持最小化：调度、内存管理、IPC 端口和硬件抽象。其他所有内容（显示服务器、文件系统、Shell）都运行在 ring-3 用户空间，并通过消息传递进行通信。
+
+## 2. 设计理念
+
+X OS 是为 AI 时代设计的微内核。没有数十年的兼容性债务，没有遗留的 Unix 假设，没有 POSIX 包袱。目标是构建一个对智能代理和人类用户都感觉原生的操作系统：美观、一致且完全开放修改。微内核架构——内核提供约 33 个系统调用（syscalls）。文件系统访问、GPU 渲染和输入处理被委托给通过 IPC 端口通信的 ring-3 服务。没有 POSIX / 没有 Unix ABI——这不是 Linux、BSD 或任何衍生品。系统调用接口故意保持最小化。嵌入式用户空间——init 进程和显示服务器（composer）被编译为 ELF 二进制文件，然后作为字节数组直接嵌入到内核镜像中。内核在启动时生成它们。用户空间中的显示服务器——一个硬件加速的 composer 在 ring 3 中运行，通过 IPC 从应用程序接收表面命令，并刷新到 virtio-gpu 帧缓冲区。
+
+## 3. 愿景
+
+这不是一个复古的爱好操作系统。目标是构建一个前瞻性的系统，用户和开发者之间的界限消失。应用程序以捆绑包形式发布。在许多情况下，源代码直接包含在捆绑包中。打开任何应用程序，阅读其工作原理，修改它，并立即运行您的版本。X OS 上的软件旨在被阅读、理解和更改。用户对系统的外观和感觉拥有绝对控制权，但在保持美观和一致性的护栏内。一个用户空间的 xui.plist 文件允许您调整动画、过渡、间距和行为。您可以使其成为您的专属，而不会将桌面变成弗兰肯斯坦。系统强制执行视觉一致性——定制化，而非混乱。最终，X OS 将托管一个实时编程环境。您编辑代码并立即看到结果，无需编译-等待-运行循环。更改实时传播到正在运行的进程中。这是基于 IPC 和动态表面组合构建的微内核的自然终点：整个系统被设计为在运行时进行修改。
+
+## 4. 架构概览
+
+组件 | 环 | 职责
+内核 | 0 | 调度、内存分配/映射、IPC 端口、定时器、中断、NVMe/virtio 驱动
+Init (PID 1) | 3 | 第一个用户空间进程；生成服务并注册知名的 nameserver 端口
+Composer | 3 | 显示服务器——表面、脏矩形、光标、桌面背景
+未来：终端、Shell、FS 服务 | 3 | 将作为使用 IPC 的正常 ring-3 进程运行
+
+## 5. 构建要求（macOS）
+
+在 Apple Silicon 的 macOS 上测试。您需要：
+- Xcode 命令行工具（提供 clang、make、git）：`xcode-select --install`
+- Homebrew：https://brew.sh
+- lld（LLVM 链接器）：`brew install lld`
+- xorriso（用于构建可启动 ISO）：`brew install xorriso`
+- QEMU——通过 Homebrew 安装或从源码构建。Makefile 自动检测路径。
+  - 选项 A——Homebrew（最快）：`brew install qemu`
+  - 选项 B——从源码构建到 /opt/qemu-head：
+    ```
+    git clone https://gitlab.com/qemu-project/qemu.git
+    cd qemu
+    mkdir build
+    cd build
+    ../configure --prefix=/opt/qemu-head --target-list=x86_64-softmmu \
+      --enable-virtiofsd --enable-spice --enable-cocoa
+    make -j$(sysctl -n hw.ncpu)
+    sudo make install
+    ```
+Makefile 首先检查 /opt/qemu-head，然后检查 Homebrew 前缀，最后回退到 PATH 中的 qemu-system-x86_64。
+
+## 6. 构建与运行
+
+一次性设置（下载 Limine 引导加载程序）：`make setup`
+构建可启动 ISO：`make`
+这会在项目根目录生成 x-os.iso。
+BIOS 模式（SeaBIOS）：`make run`
+UEFI 模式（OVMF）：`make run-uefi`
+QEMU 启动配置：
+- 机器：q35
+- 512 MB RAM，1 SMP
+- virtio-gpu-pci，分辨率 2560x1600
+- Cocoa 显示
+- NVMe 磁盘（disk.img，如果缺失则自动创建）
+- 串行输出转发到 stdio
+
+## 7. 项目布局
+
+x/
+├── boot/          # Limine 引导加载程序配置和交接结构
+├── kernel/        # 微内核源码
+│   ├── arch/x86_64/  # GDT、IDT、系统调用入口、上下文切换
+│   ├── memory/       # 物理页分配器、VMM、堆
+│   ├── sched/        # 轮转调度器
+│   ├── ipc/          # 基于端口的消息传递
+│   ├── proc/         # ELF 加载器；init 和 composer 二进制 blob
+│   ├── hal/          # NVMe、virtio GPU、PS/2 输入、PCI、定时器
+│   ├── fs/           # 自定义 XFS 文件系统
+│   └── entry/        # kmain() 启动序列
+├── userspace/     # Ring-3 代码
+│   ├── init/         # PID 1
+│   ├── runtime/      # 系统调用包装器（共享 C 库）
+│   └── services/
+│       └── composer/ # 显示服务器
+├── Makefile
+└── disk.img       # 原始 4 MiB 块设备镜像（自动创建）
+
+清理：
+- `make clean`：移除构建产物和 ISO
+- `make distclean`：同时移除已获取的 Limine 目录
+
+## 8. 许可证与商业信息
+
+许可证：Business Source License 1.1
+X OS 在 BSL 下提供源代码。这意味着：
+- 对贡献者免费——您可以 fork、修改、构建和发送拉取请求。
+- 对个人、教育和研究用途免费。
+- 商业用途需要付费许可证——如果您想出售、作为服务提供或嵌入产品，请联系版权所有者。
+- 所有商业权利保留——版权所有者控制所有商业许可，并可自行决定授予或拒绝商业使用。
+这种模式让社区发展项目，同时将所有商业和收购路径完全由版权所有者控制。
+完整条款见 LICENSE。
+商业许可、合作或收购咨询，请联系版权所有者。
+关于：无描述、网站或主题提供。
+资源：Readme、许可证（查看许可证）
+活动：0 星、0 关注、0 fork
+报告仓库：无发布、0 包
+语言：C 96.7%、Makefile 1.8%、Assembly 1.2%、Linker Script 0.3%
+
+---
+
+🔗 **原文链接：[https://github.com/valivalivali/x-os](https://github.com/valivalivali/x-os)**

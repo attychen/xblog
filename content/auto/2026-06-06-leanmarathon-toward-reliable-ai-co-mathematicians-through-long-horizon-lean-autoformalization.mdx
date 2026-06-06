@@ -1,0 +1,25 @@
+---
+title: "LeanMarathon：通过长程Lean自动形式化实现可靠AI合作数学家"
+date: "2026-06-06"
+excerpt: "研究数学的长程自动形式化（autoformalization）不仅在处理困难引理时失败，而且在规模上也会失败：陈述发生漂移，依赖关系纠缠不清，上下文逐渐衰减，局部修复会破坏远距离的工作。我们提出LeanMarathon，一个用于可靠的研究级Lean自动形式化的多智能体框架。其核心抽象是一个不断演化的蓝图（blueprint）：一个Lean文件，同时充当形式化证明骨架、自然语言证明图以及共享的系统记"
+category: "ai-tools"
+tags: ["自动形式化","Lean","AI合作数学家","多智能体系统","定理证明"]
+original: "https://arxiv.org/abs/2606.05400"
+draft: false
+---
+
+## 1. 引言与问题背景
+
+研究数学的长程自动形式化（autoformalization）不仅在处理困难引理时失败，而且在规模上也会失败：陈述发生漂移，依赖关系纠缠不清，上下文逐渐衰减，局部修复会破坏远距离的工作。我们提出LeanMarathon，一个用于可靠的研究级Lean自动形式化的多智能体框架。其核心抽象是一个不断演化的蓝图（blueprint）：一个Lean文件，同时充当形式化证明骨架、自然语言证明图以及共享的系统记录。四个合约范围（contract-scoped）的智能体负责构建、审计、证明和修复这个蓝图。这些智能体由一个两阶段编排器（orchestrator）协调，该编排器首先通过对抗性审查稳定目标保真度，然后从动态叶节点向上并行执行CI门控轮次，完成证明有向无环图（DAG）。LeanMarathon将一次脆弱的数小时运行转化为许多局部的、可恢复的、并行的交易。
+
+## 2. 评估与结果
+
+我们在两篇近期研究论文上评估了LeanMarathon，这些论文涵盖了四个Erdős问题（#1051、#1196、#164、#1217）。在三次自主运行中，它形式化了所有七个目标定理，没有留下任何sorry，证明了258个引理和定理。这些结果表明，可靠的AI合作数学不仅需要更强的证明器，还需要耐用的框架，以在漫长的数学开发过程中保持目标保真度。代码可在以下网址找到：https://this https URL。
+
+## 3. 论文元数据
+
+评论：26页，9张图。欢迎评论。主题：人工智能（cs.AI）；计算与语言（cs.CL）；机器学习（cs.LG）。引用为：arXiv:2606.05400 [cs.AI]（或此版本：arXiv:2606.05400v1 [cs.AI]）。https://doi.org/10.48550/arXiv.2606.05400。通过DataCite聚焦了解更多（待注册）。提交历史：来自Yuanhe Zhang [查看电子邮件] [v1] 2026年6月3日星期三20:09:39 UTC（609 KB）。全文链接：访问论文：查看PDF标题为LeanMarathon: Toward Reliable AI Co-Mathematicians through Long-Horizon Lean Autoformalization的论文，作者Yuanhe Zhang等4人。查看PDF HTML（实验性）。TeX源代码。查看许可证。当前浏览上下文：cs.AI 上一页 | 下一页 新 | 最近 | 2026-06 更改为浏览：cs cs.CL cs.LG 参考文献 引用 NASA ADS Google Scholar Semantic Scholar 导出BibTeX引用 加载中... BibTeX格式引用加载中... 数据由：提供 书签 书目工具 书目与引用工具 书目浏览器 切换书目浏览器（什么是浏览器？） Connected Papers 切换Connected Papers（什么是Connected Papers？） Litmaps 切换Litmaps（什么是Litmaps？） scite.ai 切换scite智能引用（什么是智能引用？） 代码、数据、媒体 代码、数据与本文相关媒体 alphaXiv 切换alphaXiv（什么是alphaXiv？） 代码链接 切换CatalyzeX论文代码查找器（什么是CatalyzeX？） DagsHub 切换DagsHub（什么是DagsHub？） GotitPub 切换Gotit.pub（什么是Gotit.pub？） Huggingface 切换Hugging Face（什么是Huggingface？） ScienceCast 切换ScienceCast（什么是ScienceCast？） 演示 演示 Replicate 切换Replicate（什么是Replicate？） Spaces 切换Hugging Face Spaces（什么是Spaces？） Spaces 切换TXYZ.AI（什么是TXYZ.AI？） 相关论文 推荐与搜索工具 链接到影响花 影响花（什么是影响花？） 核心推荐器 切换CORE推荐器（什么是CORE？） 作者 机构 主题 关于arXivLabs arXivLabs：与社区合作者的实验项目 arXivLabs是一个框架，允许合作者直接在我们的网站上开发和共享新的arXiv功能。与arXivLabs合作的个人和组织都接受并认同我们的价值观：开放、社区、卓越和用户数据隐私。arXiv致力于这些价值观，只与遵守这些价值观的合作伙伴合作。有项目想法能为arXiv社区增加价值吗？了解更多关于arXivLabs的信息。本文作者中哪些是背书人？| 禁用MathJax（什么是MathJax？）
+
+---
+
+🔗 **原文链接：[https://arxiv.org/abs/2606.05400](https://arxiv.org/abs/2606.05400)**
