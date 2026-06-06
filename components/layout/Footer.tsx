@@ -2,7 +2,8 @@ import Link from "next/link";
 
 const FOOTER_LINKS = [
   { label: "博客文章", href: "/blog" },
-  { label: "技能榜单", href: "/skill" },
+  { label: "Skill榜单", href: "/skill" },
+  { label: "大模型榜", href: "/models" },
   { label: "关于我", href: "/about" },
 ];
 

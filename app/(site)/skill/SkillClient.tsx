@@ -80,7 +80,7 @@ export function SkillClient({ repos }: { repos: GitHubRepo[] }) {
         {/* Header */}
         <div className="space-y-2">
           <h1 className="text-3xl font-bold font-bitcount tracking-[0.2em] text-gray-800 dark:text-gray-400 transition-colors">
-            技能榜单
+            Skill榜单
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
             GitHub 本周最热开源项目 · 每日刷新 · Top 30

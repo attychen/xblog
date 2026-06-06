@@ -12,8 +12,12 @@ const NAV_LINKS: { label: string; href: string; children?: { label: string; href
     href: "/blog",
   },
   { 
-    label: "技能榜单", 
+    label: "Skill榜单", 
     href: "/skill" 
+  },
+  { 
+    label: "大模型榜", 
+    href: "/models" 
   },
   { label: "关于我", href: "/about" },
 ];
