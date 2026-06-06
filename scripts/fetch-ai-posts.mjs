@@ -155,7 +155,28 @@ async function generateChineseArticle(apiKey, content, title, link, provider = '
 - 第一节做引入（为什么这个话题值得关注），最后一节做总结/展望。
 - 中间各节围绕原文核心展开，每节一个明确观点。
 - tags 要精准多元：包含技术名词、应用领域、趋势关键词，不用泛词如"科技""技术"。
-- category 选最贴切的一个，不要总是 tech。`;
+- category 选最贴切的一个，不要总是 tech。
+
+  // 完整翻译 prompt
+  const promptText = `你是一位专业的中英技术翻译。请将以下英文技术文章完整翻译成中文，不做总结、不遗漏。
+
+【要求】
+- 逐段完整翻译，保留所有细节、数据、引用和逻辑。
+- 专业术语首次出现时保留英文并在括号中标注中文。
+- 长句可拆分为 2-3 个短句，但信息点不能少。
+- 按原文的结构分 4-8 个 sections，每节一个标题；没有标题的按自然段落合并。
+
+【输出格式】
+严格返回 JSON（不要 markdown 代码块）：
+{
+  "title": "中文标题（信达雅，12-20字）",
+  "category": "文章分类（ai-tools/programming/startup/crypto/hardware/science/design/policy/mobile/gaming）",
+  "tags": ["标签1", "标签2", "标签3", "标签4", "标签5"],
+  "sections": [
+    {"heading": "1. 标题", "content": "完整翻译正文..."},
+    {"heading": "2. 标题", "content": "完整翻译正文..."}
+  ]
+}`;
 
   const res = await fetch(apiUrl, {
     method: 'POST',
@@ -163,11 +184,11 @@ async function generateChineseArticle(apiKey, content, title, link, provider = '
     body: JSON.stringify({
       model,
       messages: [
-        { role: 'system', content: '你是资深中文科技编辑，行文轻松有趣、逻辑清晰、事实准确。回复必须为严格 JSON。' },
-        { role: 'user', content: `${prompt}\n\n原文标题：${title}\n原文链接：${link}\n原文内容：\n${content.slice(0, 15000)}` },
+        { role: 'system', content: '你是专业的中英翻译。逐段完整翻译 JSON 输出，不总结不遗漏。' },
+        { role: 'user', content: `${promptText}\n\n原文标题：${title}\n原文链接：${link}\n原文内容：\n${content.slice(0, 15000)}` },
       ],
-      max_tokens: 3000,
-      temperature: 0.5,
+      max_tokens: 6000,
+      temperature: 0.2,
     }),
   });
 
