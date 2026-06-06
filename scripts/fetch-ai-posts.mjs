@@ -191,7 +191,7 @@ async function translateArticle(apiKey, content, title, link, provider = 'deepse
         { role: 'system', content: '你是专业的中英翻译。逐段完整翻译 JSON 输出，不总结不遗漏。' },
         { role: 'user', content: `${promptText}\n\n原文标题：${title}\n原文链接：${link}\n原文内容：\n${content.slice(0, 20000)}` },
       ],
-      max_tokens: 6000,
+      max_tokens: 8000,
       temperature: 0.2,
     }),
   });
