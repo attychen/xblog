@@ -263,8 +263,9 @@ draft: false
 
 ${body}
 
----
-<sub><sup>[原文](${safeLink})</sup></sub>
+> 📎 原文：[${safeLink}](${safeLink})
+
+> 📎 原文链接：[${safeLink}](${safeLink})
 `;
 }
 
