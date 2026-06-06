@@ -1,0 +1,28 @@
+---
+title: "多表问答中的合成对比推理方法"
+date: "2026-06-06"
+excerpt: "多表问答（Multi-table question answering）要求模型检索相关证据、链接模式（schema），并在关系型表格之间进行组合推理（compositional reasoning）。现有的多表问答资源通常提供问题和最终答案，但缺乏解释答案推导过程的推理监督（reasoning supervision）。为了弥补这一空白，我们构建了一个针对MMQA的合成对比推理轨迹数据集（syn"
+category: "ai-tools"
+tags: ["多表问答","对比推理","合成数据","偏好优化","大语言模型"]
+original: "https://arxiv.org/abs/2606.05382"
+draft: false
+---
+
+## 1. 研究背景与问题
+
+多表问答（Multi-table question answering）要求模型检索相关证据、链接模式（schema），并在关系型表格之间进行组合推理（compositional reasoning）。现有的多表问答资源通常提供问题和最终答案，但缺乏解释答案推导过程的推理监督（reasoning supervision）。为了弥补这一空白，我们构建了一个针对MMQA的合成对比推理轨迹数据集（synthetic contrastive reasoning-trace dataset），通过使用异构大语言模型（heterogeneous LLMs）生成经过验证的正向轨迹（positive traces）和合理的负向轨迹（negative traces）。
+
+## 2. 方法：对比偏好优化
+
+随后，我们利用生成的偏好对（preference pairs），通过对比偏好优化（Contrastive Preference Optimization, CPO）对开放权重的大语言模型（open-weight LLMs）进行微调。在Qwen3-14B、Mistral-8B和Llama-3.1-8B模型上，CPO相比问答监督微调（QA supervised fine-tuning）取得了绝对平均提升（absolute average improvements），范围从9.7%到16.3%，在MMQA上的提升最高达21个百分点。
+
+## 3. 消融实验与评估
+
+消融实验（Ablations）表明，异构的正向和负向轨迹生成器增强了对比信号（contrastive signal）。自动评估和人工评估均显示，生成的偏好对在很大程度上是忠实（faithful）、连贯（coherent）且具有有意义的对比性（meaningfully contrastive）的。
+
+## 4. 论文信息与引用
+
+主题：人工智能（Artificial Intelligence, cs.AI）。引用格式：arXiv:2606.05382 [cs.AI]（或 arXiv:2606.05382v1 [cs.AI]）。DOI：https://doi.org/10.48550/arXiv.2606.05382（通过DataCite分配，待注册）。提交历史：来自Ankit Pratap Singh的电子邮件[v1]，2026年6月3日星期三19:35:54 UTC（722 KB）。全文链接：查看PDF、HTML（实验性）、TeX源码。当前浏览上下文：cs.AI（上一页 | 下一页 | 新近 | 2026-06）。可切换浏览至：cs。参考文献：NASA ADS、Google Scholar、Semantic Scholar。导出BibTeX引用。数据提供：书目工具、代码与数据媒体、演示、相关论文推荐与搜索工具、作者/机构/主题信息。关于arXivLabs：这是一个允许合作者直接在网站上开发和共享新arXiv功能的实验性框架。与arXivLabs合作的个人和组织均接受并认同我们关于开放性、社区、卓越和用户数据隐私的价值观。arXiv致力于这些价值观，仅与遵守这些价值观的合作伙伴合作。如果您有能为arXiv社区增加价值的项目想法，请了解更多关于arXivLabs的信息。哪些作者是本文的背书人？禁用MathJax。
+
+---
+<sub><sup>[原文](https://arxiv.org/abs/2606.05382)</sup></sub>
