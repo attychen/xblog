@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { FriendLink } from "@/app/api/friend-links/route";
+import type { FriendLink } from "@/lib/friend-links-store";
 
 interface Props {
   initialLinks?: FriendLink[];
