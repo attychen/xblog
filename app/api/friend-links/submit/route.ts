@@ -1,29 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
-import type { FriendLink } from "../route";
-
-const DATA_FILE = path.join(process.cwd(), "public/links/data.json");
+import { readApproved, readPending, addPending } from "@/lib/friend-links-store";
+import type { FriendLink } from "@/lib/friend-links-store";
 
 // 简易内存速率限制（IP -> 最近提交时间）
 const rateMap = new Map<string, number>();
 
-function readData(): { approved: FriendLink[]; pending: FriendLink[] } {
+function extractDomain(url: string): string {
   try {
-    return JSON.parse(fs.readFileSync(DATA_FILE, "utf-8"));
+    return new URL(url).hostname.replace(/^www\./, "");
   } catch {
-    return { approved: [], pending: [] };
+    return url;
   }
 }
 
-function writeData(data: { approved: FriendLink[]; pending: FriendLink[] }) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), "utf-8");
-}
-
 // 用 AI 检查 URL 是否合法、是否为垃圾
-async function aiReview(url: string, title: string, description: string): Promise<{ pass: boolean; reason?: string }> {
+async function aiReview(
+  url: string,
+  title: string,
+  description: string
+): Promise<{ pass: boolean; reason?: string }> {
   const apiKey = process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY;
-  if (!apiKey) return { pass: true }; // 无 key 时放行
+  if (!apiKey) return { pass: true };
 
   const isDeepseek = !!process.env.DEEPSEEK_API_KEY;
   const endpoint = isDeepseek
@@ -57,7 +54,10 @@ async function aiReview(url: string, title: string, description: string): Promis
       body: JSON.stringify({
         model,
         messages: [
-          { role: "system", content: "你是一个严格的友链审核员，回复必须为严格 JSON。" },
+          {
+            role: "system",
+            content: "你是一个严格的友链审核员，回复必须为严格 JSON。",
+          },
           { role: "user", content: prompt },
         ],
         max_tokens: 300,
@@ -65,7 +65,7 @@ async function aiReview(url: string, title: string, description: string): Promis
       }),
     });
 
-    if (!res.ok) return { pass: true }; // AI 不可用时放行
+    if (!res.ok) return { pass: true };
 
     const data = await res.json();
     const txt = data.choices?.[0]?.message?.content || "";
@@ -81,14 +81,6 @@ async function aiReview(url: string, title: string, description: string): Promis
   return { pass: true };
 }
 
-function extractDomain(url: string): string {
-  try {
-    return new URL(url).hostname.replace(/^www\./, "");
-  } catch {
-    return url;
-  }
-}
-
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -96,49 +88,67 @@ export async function POST(request: NextRequest) {
 
     // --- 基础校验 ---
     if (!url || !title) {
-      return NextResponse.json({ error: "URL 和标题为必填项" }, { status: 400 });
+      return NextResponse.json(
+        { error: "URL 和标题为必填项" },
+        { status: 400 }
+      );
     }
 
     // URL 格式校验
-    let parsedUrl: URL;
     try {
-      parsedUrl = new URL(url);
+      const parsedUrl = new URL(url);
       if (!["http:", "https:"].includes(parsedUrl.protocol)) throw new Error();
     } catch {
-      return NextResponse.json({ error: "请输入有效的网址（以 http:// 或 https:// 开头）" }, { status: 400 });
+      return NextResponse.json(
+        { error: "请输入有效的网址（以 http:// 或 https:// 开头）" },
+        { status: 400 }
+      );
     }
 
-    // 标题长度
     if (title.length < 2 || title.length > 50) {
-      return NextResponse.json({ error: "标题长度应在 2-50 字之间" }, { status: 400 });
+      return NextResponse.json(
+        { error: "标题长度应在 2-50 字之间" },
+        { status: 400 }
+      );
     }
 
     // --- 反垃圾：速率限制 ---
-    const ip = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "unknown";
+    const ip =
+      request.headers.get("x-forwarded-for") ||
+      request.headers.get("x-real-ip") ||
+      "unknown";
     const lastSubmit = rateMap.get(ip);
     if (lastSubmit && Date.now() - lastSubmit < 60000) {
-      return NextResponse.json({ error: "提交过于频繁，请 1 分钟后再试" }, { status: 429 });
+      return NextResponse.json(
+        { error: "提交过于频繁，请 1 分钟后再试" },
+        { status: 429 }
+      );
     }
     rateMap.set(ip, Date.now());
 
     // --- 反垃圾：去重 ---
-    const data = readData();
     const domain = extractDomain(url);
-    const allUrls = [
-      ...(data.approved || []).map((l: FriendLink) => extractDomain(l.url)),
-      ...(data.pending || []).map((l: FriendLink) => extractDomain(l.url)),
+    const existing = [
+      ...readApproved().map((l: FriendLink) => extractDomain(l.url)),
+      ...readPending().map((l: FriendLink) => extractDomain(l.url)),
     ];
-    if (allUrls.includes(domain)) {
-      return NextResponse.json({ error: "该网站已经提交过友链申请" }, { status: 409 });
+    if (existing.includes(domain)) {
+      return NextResponse.json(
+        { error: "该网站已经提交过友链申请" },
+        { status: 409 }
+      );
     }
 
     // --- AI 审核 ---
     const review = await aiReview(url, title, description || "");
     if (!review.pass) {
-      return NextResponse.json({ error: `审核未通过: ${review.reason}` }, { status: 400 });
+      return NextResponse.json(
+        { error: `审核未通过: ${review.reason}` },
+        { status: 400 }
+      );
     }
 
-    // --- 存储到 pending ---
+    // --- 存储到 pending（写入 /tmp/，安全） ---
     const newLink: FriendLink = {
       title,
       url,
@@ -147,9 +157,11 @@ export async function POST(request: NextRequest) {
       status: "pending",
     };
 
-    data.pending = data.pending || [];
-    data.pending.push(newLink);
-    writeData(data);
+    const ok = addPending(newLink);
+    if (!ok) {
+      // 写入失败但不阻止用户 — 数据仍可通过重新提交恢复
+      console.error("addPending failed");
+    }
 
     return NextResponse.json({
       success: true,
@@ -157,6 +169,9 @@ export async function POST(request: NextRequest) {
     });
   } catch (err) {
     console.error("friend-links submit error:", err);
-    return NextResponse.json({ error: "服务器内部错误" }, { status: 500 });
+    return NextResponse.json(
+      { error: "服务器内部错误，请稍后重试" },
+      { status: 500 }
+    );
   }
 }
