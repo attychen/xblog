@@ -244,10 +244,8 @@ ${body}
 
 ---
 
-<div className="flex justify-end">
-  <span className="text-[10px] text-gray-300 dark:text-gray-600">
-    本文由 DeepSeek V4 数据驱动生成
-  </span>
+<div style="text-align:right;margin-top:2em">
+  <span style="font-size:10px;color:#999">本文由 DeepSeek V4 数据驱动生成</span>
 </div>
 `;
 }
