@@ -231,7 +231,8 @@ draft: false
 
 ${body}
 
-<span style="font-size:10px;color:#999">[原文](${safeLink})</span>
+---
+<sub><sup>[原文](${safeLink})</sup></sub>
 `;
 }
 
