@@ -1,4 +1,5 @@
 import Link from "next/link";
+import FriendLinks from "./FriendLinks";
 
 const FOOTER_LINKS = [
   { label: "博客文章", href: "/blog" },
@@ -11,7 +12,7 @@ export default function Footer() {
   return (
     <footer className="mt-20 border-t border-gray-200/60 dark:border-gray-800/60 bg-white/40 dark:bg-gray-900/40 backdrop-blur-sm">
       <div className="max-w-6xl mx-auto px-4 py-10">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="space-y-2">
             <Link href="/" className="font-bitcount text-xl font-semibold text-gray-800 dark:text-gray-200">
@@ -36,6 +37,11 @@ export default function Footer() {
                 </Link>
               ))}
             </div>
+          </div>
+
+          {/* Friend Links */}
+          <div className="space-y-3">
+            <FriendLinks />
           </div>
 
           {/* Contact / Extra */}

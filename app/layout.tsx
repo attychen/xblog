@@ -136,15 +136,16 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" suppressHydrationWarning>
       <head>
-        {/* JSON-LD 结构化数据，帮助搜索引擎理解站点 */}
+        {/* JSON-LD 结构化数据 — 站点信息（SEO + GEO） */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               "@context": "https://schema.org",
-              "@type": "Blog",
+              "@type": ["Blog", "WebSite"],
               name: "法舟记",
-              description: "一个关于编程、AI、开源与独立思考的技术博客",
+              alternateName: "Fazhouji",
+              description: "汇聚AI前沿自留地。记录大语言模型、AI Agent、开源模型的最新进展与深度思考。",
               url: "https://fazhouji.vercel.app",
               author: {
                 "@type": "Person",
@@ -152,6 +153,29 @@ export default function RootLayout({
                 url: "https://github.com/attychen",
               },
               inLanguage: "zh-CN",
+              potentialAction: {
+                "@type": "SearchAction",
+                target: {
+                  "@type": "EntryPoint",
+                  urlTemplate: "https://fazhouji.vercel.app/blog?q={search_term_string}",
+                },
+                "query-input": "required name=search_term_string",
+              },
+            }),
+          }}
+        />
+        {/* BreadcrumbList 结构化数据 */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "BreadcrumbList",
+              itemListElement: [
+                { "@type": "ListItem", position: 1, name: "首页", item: "https://fazhouji.vercel.app" },
+                { "@type": "ListItem", position: 2, name: "博客", item: "https://fazhouji.vercel.app/blog" },
+                { "@type": "ListItem", position: 3, name: "大模型榜", item: "https://fazhouji.vercel.app/models" },
+              ],
             }),
           }}
         />
