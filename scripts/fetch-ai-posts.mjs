@@ -241,12 +241,6 @@ draft: false
 > 原文：[${safeLink}](${safeLink})
 
 ${body}
-
----
-
-<div style="text-align:right;margin-top:2em">
-  <span style="font-size:10px;color:#999">本文由 DeepSeek V4 数据驱动生成</span>
-</div>
 `;
 }
 

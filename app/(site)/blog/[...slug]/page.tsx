@@ -197,10 +197,6 @@ export default async function BlogPostPage({ params }: BlogPageProps) {
             <MDXContent components={mdxComponents} />
           </article>
         </main>
-
-        <div className="px-4 md:px-8 py-6 border-t border-gray-100 dark:border-gray-700 text-center text-gray-400 dark:text-gray-500 text-sm">
-          © {new Date().getFullYear()} {frontmatter.author || "Blog Owner"}. All rights reserved.
-        </div>
       </div>
     </div>
   );
