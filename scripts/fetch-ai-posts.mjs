@@ -236,8 +236,6 @@ original: "${safeLink}"
 draft: false
 ---
 
-# ${escapeMdx(safeTitle)}
-
 > 原文：[${safeLink}](${safeLink})
 
 ${body}
