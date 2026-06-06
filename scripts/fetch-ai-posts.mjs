@@ -10,7 +10,8 @@ const DEEPSEEK_API = 'https://api.deepseek.com/chat/completions';
 const DEEPSEEK_MODEL = 'deepseek-chat';
 
 const DEFAULT_FEEDS = [
-  'http://export.arxiv.org/rss/cs.AI',
+  'https://hnrss.org/frontpage?count=30',   // HackerNews 首页热门
+  'http://export.arxiv.org/rss/cs.AI',      // arXiv AI 新论文
   'https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml',
   'https://www.technologyreview.com/feed/',
 ];
@@ -112,59 +113,30 @@ async function scrapeFullContent(url) {
       .replace(/<header[\s\S]*?<\/header>/gi, '')
       .replace(/<aside[\s\S]*?<\/aside>/gi, '');
     const text = stripHtml(cleaned);
-    return text.slice(0, 12000);
+    return text.slice(0, 20000);
   } catch (_) {
     return null;
   }
 }
 
 // ============================================================
-// DeepSeek 完整中文文章生成（OpenAI 兼容接口）
+// DeepSeek 完整中文翻译（OpenAI 兼容接口）
 // ============================================================
-async function generateChineseArticle(apiKey, content, title, link, provider = 'deepseek') {
+async function translateArticle(apiKey, content, title, link, provider = 'deepseek') {
   const isDeepseek = provider === 'deepseek';
   const apiUrl = isDeepseek
     ? 'https://api.deepseek.com/chat/completions'
     : 'https://api.openai.com/v1/chat/completions';
   const model = isDeepseek ? 'deepseek-chat' : 'gpt-4o-mini';
 
-  const prompt = `你是一位资深中文科技编辑。请根据以下原文撰写一篇高质量中文技术文章。
-
-【硬性要求】
-- 事实准确，不编造数据。不确定的信息标注「据原文」。
-- 文笔轻松有趣但不失严谨，像和朋友聊天一样讲清楚技术话题。
-- 逻辑清晰：先讲是什么、为什么重要，再讲怎么做、有什么影响。
-- 不拖泥带水，每句话都有信息量。
-- 小节标题用序号（1. 2. 3.），层次分明不跳号。
-
-【输出结构】
-返回严格 JSON（不要 markdown 代码块）：
-{
-  "title": "中文标题（12-20字，抓人眼球但不标题党）",
-  "category": "文章分类，从以下选一个最贴切的：ai-tools / programming / startup / crypto / hardware / science / design / policy / mobile / gaming",
-  "tags": ["标签1", "标签2", "标签3", "标签4", "标签5"],
-  "sections": [
-    {"heading": "1. 小节标题", "content": "该节完整段落（不少于150字，有细节有观点）"},
-    {"heading": "2. 小节标题", "content": "该节完整段落"},
-    {"heading": "3. 小节标题", "content": "该节完整段落"}
-  ]
-}
-
-【写作指南】
-- sections 至少 3 节，至多 6 节，每节 content 不少于 120 字。
-- 第一节做引入（为什么这个话题值得关注），最后一节做总结/展望。
-- 中间各节围绕原文核心展开，每节一个明确观点。
-- tags 要精准多元：包含技术名词、应用领域、趋势关键词，不用泛词如"科技""技术"。
-- category 选最贴切的一个，不要总是 tech。
-
-  // 完整翻译 prompt
-  const promptText = `你是一位专业的中英技术翻译。请将以下英文技术文章完整翻译成中文，不做总结、不遗漏。
+  const promptText = `你是一位专业的中英技术翻译。请将以下英文技术文章完整翻译成中文。
 
 【要求】
-- 逐段完整翻译，保留所有细节、数据、引用和逻辑。
+- 逐段完整翻译，保留所有细节、数据、案例和引用。
 - 专业术语首次出现时保留英文并在括号中标注中文。
 - 长句可拆分为 2-3 个短句，但信息点不能少。
-- 按原文的结构分 4-8 个 sections，每节一个标题；没有标题的按自然段落合并。
+- 保持原文逻辑顺序和段落结构。
+- 按自然分段合并为 4-8 个 sections，每节一个小标题。
 
 【输出格式】
 严格返回 JSON（不要 markdown 代码块）：
@@ -185,7 +157,7 @@ async function generateChineseArticle(apiKey, content, title, link, provider = '
       model,
       messages: [
         { role: 'system', content: '你是专业的中英翻译。逐段完整翻译 JSON 输出，不总结不遗漏。' },
-        { role: 'user', content: `${promptText}\n\n原文标题：${title}\n原文链接：${link}\n原文内容：\n${content.slice(0, 15000)}` },
+        { role: 'user', content: `${promptText}\n\n原文标题：${title}\n原文链接：${link}\n原文内容：\n${content.slice(0, 20000)}` },
       ],
       max_tokens: 6000,
       temperature: 0.2,
@@ -257,9 +229,9 @@ original: "${safeLink}"
 draft: false
 ---
 
-> 原文：[${safeLink}](${safeLink})
-
 ${body}
+
+<span style="font-size:10px;color:#999">[原文](${safeLink})</span>
 `;
 }
 
@@ -298,7 +270,7 @@ async function main() {
       } catch (_) { /* ignore */ }
     }
 
-    const N = Number(process.env.MAX_NEW_POSTS || 3);
+    const N = Number(process.env.MAX_NEW_POSTS || 10);
     allItems.sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
     const uniq = [];
     const seenLinks = new Set();
@@ -336,7 +308,7 @@ async function main() {
       if (deepseekKey) {
         try {
           console.log('  🤖 DeepSeek 生成完整中文文章...');
-          article = await generateChineseArticle(deepseekKey, fullContent, item.title, item.link, 'deepseek');
+          article = await translateArticle(deepseekKey, fullContent, item.title, item.link, 'deepseek');
           console.log(`  ✅ ${article.title?.slice(0, 40)}...`);
         } catch (e) {
           console.warn(`  ⚠️  DeepSeek 失败: ${e.message}`);
@@ -346,7 +318,7 @@ async function main() {
       if (!article && openaiKey) {
         try {
           console.log('  🤖 OpenAI 回退...');
-          article = await generateChineseArticle(openaiKey, fullContent, item.title, item.link, 'openai');
+          article = await translateArticle(openaiKey, fullContent, item.title, item.link, 'openai');
           console.log(`  ✅ ${article.title?.slice(0, 40)}...`);
         } catch (e) {
           console.warn(`  ⚠️  OpenAI 失败: ${e.message}`);
