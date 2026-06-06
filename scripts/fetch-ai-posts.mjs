@@ -199,6 +199,15 @@ async function generateChineseArticle(apiKey, content, title, link, provider = '
   };
 }
 
+// 转义 MDX 中的特殊字符（{ } 会被解析为 JS 表达式）
+function escapeMdx(s) {
+  return String(s || '')
+    .replace(/\{/g, '&#123;')
+    .replace(/\}/g, '&#125;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
 // ============================================================
 // 生成 MDX
 // ============================================================
@@ -212,9 +221,9 @@ function buildMdx(item, article, date) {
 
   const body = sections.map(s => {
     if (s.heading) {
-      return `## ${s.heading}\n\n${s.content}`;
+      return `## ${escapeMdx(s.heading)}\n\n${escapeMdx(s.content)}`;
     }
-    return s.content;
+    return escapeMdx(s.content);
   }).join('\n\n');
 
   return `---
@@ -227,7 +236,7 @@ original: "${safeLink}"
 draft: false
 ---
 
-# ${safeTitle}
+# ${escapeMdx(safeTitle)}
 
 > 原文：[${safeLink}](${safeLink})
 
