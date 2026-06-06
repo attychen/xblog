@@ -41,10 +41,10 @@ export default function HomeClient({ posts }: { posts: Post[] }) {
           <div className="lg:col-span-3">
             <div className="mb-2">
               <h2 className="text-xl md:text-3xl font-bold text-black mb-2 dark:text-white">
-                最新文章
+                最新动态
               </h2>
               <p className="text-gray-600 dark:text-gray-400">
-                大模型、AI Agent 与智能体前沿洞察
+                每天 8:00 UTC 自动更新 · AI 大模型与智能体前沿动态
               </p>
             </div>
             <div className="max-h-[50vh] overflow-y-auto pr-2 hide-scrollbar fade-bottom pb-6 overscroll-contain">

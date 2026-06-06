@@ -62,8 +62,8 @@ export async function generateMetadata({ params }: BlogPageProps) {
   const categoryMeta = getCategoryMeta(slug);
   if (categoryMeta) {
     return {
-      title: `${categoryMeta.name} Articles`,
-      description: `${categoryMeta.name} 分类下的文章列表`,
+      title: `${categoryMeta.name} 动态`,
+      description: `${categoryMeta.name} 分类下的动态列表`,
     };
   }
 
@@ -104,7 +104,7 @@ export default async function BlogPostPage({ params }: BlogPageProps) {
 
             <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400 transition-colors">
               <span className="text-gray-500 dark:text-gray-400">
-                {posts.length > 0 ? `${posts.length} 篇文章` : "暂无文章"}
+                {posts.length > 0 ? `${posts.length} 条动态` : "暂无动态"}
               </span>
             </div>
           </header>

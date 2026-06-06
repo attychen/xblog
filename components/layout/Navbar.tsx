@@ -8,7 +8,7 @@ import { useTheme } from "next-themes";
 
 const NAV_LINKS: { label: string; href: string; children?: { label: string; href: string }[] }[] = [
   { 
-    label: "博客文章", 
+    label: "AI动态", 
     href: "/blog",
   },
   { 

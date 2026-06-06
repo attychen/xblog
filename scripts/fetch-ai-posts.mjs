@@ -244,7 +244,11 @@ ${body}
 
 ---
 
-*本文由 AI 辅助生成，内容经整理后发布。*
+<div className="flex justify-end">
+  <span className="text-[10px] text-gray-300 dark:text-gray-600">
+    本文由 DeepSeek V4 数据驱动生成
+  </span>
+</div>
 `;
 }
 

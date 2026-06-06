@@ -2,7 +2,7 @@ import Link from "next/link";
 import FriendLinks from "./FriendLinks";
 
 const FOOTER_LINKS = [
-  { label: "博客文章", href: "/blog" },
+  { label: "AI动态", href: "/blog" },
   { label: "Skill榜单", href: "/skill" },
   { label: "大模型榜", href: "/models" },
   { label: "关于我", href: "/about" },
