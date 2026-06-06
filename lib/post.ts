@@ -51,7 +51,7 @@ function getAllMdxFiles(dir: string, fileList: string[] = []): string[] {
 
 function getSlugFromPath(filePath: string): string {
   const relativePath = path.relative(postsDirectory, filePath);
-  return relativePath.replace(/\.mdx$/, "").replace(/\\/g, "/");
+  return relativePath.replace(/\.mdx$/, ".html").replace(/\\/g, "/");
 }
 
 function normalizeDraft(raw: unknown): boolean {
@@ -119,7 +119,8 @@ export function getAllPosts(): Post[] {
 }
 
 export function getPostBySlug(slug: string): { frontmatter: Post; content: string } | null {
-  const filePath = path.join(postsDirectory, `${slug}.mdx`);
+  const fileSlug = slug.replace(/\.html$/, "");
+  const filePath = path.join(postsDirectory, `${fileSlug}.mdx`);
 
   if (!fs.existsSync(filePath)) {
     return null;
