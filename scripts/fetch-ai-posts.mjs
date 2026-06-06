@@ -99,7 +99,39 @@ function stripHtml(s) {
 }
 
 // ============================================================
-// 抓取文章全文
+// 内容质量检测
+// ============================================================
+function isValidContent(text) {
+  if (!text || text.length < 300) return false;
+
+  // 检测论坛/评论风格内容（Reddit、HN 讨论等）
+  const forumPatterns = [
+    /\b(upvote|downvote|karma|reddit|subreddit)\b/i,
+    /\b(comments?\s*\d+|reply|replied|replie)\b/i,
+    /posted\s+(by|u\/|user)/i,
+    /\[–\]\s*\[deleted\]|\[removed\]/i,
+    /points?\s*(ago|by)/i,
+    /分[享钟]|评论|回复|举报/i,
+  ];
+
+  let forumScore = 0;
+  for (const p of forumPatterns) {
+    if (p.test(text)) forumScore++;
+  }
+
+  // 如果匹配到 3 个以上论坛特征，判定为低质量
+  if (forumScore >= 3) return false;
+
+  // 检查可读性：中文字符占比
+  const chineseChars = (text.match(/[\u4e00-\u9fff]/g) || []).length;
+  const englishWords = (text.match(/[a-zA-Z]{3,}/g) || []).length;
+  const totalChars = text.length;
+
+  // 太短或全是英文短句 = 可能不是好文章
+  if (totalChars < 500) return false;
+
+  return true;
+}
 // ============================================================
 async function scrapeFullContent(url) {
   try {
@@ -302,6 +334,12 @@ async function main() {
         console.log(`  ✅ 获取 ${fullContent.length} 字符`);
       } else {
         console.log(`  ℹ️  使用摘要 (${fullContent.length} 字符)`);
+      }
+
+      // 质量检测
+      if (!isValidContent(fullContent)) {
+        console.log(`  ⏭️  内容质量不足，跳过`);
+        continue;
       }
 
       let article = null;
