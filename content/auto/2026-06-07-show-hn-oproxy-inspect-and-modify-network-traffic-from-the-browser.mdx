@@ -1,0 +1,45 @@
+---
+title: "Oproxy：浏览器端网络流量拦截与修改工具"
+date: "2026-06-07"
+excerpt: "Oproxy 是一个本地 HTTP、HTTPS 和 SOCKS5 代理，用于检查、重放和修改网络流量。它专为开发人员设计，可在本地机器或本地 Docker 容器中测试浏览器、命令行工具（CLI）、移动应用、API 客户端、服务和测试套件。"
+category: "programming"
+tags: ["代理","MITM","HTTP代理","HTTPS代理","SOCKS5代理","AI辅助","Charles替代","开发者工具"]
+original: "https://github.com/sauravrao637/oproxy"
+draft: false
+---
+
+## 1. 项目概述
+
+Oproxy 是一个本地 HTTP、HTTPS 和 SOCKS5 代理，用于检查、重放和修改网络流量。它专为开发人员设计，可在本地机器或本地 Docker 容器中测试浏览器、命令行工具（CLI）、移动应用、API 客户端、服务和测试套件。
+
+## 2. 核心功能
+
+捕获 HTTP 流量以及信任本地 oproxy CA 后的 HTTPS 流量。查看请求、响应、头部、正文、状态码、时间、标签、备注以及选定的检查器数据。重放捕获的请求并在 Compose 中打开。使用头部、查询参数、认证、原始正文、变量、集合和 cURL 导出构建手动请求。将捕获内容导出为 HAR 或生成的 cURL、Fetch 和 Python 代码片段。通过规则集、map-remote、map-local、访问规则、限速、断点、模拟响应、DNS 覆盖、Lua 脚本和上游代理链来修改流量。使用经过认证的助手（Assistant）通过兼容 OpenAI 的聊天模型检查状态并准备确认的代理更改。从源码或 Docker 运行，使用持久卷存储 CA 材料和本地状态。
+
+## 3. 快速开始
+
+Docker 方式：运行命令 `docker run --rm --name oproxy -p 127.0.0.1:8080:8080 -p 127.0.0.1:1080:1080 -e OPROXY_BIND_HOST=0.0.0.0 -e OPROXY_MITM_ENABLED=true -v oproxy-certs:/app/certs -v oproxy-storage:/app/storage ghcr.io/sauravrao637/oproxy:latest`，然后打开 http://127.0.0.1:8080。或者本地构建：`docker build -t oproxy:latest .`。Docker Compose 方式：运行 `docker compose up --build`，附带的 Compose 文件使用主机网络，持久化 /app/certs 和 /app/storage，并设置 OPROXY_BIND_HOST=0.0.0.0。源码方式：需要 Rust 1.85 或更新版本、Node.js 22 或更新版本、通过 Corepack 启用 Yarn（`corepack enable`），然后执行 `yarn --cwd src/design install --frozen-lockfile`、`yarn --cwd src/design build`、`cargo run --release`，最后打开 http://127.0.0.1:8080。
+
+## 4. 首次使用
+
+首次请求：运行 `curl -x http://127.0.0.1:8080 http://example.com`，请求会出现在 Sessions 视图中。首次 HTTPS 捕获：运行 `curl http://127.0.0.1:8080/admin/ca -o oproxy-ca.crt` 和 `curl --cacert oproxy-ca.crt -x http://127.0.0.1:8080 https://example.com`。对于浏览器 HTTPS 捕获，请从 http://127.0.0.1:8080/admin/ca 将 CA 安装到浏览器或操作系统的信任存储中。
+
+## 5. 详细能力
+
+在 OPROXY_PORT/port（默认 8080）上作为正向 HTTP 代理运行。从同一监听器提供本地管理 UI 和 API。当 MITM 启用且客户端信任生成的 CA 时，拦截 HTTPS CONNECT 流量。可选地在 socks5_port 上监听 SOCKS5 CONNECT 流量。可选地使用 https_port 运行第二个 TLS 监听器。在内存中捕获实时会话，具有有界的会话和正文保留。通过管理端点显式保存和加载会话。导出 HAR、cURL、Fetch 和 Python 代码片段，默认进行编辑。导入 HAR 文件和 oproxy JSON 会话数据。使用服务器发送事件（server-sent events）流式传输会话更改通知。在捕获匹配流量时检查 JWT、GraphQL、gRPC 和 WebSocket 帧元数据。
+
+## 6. 使用场景
+
+调试浏览器或 CLI 请求，无需更改应用程序代码。在 Compose 中编辑头部或正文后重放捕获的请求。针对模拟响应或本地 fixture 文件测试前端。将部分流量路由到预发布服务。重现缓慢或带宽受限的响应。在匹配的请求或响应继续之前暂停它们。验证客户端在请求被阻止、重定向或重写时的行为。
+
+## 7. 项目信息
+
+许可证：MIT。主题：开源 MITM 代理，用于拦截、检查和模拟网络流量。标签：rust、proxy、mitm、http-proxy、https-proxy、socks5-proxy、ai-powered、charles-proxy-alternative、developer-tools-networking。资源：Readme、MIT 许可证、安全策略。活动：126 颗星、0 个关注者、3 个复刻。发布：7 个版本，最新 v0.1.6（2026 年 6 月 6 日）。语言：Rust 60.5%、JavaScript 27.3%、CSS 5.0%、Python 5.0%、HTML 1.8%、Dockerfile 0.2%、Makefile 0.2%。
+
+## 8. 文档与支持
+
+文档涵盖：入门指南、Docker、HTTPS MITM、Compose、助手（Assistant）、Map Local、DNS 覆盖、SOCKS5、配置、故障排除、安全。
+
+---
+
+🔗 **原文链接：[https://github.com/sauravrao637/oproxy](https://github.com/sauravrao637/oproxy)**
