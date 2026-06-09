@@ -1,0 +1,37 @@
+---
+title: "GentleOS：为经典32位PC打造的复古图形界面操作系统"
+date: "2026-06-09"
+excerpt: "GentleOS/32 是一个面向经典32位PC的业余操作系统。其目标是为复古硬件（retro hardware）的改造和裸机（bare metal）上运行图形交互应用提供一个简单平台。最低配置仅需i386 CPU、4MB内存和一块支持640x480x16模式的VGA显示器。"
+category: "programming"
+tags: ["操作系统","复古硬件","图形界面","开源","C语言"]
+original: "https://github.com/luke8086/gentleos32"
+draft: false
+---
+
+## 1. 项目概述
+
+GentleOS/32 是一个面向经典32位PC的业余操作系统。其目标是为复古硬件（retro hardware）的改造和裸机（bare metal）上运行图形交互应用提供一个简单平台。最低配置仅需i386 CPU、4MB内存和一块支持640x480x16模式的VGA显示器。
+
+## 2. 设计理念与支持设备
+
+该系统设计上完全采用宏内核（monolithic）架构，大部分功能在编译时配置，仅支持标准PC设备：VGA/SVGA、键盘、PS/2鼠标、串口鼠标和PC扬声器。未来计划仅限于修复bug、优化性能和增加更多应用。
+
+## 3. 衍生版本
+
+GentleOS/32 还有一个纯16位衍生版本，名为 GentleOS/16，它面向80186等更古老的设备。关于构建和运行详情，请参阅 USAGE.md 文件。
+
+## 4. 图库与资源归属
+
+图库部分展示了系统的运行截图。资源归属方面：vendor/icons8 中的资源来自 Icons8，使用免费许可并经过修改；vendor/mona 中的资源来自 Mona Font，经过修改（遵循 LICENSE 文件）；vendor/int10h 中的资源来自 The Ultimate Oldschool PC Font Pack，经过修改（遵循 LICENSE 文件）。
+
+## 5. 许可证信息
+
+除非另有说明，GentleOS/32 采用 GPLv2 许可证。
+
+## 6. 项目状态与社区
+
+该项目是一个面向经典32位PC的业余操作系统。资源包括：README 文件、GPL-2.0 许可证。当前获得 121 颗星，2 位关注者，0 个分支。发布版本 1 个，标签 1 个。贡献者信息因加载错误暂时无法显示。编程语言构成：C 语言 92.7%，Perl 3.5%，汇编 2.7%，Makefile 0.6%，Shell 0.3%，链接器脚本 0.2%。
+
+---
+
+🔗 **原文链接：[https://github.com/luke8086/gentleos32](https://github.com/luke8086/gentleos32)**
