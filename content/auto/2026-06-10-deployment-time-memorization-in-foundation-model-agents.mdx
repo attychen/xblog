@@ -1,0 +1,25 @@
+---
+title: "基础模型代理部署阶段记忆机制研究"
+date: "2026-06-10"
+excerpt: "基础模型代理（Foundation-model agents）正日益成为长期运行的系统，能够在多次交互中记住用户信息，这使得记忆功能成为明确的部署阶段功能，而不仅仅是模型权重的属性。现有研究主要关注参数化记忆（parametric memorization）或审计固定记忆配置，但未能描述记忆设计选择如何共同影响个性化效用（personalization utility）、提取风险（extracti"
+category: "ai-tools"
+tags: ["基础模型","代理记忆","隐私安全","记忆删除","个性化效用"]
+original: "https://arxiv.org/abs/2606.10062"
+draft: false
+---
+
+## 1. 研究背景与核心问题
+
+基础模型代理（Foundation-model agents）正日益成为长期运行的系统，能够在多次交互中记住用户信息，这使得记忆功能成为明确的部署阶段功能，而不仅仅是模型权重的属性。现有研究主要关注参数化记忆（parametric memorization）或审计固定记忆配置，但未能描述记忆设计选择如何共同影响个性化效用（personalization utility）、提取风险（extraction risk）和删除保真度（deletion fidelity）。我们将这一研究面定义为部署阶段记忆（deployment-time memorization），通过个性化召回率（Personalization Recall, PR）和对抗性提取率（Adversarial Extraction Rate, AER）来度量代理记忆的隐私-效用边界（privacy-utility frontier），并系统考察三个记忆设计旋钮：摘要攻击性（summarization aggressiveness）、检索广度（retrieval breadth, k）和删除模式（deletion mode）。
+
+## 2. 遗忘残留分数与评估方法
+
+我们进一步引入了遗忘残留分数（Forgetting Residue Score, FRS），用于量化已删除信息是否仍可从衍生记忆层级（derived memory tiers）中恢复。在LongMemEval数据集上，关键事实摘要（key-fact summarization）使Gemma 3 12B的金丝雀提取（canary extraction）降低了76%，使GPT-4o-mini降低了64%，同时几乎保留了全部个性化召回率；关键的是，一旦内容被压缩掉，增加k值不再能恢复泄漏。然而，同样的压缩却导致了删除保真度失败：仅原始删除（raw-only deletion）使得约20%的实例中衍生摘要副本可恢复，只有全流水线清除（full-pipeline purge）或墓碑修订（tombstone redaction）才能将最差层级的残留降至零。
+
+## 3. 主要结论与启示
+
+综合这些结果，我们确立了持久代理记忆（persistent agent memory）必须作为一等记忆机制（first-class memorization mechanism）进行评估——通过评估它帮助代理回忆的内容、使其可提取的内容以及能够真正擦除的内容。
+
+---
+
+🔗 **原文链接：[https://arxiv.org/abs/2606.10062](https://arxiv.org/abs/2606.10062)**

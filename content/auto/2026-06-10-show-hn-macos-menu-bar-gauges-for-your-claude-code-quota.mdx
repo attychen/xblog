@@ -1,0 +1,41 @@
+---
+title: "macOS菜单栏仪表盘：实时监控Claude Code配额使用情况"
+date: "2026-06-10"
+excerpt: "claude-quota 是一个菜单栏仪表盘插件，用于实时显示你的 Claude Code 配额使用情况——每个账户对应一个进度条，效果如下：（针对深色菜单栏设计——白色轮廓线）每个进度条显示一个账户在5小时窗口内的使用率，颜色根据使用程度变化：绿色（正常）、橙色（≥70%）、红色（≥90%）。当5小时窗口额度用尽时，进度条不再显示百分比，而是显示重置倒计时（例如 4:28）。当达到每周限额时，进"
+category: "ai-tools"
+tags: ["Claude Code","macOS","菜单栏","配额监控","SwiftBar","开源工具"]
+original: "https://github.com/grzegorz-raczek-unit8/claude-quota"
+draft: false
+---
+
+## 1. 项目概述
+
+claude-quota 是一个菜单栏仪表盘插件，用于实时显示你的 Claude Code 配额使用情况——每个账户对应一个进度条，效果如下：（针对深色菜单栏设计——白色轮廓线）每个进度条显示一个账户在5小时窗口内的使用率，颜色根据使用程度变化：绿色（正常）、橙色（≥70%）、红色（≥90%）。当5小时窗口额度用尽时，进度条不再显示百分比，而是显示重置倒计时（例如 4:28）。当达到每周限额时，进度条变为黑色并显示每周重置倒计时（例如 2D）——这是更严格的硬性上限，无论5小时窗口显示什么。下拉菜单会列出每个账户的完整详细信息：5小时和每周窗口、你的套餐报告中的按模型窗口、额外使用积分以及重置时间。每5分钟自动刷新一次（遵循SwiftBar文件名约定），并提供一个手动“立即刷新”选项。
+
+## 2. 快速安装
+
+快速安装命令：curl -fsSL https://raw.githubusercontent.com/grzegorz-raczek-unit8/claude-quota/main/install.sh | bash 需要 macOS 和 Homebrew。当 macOS 在首次刷新时弹出钥匙串权限对话框，请点击“始终允许”。
+
+## 3. 工作原理
+
+该插件从 macOS 钥匙串中读取你的 Claude Code OAuth 令牌（只读——它从不刷新或重写令牌，因此不会导致你退出登录），并查询与 Claude Code 的 /usage 屏幕相同的使用情况端点。无需密码、无需网页抓取、无需第三方服务。注意：该端点是 Claude Code 内部使用的，且未公开文档，因此未来 Claude Code 的更新可能需要对插件进行小幅调整。
+
+## 4. 从代码仓库安装
+
+从代码仓库安装：git clone https://github.com/grzegorz-raczek-unit8/claude-quota.git cd claude-quota ./install.sh 两种安装方式都会在未安装 SwiftBar 时通过 Homebrew 自动安装。如果某个账户显示 ⚠ 符号，表示其令牌因长期未使用而过期——只需运行一次 claude CLI 命令，插件将在下一个刷新周期自动恢复。
+
+## 5. 账户管理
+
+默认情况下，插件会自动发现账户：每个包含 Claude Code 钥匙串条目的 ~/.claude / ~/.claude-* 配置目录都会对应一个进度条，标签由目录后缀决定（例如 ~/.claude-work → W）。如果只自动发现一个账户，则不显示字母标签——仅显示进度条。要固定或重命名账户（例如你使用了多个 CLAUDE_CONFIG_DIR），请创建 ~/.config/claude-quota/accounts 文件，每行包含一个路径 [标签]（标签为单个单词）：~/.claude-work Work ~/.claude-priv Priv 要隐藏某个账户的菜单栏进度条（其下拉详情仍然保留），请在该账户所在行的下拉菜单中选择“从菜单栏隐藏”——或编辑 ~/.config/claude-quota/hidden 文件（每行一个标签）。
+
+## 6. 通过 CLAUDE_CONFIG_DIR 使用多个账户
+
+通过 CLAUDE_CONFIG_DIR 使用多个账户的配置示例如下（添加到你的 shell 配置文件中）：claude () &#123; CLAUDE_CONFIG_DIR="$HOME/.claude-work" command claude "$@" ; &#125; claude-priv () &#123; CLAUDE_CONFIG_DIR="$HOME/.claude-priv" command claude "$@" ; &#125;
+
+## 7. 卸载与项目信息
+
+卸载方法：从你的 SwiftBar 插件文件夹（默认为 ~/.swiftbar）中删除 claude-quota.5m.py 文件。项目信息：Claude Code 配额的菜单栏仪表盘（SwiftBar 插件）。资源：Readme。许可证：MIT 许可证。活动：5 颗星、0 个关注者、0 个复刻。发布：无发布版本。包：0 个。贡献者：暂无。语言：Python 93.4%、Shell 6.6%。
+
+---
+
+🔗 **原文链接：[https://github.com/grzegorz-raczek-unit8/claude-quota](https://github.com/grzegorz-raczek-unit8/claude-quota)**

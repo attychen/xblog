@@ -1,0 +1,96 @@
+---
+title: "React编译器Rust移植：架构、性能与集成策略"
+date: "2026-06-10"
+excerpt: "这是一个实验性的、正在进行中的React编译器（React Compiler）Rust移植版本。关键要点如下：  - **进行中**：我们在Meta内部测试之前就提前分享，以便在持续开发的同时，从合作伙伴那里获得反馈。 - **尚无构建版本**：如果你想尝试，需要自己进行一些代码修改。 - **所有测试用例通过**：所有固定测试（fixtures）均通过，没有已知的缺口，但可能存在隐藏的bug。 "
+category: "programming"
+tags: ["React","Rust","编译器","Babel","SWC","OXC","性能优化"]
+original: "https://github.com/react/react/pull/36173"
+draft: false
+---
+
+## 1. 项目概述与关键要点
+
+这是一个实验性的、正在进行中的React编译器（React Compiler）Rust移植版本。关键要点如下：
+
+- **进行中**：我们在Meta内部测试之前就提前分享，以便在持续开发的同时，从合作伙伴那里获得反馈。
+- **尚无构建版本**：如果你想尝试，需要自己进行一些代码修改。
+- **所有测试用例通过**：所有固定测试（fixtures）均通过，没有已知的缺口，但可能存在隐藏的bug。
+- **架构由人类主导，代码主要由AI编写**：架构由我（@josephsavona）主导，但大部分代码由AI生成。我在架构设计、测试与验证策略、增量迁移方法等方面投入了大量精力。我也密切关注代码质量，花费了不少时间反复调整，以确保代码质量达到可接受的水平。
+
+公共API基本上是“Rust Babel AST + 作用域信息（Scope Info）输入，Rust Babel AST输出”。我们使用Babel AST的Rust表示作为“公共API”，然后每个集成（Babel、OXC、SWC）在其原生表示之间进行转换。目前，集成还必须提供作用域信息——未来，React编译器可能会自行从AST计算绑定和引用。
+
+## 2. 内部架构与数据表示
+
+在内部，Rust版本使用与TypeScript版本相同的架构。编译器将AST转换为我们自己的中间表示（HIR，即高级中间表示），该表示使用控制流图（CFG）和静态单赋值（SSA）。我们经历相同的一系列处理阶段（passes），使用相同的整体算法。这基本上是一个逐阶段移植。
+
+主要区别在于数据表示——使用类似竞技场（arena-like）的结构（以及指向这些竞技场的索引）来适应Rust的借用系统。
+
+早期性能数据来自AI，我还没有花太多时间验证基准测试设置，除了发现它发现的优化机会完全合理且修复正确之外。基于这个前提，Rust版本似乎已经相当快了：作为Babel插件运行时，速度快了3倍。序列化成本相当高，但实际的转换逻辑快了约10倍，因此整体上更快。原生集成（oxc、swc）应该会更快。
+
+目前有3种集成：一个备用的Babel插件（最终将在集成到babel-plugin-react-compiler时被移除），以及OXC和SWC集成的示例（参见react_compiler_oxc和react_compiler_swc crate）。
+
+## 3. 正确性与测试策略
+
+**正确性**：在将插件的临时Rust版本与主版本进行比较时，所有1725个固定测试在snap中均通过。这比较了生成的代码输出以及错误。所有固定测试还通过了逐阶段编译器中间表示的完整比较——每个阶段之后的中间状态（包括日志事件和错误）几乎相同（除了某些ID的归一化）。OXC和SWC示例集成似乎运行良好，尽管我没有像对Babel集成那样手动验证到相同程度。
+
+**开发测试**：
+- `yarn snap --rust` 是主要的测试套件，测试我们是否按预期报错或编译。但它不测试编译器内部的中间状态，因此不太适合发现TypeScript和Rust版本之间的细微逻辑差异。它也是基于Babel的，因此不太容易测试OXC和SWC集成。
+- `compiler/scripts/test-e2e.sh` 是一个端到端测试，针对TypeScript实现测试所有3种变体（围绕Rust的Babel包装器、OXC/SWC集成）。这进行部分比较，仅关注最终输出代码（不测试错误细节等）。对于使swc和oxc集成达到同等水平很有用。
+- `compiler/script/test-rust-port.sh` 除了检查最终输出代码外，还对每个阶段后的内部编译器状态进行详细测试。这是用于移植编译器的关键脚本，确保不仅输出相同，而且每个阶段都捕获了所有相同的细节。此脚本可以指向任何JS文件目录，我们预计将在Meta内部测试中使用。
+
+## 4. 合作伙伴集成指南
+
+我们很高兴与团队合作，将Rust版本的React编译器集成到其他工具中，如OXC和SWC。如果你有兴趣与我们合作，最好的起点是查看react_compiler_swc和react_compiler_oxc crate。这些可以让你了解我们正在考虑的API形状。请注意，从任何AST转换到我们的HIR都很复杂，我们只能维护一个版本。因此，我们一致同意使用类似Babel的AST作为我们的公共API。
+
+另一个关键点是，我们尚未实现自己的作用域分析（因为TypeScript版本的编译器依赖于Babel的作用域分析），因此目前我们要求序列化作用域数据。它是一个非规范化的图，必须存储一些元数据以将节点与作用域关联起来。我们欢迎对AST和作用域表示的反馈——我们进行了一些迭代以使事情正常工作，但它可以更优化。
+
+## 5. 计划中的关键变更
+
+我们正在考虑的关键变更包括：
+
+- **返回补丁而非完整程序**：目前编译器返回 `Option&lt;Program&gt;`，如果发生任何更改，则返回 `Some`。这需要替换整个程序。我们计划将其改为返回一系列要应用的补丁，以对我们关心的所有集成（Babel、OXC、SWC等）都合理可用且高效的形式。
+- **优化AST表示**：Babel AST的Rust表示已经足够好，但我们可以通过竞技场分配（arena allocation）使其更优化。我们还计划将字符串表示改为 `smol_str`。
+- **作用域表示**：作用域表示以及AST和作用域之间的数据关联，目前是足够好的初步方法。不过，我们预计将实现自己的作用域解析，因此希望不需要迭代作用域表示，可以直接丢弃它。
+
+就集成形式而言，我们预计每个集成将包含以下内容：
+- **实现者仓库（OXC、SWC等）**：轻量级代码转换和lint管道集成，委托给我们仓库中的 `crates/react_compiler_&lt;名称&gt;`。
+- **我们的仓库**：每个实现者一个crate，例如 `react_compiler_swc`、`react_compiler_oxc`，其中包含大部分逻辑。这种设置使我们能够轻松地在我们的仓库内对集成层进行更改。
+
+欢迎反馈！
+
+## 6. 移植过程中的修复与优化（2026年3月）
+
+Joe Savona在2026年3月21日添加了30个提交，包括：
+
+- **HIR函数格式化桥接**：为反应式打印器（reactive printer）添加HirFunctionFormatter回调，以便FunctionExpression和ObjectMethod值可以打印其内部HIR函数的完整细节。
+- **修复BuildReactiveFunction中的StoreLocal→LoadLocal转换**：移植TypeScript逻辑，当值块的最后一条指令存储到未命名的临时变量时，将StoreLocal转换为LoadLocal。修复了反应式函数输出中的标识符/位置不匹配问题。
+- **修复for循环继续块**：在BuildReactiveFunction中，for循环应在存在更新块时使用更新块作为继续目标，否则回退到测试块。匹配TS `terminal.update ?? terminal.test` 模式。
+- **修复BuildReactiveFunction移植保真度问题**：进行了多项重大修复以匹配TypeScript BuildReactiveFunction行为，包括值块结果序列化、for-of继续块修复、可达性检查、循环ID检查、switch case处理顺序修复等。通过率从85%提升至95.2%。
+- **移植所有反应式处理阶段**：从TypeScript到Rust移植了15个反应式处理阶段和访问器/转换基础设施，包括assertWellFormedBreakTargets、pruneUnusedLabels、mergeReactiveScopesThatInvalidateTogether等。
+- **修复标识符分配顺序**：在PropagateEarlyReturns中重新排序create_temporary_place_id调用，以匹配TypeScript分配顺序，消除了33个测试差异。
+- **修复支配者计算中的块ID消耗**：在TypeScript中，buildReverseGraph调用fn.env.nextBlockId创建合成退出节点，这会作为副作用递增块ID计数器。Rust端口读取env.next_block_id_counter而不递增。通过更改3个调用者使用env.next_block_id().0来消耗ID，将块ID差异从约1505减少到约117个。
+- **类型推断错误修复**：修复了InferTypes中的5个bug，包括上下文变量类型解析、StartMemoize依赖类型、形状合并、phi/循环错误处理等。
+- **修复ConstantPropagation的JS语义**：添加了'delete'和'await'到is_reserved_word，更改了整数溢出保护逻辑。
+- **将约55个panic!()调用转换为Err(CompilerDiagnostic)**：跨29个文件，将CompilerError.invariant()和CompilerError.throwTodo()的panic转换为Err(CompilerDiagnostic)返回，匹配架构指南。
+
+## 7. OXC和SWC前端集成与代码生成
+
+2026年3月，添加了以下内容：
+
+- **react_compiler_oxc crate**：为React编译器添加OXC前端。包括OXC 0.121 AST转换、反向转换、作用域处理、预过滤器和诊断。
+- **react_compiler_swc crate**：为React编译器添加SWC前端。包括SWC AST转换、反向转换、作用域处理、预过滤器、诊断和集成测试。
+- **移植CodegenReactiveFunction**：最终的代码生成阶段（约2800行）。将ReactiveFunction树转换回兼容Babel的AST，并接入记忆化（useMemoCache）。包括对内部函数的pruneHoistedContexts修复。
+- **将CodegenReactiveFunction接入管道**：连接到编译管道，添加了codegen模块，更新了pipeline.rs以在PruneHoistedContexts之后调用codegen_function。
+- **最终代码输出比较**：扩展了Rust移植测试脚本，以捕获并比较每个编译器的Babel插件生成的最终JavaScript代码，代码在差异比较前使用prettier格式化。结果单独报告，带有各自的通过/失败计数和差异输出。
+- **端到端测试基础设施**：添加了react_compiler_e2e_cli二进制crate，用于通过stdin/stdout测试SWC和OXC前端，以及一个test-e2e.ts编排器，用于比较所有3个Rust前端（Babel/NAPI、SWC、OXC）的输出与TypeScript基线。
+
+## 8. Flow匹配语法支持与后续更新（2026年6月）
+
+2026年6月8日，poteto等人添加了17个提交，包括：
+
+- **Flow匹配语法支持**：替换了六个Flow `match`固定测试的“重命名为error.todo-*”方法，改为实际支持，从pr-36173提交移植。npm hermes-parser可以解析match语法：它需要hermes-parser &gt;= 0.28，并启用`enableExperimentalFlowMatchSyntax`解析器选项（snap固定为0.25.1且从未传递该标志；0.26携带不兼容的草稿语法）。
+- **恢复六个match固定测试**：从error.todo-*重命名回原始名称，恢复重命名前的输入。
+
+---
+
+🔗 **原文链接：[https://github.com/react/react/pull/36173](https://github.com/react/react/pull/36173)**
