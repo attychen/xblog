@@ -34,7 +34,7 @@ export default function AboutPage() {
     <div className="pt-20 pb-16">
       <div className="max-w-4xl mx-auto px-4 space-y-8">
         {/* 个人信息卡片 */}
-        <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-8 shadow-lg">
+        <div className="pui-glass-card p-8">
           <div className="flex items-center gap-4 mb-6">
             <Image
               src="/logo.png"
@@ -74,7 +74,7 @@ export default function AboutPage() {
 
 
         {/* 职业技能 */}
-        <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-8 shadow-lg">
+        <div className="pui-glass-card p-8">
           <h2 className="text-2xl font-bold text-black dark:text-white mb-6 flex items-center gap-2">
             <span>🛠️</span>
             <span>职业技能</span>

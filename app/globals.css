@@ -400,6 +400,98 @@ figure[data-rehype-pretty-code-figure]:hover .code-copy-btn {
   border-radius: 5px;
 }
 
+/* =========================================================
+   Performative UI — Design Tokens
+   ========================================================= */
+:root {
+  --pui-glass: rgba(255, 255, 255, 0.78);
+  --pui-grad-from: #7c3aed;
+  --pui-grad-via: #a855f7;
+  --pui-grad-to: #c084fc;
+  --pui-glow: rgba(124, 58, 237, 0.15);
+  --pui-radius: 16px;
+}
+
+.dark {
+  --pui-glass: rgba(18, 18, 26, 0.78);
+  --pui-glow: rgba(124, 58, 237, 0.12);
+}
+
+/* PUI Glass Card */
+.pui-glass {
+  background: var(--pui-glass);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid color-mix(in srgb, var(--pui-grad-from) 15%, transparent);
+  border-radius: var(--pui-radius);
+}
+
+.pui-glass-card {
+  background: var(--pui-glass);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid color-mix(in srgb, var(--pui-grad-from) 12%, transparent);
+  border-radius: var(--pui-radius);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pui-glass-card:hover {
+  border-color: color-mix(in srgb, var(--pui-grad-from) 30%, transparent);
+  box-shadow: 0 0 32px var(--pui-glow);
+  transform: translateY(-2px);
+}
+
+/* PUI Gradient Text */
+.pui-grad-text {
+  background: linear-gradient(135deg, var(--pui-grad-from), var(--pui-grad-via), var(--pui-grad-to));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* PUI Shimmer (sweep) */
+@keyframes pui-shimmer {
+  0%   { transform: translateX(-100%); }
+  60%  { transform: translateX(100%); }
+  100% { transform: translateX(100%); }
+}
+
+.pui-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.pui-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+  transform: translateX(-100%);
+  animation: pui-shimmer 3s ease-in-out infinite;
+}
+
+/* PUI Breathe (glow border pulse) */
+@keyframes breathe {
+  0%, 100% { box-shadow: 0 0 0 rgba(124,58,237,0); }
+  50%      { box-shadow: 0 0 30px rgba(124,58,237,0.10); }
+}
+.pui-breathe {
+  animation: breathe 3s ease-in-out infinite;
+}
+
+/* PUI Fade-in */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.pui-fade-in {
+  animation: fade-up 0.45s ease-out both;
+}
+.pui-fade-1 { animation-delay: 0.05s; }
+.pui-fade-2 { animation-delay: 0.15s; }
+.pui-fade-3 { animation-delay: 0.25s; }
+.pui-fade-4 { animation-delay: 0.35s; }
+}
+
 ::-webkit-scrollbar-thumb:hover {
   background: rgb(var(--muted-foreground) / 0.6);
 }

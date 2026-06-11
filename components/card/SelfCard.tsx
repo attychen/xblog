@@ -8,11 +8,11 @@ interface SelfCardProps {
 
 export default function SelfCard({ postCount = 0, categoryCount = 0 }: SelfCardProps) {
   return (
-    <section className="w-full border-b border-black/10 dark:border-white/10 pb-5">
+    <section className="w-full border-b border-[#7c3aed]/10 dark:border-[#7c3aed]/20 pb-5">
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div className="max-w-2xl text-black dark:text-white">
           <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
-            <span>{PROFILE.name}&apos;s notes</span>
+              <span className="pui-grad-text">{PROFILE.name}&apos;s notes</span>
           </div>
           <h1 className="text-2xl font-bold tracking-tight md:text-4xl">
             AI 大模型、智能体与前沿探索

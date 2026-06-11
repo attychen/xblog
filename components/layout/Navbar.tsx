@@ -39,10 +39,12 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="w-full flex items-center justify-between p-4 text-black dark:text-white fixed top-0 left-0 right-0 z-50 backdrop-blur-sm bg-[#fff4e6]/80 dark:bg-[#1a0f00]/80 border-b border-orange-200/60 dark:border-orange-900/40 transition-colors duration-300">
+      <nav className="w-full flex items-center justify-between p-4 text-black dark:text-white fixed top-0 left-0 right-0 z-50 pui-glass border-b border-[#7c3aed]/10 dark:border-[#7c3aed]/20 transition-colors duration-300">
         {/* 左侧：Logo */}
         <Link href="/" className="flex items-center">
-          <div className="font-bitcount text-xl md:text-3xl font-semibold">法舟记</div>
+          <div className="font-bitcount text-xl md:text-3xl font-semibold">
+            <span className="pui-grad-text">法舟记</span>
+          </div>
         </Link>
 
         {/* 中间：桌面端导航链接（移动端隐藏） */}

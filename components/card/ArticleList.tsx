@@ -17,7 +17,7 @@ export default function ArticleList({ posts }: { posts: Post[] }) {
 
   if (posts.length === 0) {
     return (
-      <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-8 text-center dark:bg-gray-800">
+      <div className="pui-glass-card p-8 text-center">
         <p className="text-gray-500 dark:text-gray-400">No articles yet. Check back soon!</p>
       </div>
     );
@@ -30,7 +30,7 @@ export default function ArticleList({ posts }: { posts: Post[] }) {
         {paged.map((post) => (
           <div
             key={post.slug}
-            className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 transition-all shadow-lg hover:shadow-xl hover:-translate-y-1 dark:bg-gray-800 dark:border dark:border-gray-700"
+            className="pui-glass-card p-5"
           >
             <ArticleCard post={post} />
           </div>
@@ -72,7 +72,7 @@ export default function ArticleList({ posts }: { posts: Post[] }) {
         {mobilePosts.map((post) => (
           <div
             key={post.slug}
-            className="bg-white/90 backdrop-blur-sm rounded-2xl p-5 transition-all shadow-lg hover:shadow-xl dark:bg-gray-800 dark:border dark:border-gray-700"
+            className="pui-glass-card p-5"
           >
             <ArticleCard post={post} />
           </div>

@@ -14,7 +14,7 @@ export default function CategoryCard({ posts }: CategoryCardProps) {
 
   return (
     <div className="sticky top-24">
-      <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-5 shadow-lg">
+      <div className="pui-glass-card p-5">
         <h2 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-4 tracking-wide uppercase">
           Categories
         </h2>

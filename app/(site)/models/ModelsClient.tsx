@@ -43,7 +43,7 @@ export default function ModelsClient({ models }: { models: HFModel[] }) {
       <div className="max-w-6xl mx-auto px-4 space-y-6">
         {/* Header */}
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold font-bitcount tracking-[0.2em] text-gray-800 dark:text-gray-400 transition-colors">
+          <h1 className="text-3xl font-bold font-bitcount tracking-[0.2em] pui-grad-text transition-colors">
             大模型榜
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
@@ -86,7 +86,7 @@ export default function ModelsClient({ models }: { models: HFModel[] }) {
         </p>
 
         {/* Table - Desktop */}
-        <div className="hidden md:block bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm transition-shadow hover:shadow-md">
+        <div className="hidden md:block pui-glass overflow-hidden shadow-sm transition-shadow hover:shadow-md">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -169,7 +169,7 @@ export default function ModelsClient({ models }: { models: HFModel[] }) {
           {filtered.map((m, i) => (
             <div
               key={m.id}
-              className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm space-y-3"
+              className="pui-glass-card p-4 space-y-3"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2 min-w-0">

@@ -122,7 +122,7 @@ export function SkillClient({ repos }: { repos: GitHubRepo[] }) {
         </p>
 
         {/* Table - Desktop */}
-        <div className="hidden md:block bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm transition-shadow hover:shadow-md">
+        <div className="hidden md:block pui-glass overflow-hidden shadow-sm transition-shadow hover:shadow-md">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -213,7 +213,7 @@ export function SkillClient({ repos }: { repos: GitHubRepo[] }) {
           {filtered.map((repo, i) => (
             <div
               key={repo.id}
-              className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm space-y-3"
+              className="pui-glass-card p-4 space-y-3"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2 min-w-0">
