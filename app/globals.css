@@ -490,7 +490,6 @@ figure[data-rehype-pretty-code-figure]:hover .code-copy-btn {
 .pui-fade-2 { animation-delay: 0.15s; }
 .pui-fade-3 { animation-delay: 0.25s; }
 .pui-fade-4 { animation-delay: 0.35s; }
-}
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgb(var(--muted-foreground) / 0.6);
