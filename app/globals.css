@@ -650,7 +650,7 @@ figure[data-rehype-pretty-code-figure]:hover .code-copy-btn {
 
 /* PUI Input */
 .pui-input {
-  background: var(--pui-glass);
+  background: var(--pui-bg-elev);
   border: 1px solid var(--pui-border);
   border-radius: 12px;
   padding: 10px 16px;
@@ -658,7 +658,6 @@ figure[data-rehype-pretty-code-figure]:hover .code-copy-btn {
   color: var(--pui-fg);
   outline: none;
   transition: all 0.2s ease;
-  backdrop-filter: blur(8px);
   width: 100%;
 }
 
