@@ -151,7 +151,8 @@ export default function Navbar() {
           {/* 汉堡按钮（移动端显示） */}
           <button
             onClick={() => setDrawerOpen((v) => !v)}
-            className="md:hidden p-3 -mr-1.5 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 active:bg-black/20 dark:active:bg-white/20 transition-all cursor-pointer select-none touch-manipulation"
+            onPointerDown={(e) => { e.preventDefault(); setDrawerOpen((v) => !v); }}
+            className="md:hidden p-3 -mr-1.5 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 active:bg-black/20 dark:active:bg-white/20 transition-all cursor-pointer select-none"
             aria-label={drawerOpen ? "关闭菜单" : "打开菜单"}
           >
             {drawerOpen
@@ -189,6 +190,7 @@ export default function Navbar() {
                     <div className="flex items-center justify-between px-6 py-4">
                       <Link
                         href={link.href}
+                        onPointerDown={() => setDrawerOpen(false)}
                         onClick={() => setDrawerOpen(false)}
                         className={`text-lg font-semibold font-zenmaru transition-colors ${
                           pathname === link.href || pathname.startsWith(link.href + '/')
@@ -226,6 +228,7 @@ export default function Navbar() {
                                   key={child.href}
                                   href={child.href}
                                   onClick={() => setDrawerOpen(false)}
+                                  onPointerDown={() => setDrawerOpen(false)}
                                   className={`py-2 pl-4 text-base font-zenmaru border-l-2 transition-colors ${
                                     pathname === child.href
                                       ? 'border-orange-500 text-orange-500 font-bold'
@@ -247,6 +250,7 @@ export default function Navbar() {
                   href="#"
                   target="_blank"
                   onClick={() => setDrawerOpen(false)}
+                  onPointerDown={() => setDrawerOpen(false)}
                   className="px-6 py-4 text-lg font-semibold font-zenmaru text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center gap-2"
                 >
                   <GithubIcon className="w-5 h-5" />

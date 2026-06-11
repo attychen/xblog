@@ -82,6 +82,7 @@ export default function ArticleList({ posts }: { posts: Post[] }) {
           <div className="text-center pt-2">
             <button
               onClick={() => setMobileCount((c) => c + PAGE_SIZE)}
+              onPointerDown={(e) => { e.preventDefault(); setMobileCount((c) => c + PAGE_SIZE); }}
               className="w-full py-4 text-sm font-semibold text-blue-600 dark:text-blue-400
                          border border-dashed border-gray-300 dark:border-gray-600 rounded-xl
                          hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors
