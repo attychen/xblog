@@ -59,10 +59,7 @@ export default function ModelsClient({ models }: { models: HFModel[] }) {
               placeholder="搜索模型名称或标签..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full px-4 py-2 pl-10 rounded-lg border border-gray-200 bg-white/90 backdrop-blur-sm
-                         focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                         dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder-gray-400
-                         text-sm transition-all"
+              className="w-full px-4 py-2 pl-10 rounded-xl pui-input text-sm"
             />
             <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -71,9 +68,7 @@ export default function ModelsClient({ models }: { models: HFModel[] }) {
           <select
             value={catFilter}
             onChange={e => setCatFilter(e.target.value)}
-            className="px-3 py-2 rounded-lg border border-gray-200 bg-white/90 backdrop-blur-sm text-sm
-                       focus:outline-none focus:ring-2 focus:ring-blue-500
-                       dark:bg-gray-800 dark:border-gray-700 dark:text-white transition-all"
+            className="px-3 py-2 rounded-xl pui-input pui-select text-sm"
           >
             <option value="">全部分类</option>
             {categories.map(c => <option key={c} value={c}>{c}</option>)}

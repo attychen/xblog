@@ -14,7 +14,7 @@ export default function SelfCard({ postCount = 0, categoryCount = 0 }: SelfCardP
           <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
               <span className="pui-grad-text">{PROFILE.name}&apos;s notes</span>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight md:text-4xl">
+          <h1 className="text-2xl font-bold tracking-tight md:text-4xl pui-grad-text">
             AI 大模型、智能体与前沿探索
           </h1>
           <p className="mt-3 max-w-xl text-sm leading-relaxed text-gray-600 dark:text-gray-400 md:text-base">

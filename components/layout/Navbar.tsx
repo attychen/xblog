@@ -114,7 +114,7 @@ export default function Navbar() {
           {/* 主题切换 */}
           <button
             onClick={toggleTheme}
-            className="relative p-2.5 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#38bdf8]/50 focus:ring-offset-2 cursor-pointer select-none"
+            className="relative p-2.5 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/50 focus:ring-offset-2 cursor-pointer select-none"
             aria-label={isDark ? "切换到浅色模式" : "切换到深色模式"}
           >
             <div className="relative w-5 h-5">

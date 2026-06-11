@@ -56,7 +56,7 @@ export default function AboutPage() {
 
           <div className="flex gap-2 flex-wrap">
             {PROFILE.tags.map((tag) => (
-              <span key={tag.label} className="px-3 py-1 rounded-full bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 text-xs font-semibold transition-colors">
+              <span key={tag.label} className="pui-badge bg-[#7c3aed]/10 text-[#7c3aed] dark:bg-[#7c3aed]/20 dark:text-[#c084fc]">
                 {tag.label}
               </span>
             ))}

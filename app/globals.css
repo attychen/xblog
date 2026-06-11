@@ -592,3 +592,187 @@ figure[data-rehype-pretty-code-figure]:hover .code-copy-btn {
     transform: scale(0.99);
   }
 }
+
+/* =========================================================
+   Performative UI — Complete Component System
+   ========================================================= */
+
+/* PUI Button variants */
+.pui-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 24px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  border: none;
+  outline: none;
+  text-decoration: none;
+}
+
+.pui-btn-glow {
+  background: linear-gradient(135deg, var(--pui-grad-from), var(--pui-grad-via));
+  color: white;
+  position: relative;
+}
+
+.pui-btn-glow::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--pui-grad-from), var(--pui-grad-to));
+  opacity: 0;
+  z-index: -1;
+  filter: blur(14px);
+  transition: opacity 0.4s ease;
+}
+
+.pui-btn-glow:hover::after { opacity: 0.6; }
+.pui-btn-glow:hover { transform: translateY(-2px); }
+
+.pui-btn-ghost {
+  background: var(--pui-glass);
+  border: 1px solid var(--pui-border);
+  color: var(--pui-fg);
+  backdrop-filter: blur(8px);
+}
+
+.pui-btn-ghost:hover {
+  border-color: var(--pui-border-bright);
+  background: var(--pui-bg-elev);
+  transform: translateY(-1px);
+}
+
+/* PUI Input */
+.pui-input {
+  background: var(--pui-glass);
+  border: 1px solid var(--pui-border);
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-size: 14px;
+  color: var(--pui-fg);
+  outline: none;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(8px);
+  width: 100%;
+}
+
+.pui-input:focus {
+  border-color: var(--pui-grad-via);
+  box-shadow: 0 0 0 3px var(--pui-glow);
+}
+
+.pui-input::placeholder { color: var(--pui-fg-mute); }
+
+/* PUI Select */
+.pui-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239898a8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+}
+
+/* PUI Table */
+.pui-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.pui-table th {
+  padding: 12px 16px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--pui-fg-mute);
+  text-align: left;
+  border-bottom: 1px solid var(--pui-border);
+}
+
+.pui-table td {
+  padding: 12px 16px;
+  font-size: 14px;
+  border-bottom: 1px solid var(--pui-border);
+  transition: background 0.15s ease;
+}
+
+.pui-table tr:last-child td { border-bottom: none; }
+.pui-table tr:hover td { background: var(--pui-glow); }
+
+/* PUI Badge */
+.pui-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+/* PUI Link */
+.pui-link {
+  color: var(--pui-grad-via);
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.pui-link:hover {
+  color: var(--pui-grad-to);
+  text-decoration: underline;
+}
+
+/* PUI Page header */
+.pui-page-header {
+  margin-bottom: 32px;
+}
+
+.pui-page-header h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.pui-page-header p {
+  color: var(--pui-fg-dim);
+  font-size: 15px;
+  margin-top: 8px;
+}
+
+/* PUI Card list item */
+.pui-list-item {
+  border-radius: var(--pui-radius);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pui-list-item:hover {
+  transform: translateY(-2px);
+  border-color: var(--pui-border-bright);
+}
+
+/* PUI Search */
+.pui-search-wrapper {
+  position: relative;
+}
+
+.pui-search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--pui-fg-mute);
+  pointer-events: none;
+}
+
+.pui-search-input {
+  padding-left: 40px;
+}
