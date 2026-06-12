@@ -143,7 +143,7 @@ export default async function BlogPostPage({ params }: BlogPageProps) {
       <ReadingEnhancements headings={headings} />
       <CodeCopyButton />
 
-      <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden">
+      <div className="pui-glass-card overflow-hidden">
         {/* Header */}
         <div className="px-4 md:px-8 pt-7 pb-6 border-b border-gray-100 dark:border-gray-700">
           <Link

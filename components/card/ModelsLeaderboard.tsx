@@ -30,7 +30,7 @@ export default function ModelsLeaderboard({ models }: { models: HFModel[] }) {
   }
 
   return (
-    <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
+    <div className="pui-glass overflow-hidden">
       {/* 桌面端表格 */}
       <div className="hidden sm:block overflow-x-auto">
         <table className="w-full text-sm">
@@ -106,9 +106,9 @@ export default function ModelsLeaderboard({ models }: { models: HFModel[] }) {
       </div>
 
       {/* 移动端卡片 */}
-      <div className="sm:hidden divide-y divide-gray-100 dark:divide-gray-700/50">
+      <div className="sm:hidden space-y-2">
         {models.slice(0, 20).map((m, i) => (
-          <div key={m.id} className="px-4 py-3 space-y-2">
+          <div key={m.id} className="pui-glass-card px-4 py-3 space-y-2">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">
                 <span className={`text-xs font-mono shrink-0 ${i < 3 ? "font-bold text-yellow-500" : "text-gray-400"}`}>
