@@ -52,8 +52,8 @@ export default function ModelsClient({ models }: { models: HFModel[] }) {
         </div>
 
         {/* Filter bar */}
-        <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
-          <div className="relative flex-1 min-w-0">
+        <div className="space-y-3">
+          <div className="relative">
             <input
               type="text"
               placeholder="搜索模型名称或标签..."
@@ -65,14 +65,16 @@ export default function ModelsClient({ models }: { models: HFModel[] }) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
-          <select
-            value={catFilter}
-            onChange={e => setCatFilter(e.target.value)}
-            className="px-3 py-2.5 w-36 sm:w-40 rounded-xl pui-input pui-select text-sm flex-shrink-0"
-          >
-            <option value="">全部分类</option>
-            {categories.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
+          <div className="flex items-center gap-2">
+            <select
+              value={catFilter}
+              onChange={e => setCatFilter(e.target.value)}
+              className="px-3 py-2.5 rounded-xl pui-input pui-select text-sm w-36 sm:w-40"
+            >
+              <option value="">全部分类</option>
+              {categories.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
         </div>
 
         {/* Count */}

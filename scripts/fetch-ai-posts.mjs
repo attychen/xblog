@@ -191,7 +191,7 @@ async function translateArticle(apiKey, content, title, link, provider = 'deepse
         { role: 'system', content: '你是专业的中英翻译。逐段完整翻译 JSON 输出，不总结不遗漏。' },
         { role: 'user', content: `${promptText}\n\n原文标题：${title}\n原文链接：${link}\n原文内容：\n${content.slice(0, 20000)}` },
       ],
-      max_tokens: 8000,
+      max_tokens: 10000,
       temperature: 0.2,
     }),
   });
@@ -222,6 +222,20 @@ async function translateArticle(apiKey, content, title, link, provider = 'deepse
     tags: [],
     sections: [{ heading: '', content: txt.slice(0, 2000) }],
   };
+}
+
+// 验证翻译结果是否完整（最后一节没有被截断）
+function isValidTranslation(article) {
+  if (!article || !article.sections || article.sections.length < 2) return false;
+  const last = article.sections[article.sections.length - 1];
+  if (!last.content) return false;
+  // 检查是否被截断：以未完成的句子或标点结尾
+  const truncated = /[，、；：]\s*$/.test(last.content) || /（[^）]*$/.test(last.content) || /"[^"]*$/.test(last.content);
+  // 检查内容是否足够
+  const totalChars = article.sections.reduce((sum, s) => sum + (s.content?.length || 0), 0);
+  if (totalChars < 500) return false;
+  if (truncated) return false;
+  return true;
 }
 
 // 转义 MDX 中的特殊字符（{ } 会被解析为 JS 表达式）
@@ -349,7 +363,12 @@ async function main() {
         try {
           console.log('  🤖 DeepSeek 生成完整中文文章...');
           article = await translateArticle(deepseekKey, fullContent, item.title, item.link, 'deepseek');
-          console.log(`  ✅ ${article.title?.slice(0, 40)}...`);
+          if (article && !isValidTranslation(article)) {
+            console.log(`  ⏭️  翻译结果不完整，丢弃`);
+            article = null;
+          } else {
+            console.log(`  ✅ ${article.title?.slice(0, 40)}...`);
+          }
         } catch (e) {
           console.warn(`  ⚠️  DeepSeek 失败: ${e.message}`);
         }
@@ -359,7 +378,12 @@ async function main() {
         try {
           console.log('  🤖 OpenAI 回退...');
           article = await translateArticle(openaiKey, fullContent, item.title, item.link, 'openai');
-          console.log(`  ✅ ${article.title?.slice(0, 40)}...`);
+          if (article && !isValidTranslation(article)) {
+            console.log(`  ⏭️  翻译结果不完整，丢弃`);
+            article = null;
+          } else {
+            console.log(`  ✅ ${article.title?.slice(0, 40)}...`);
+          }
         } catch (e) {
           console.warn(`  ⚠️  OpenAI 失败: ${e.message}`);
         }
