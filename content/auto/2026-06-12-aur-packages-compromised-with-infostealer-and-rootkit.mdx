@@ -1,0 +1,25 @@
+---
+title: "400余AUR软件包遭信息窃取器和Rootkit入侵"
+date: "2026-06-12"
+excerpt: "据最新威胁情报显示，一名新的AUR软件包维护者（arojas）接管并感染了408个以上的软件包。该入侵事件已被报告，其他AUR维护者正在努力移除受感染的软件包。受影响的软件包被修改，添加了预安装脚本（preinstall scripts），这些脚本使用npm安装恶意负载包atomic-lockfile。以下是变更示例：该博客对此次攻击进行了深入分析。"
+category: "security"
+tags: ["AUR","供应链攻击","信息窃取器","Rootkit","eBPF","Linux","Arch Linux"]
+original: "https://discourse.ifin.network/t/400-aur-packages-compromised-with-infostealer-and-rootkit/577"
+draft: false
+---
+
+## 1. 事件概述
+
+据最新威胁情报显示，一名新的AUR软件包维护者（arojas）接管并感染了408个以上的软件包。该入侵事件已被报告，其他AUR维护者正在努力移除受感染的软件包。受影响的软件包被修改，添加了预安装脚本（preinstall scripts），这些脚本使用npm安装恶意负载包atomic-lockfile。以下是变更示例：该博客对此次攻击进行了深入分析。
+
+## 2. 受影响用户与应对措施
+
+如果你不使用Arch Linux（顺便一提），则不受影响。Arch用户：请查看受影响软件包列表，并使用此脚本检查你的暴露情况：aur_check.sh · GitHub。查阅Ioctl博客了解入侵指标（indicators of compromise），如发现相关指标，请妥善保存系统以便进行取证调查。如果发现受感染软件包，请遵循常规入侵处理流程。轮换所有凭据，并考虑重新安装Arch Linux。由于存在Rootkit的可能性，系统已不可信。
+
+## 3. 攻击范围与罕见性
+
+这些软件包大多较为罕见，但影响范围显著。此外，此类供应链攻击同时涉及信息窃取器（infostealer）行为和eBPF Rootkit，实属罕见。Socket.dev上记录了恶意NPM包，显示有134次下载。链接：https://socket.dev/npm/package/atomic-lockfile。该NPM包由用户herbsobering维护。在GitHub上搜索该用户名，发现一个单独的容器镜像，该镜像似乎是一个反向Shell/代理工具。链接：Package herbsobering430 · GitHub。
+
+---
+
+🔗 **原文链接：[https://discourse.ifin.network/t/400-aur-packages-compromised-with-infostealer-and-rootkit/577](https://discourse.ifin.network/t/400-aur-packages-compromised-with-infostealer-and-rootkit/577)**
