@@ -88,7 +88,7 @@ button, a, [role="button"] {
   --radius: 0.5rem;
 
   /* Background Gradient */
-  --gradient-bg: linear-gradient(180deg, #fff4e6 0%, #fafaf8 100%);
+  --gradient-bg: linear-gradient(180deg, #f8f6ff 0%, #f0edfa 50%, #faf8ff 100%);
 }
 
 .dark {
@@ -104,7 +104,7 @@ button, a, [role="button"] {
   --border: 39 39 42;
   --ring: 96 165 250;
 
-  --gradient-bg: linear-gradient(180deg, #1a0f00 0%, #0f0f0e 100%);
+  --gradient-bg: linear-gradient(180deg, #0a0a0f 0%, #0f0d1a 50%, #0a0a0f 100%);
 }
 
 /* =========================================================

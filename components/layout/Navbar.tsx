@@ -3,24 +3,20 @@ import Link from "next/link";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { SunIcon, MoonIcon, GithubIcon, MenuIcon, XIcon, ChevronDown } from "lucide-react";
+import { SunIcon, MoonIcon, MenuIcon, XIcon } from "lucide-react";
 import { useTheme } from "next-themes";
 
-const NAV_LINKS: { label: string; href: string; children?: { label: string; href: string }[] }[] = [
-  { 
-    label: "AI动态", 
-    href: "/blog",
-  },
-  { 
-    label: "Skill榜单", 
-    href: "/skill" 
-  },
-  { 
-    label: "大模型榜", 
-    href: "/models" 
-  },
+const NAV_LINKS = [
+  { label: "AI动态", href: "/blog" },
+  { label: "Skill榜单", href: "/skill" },
+  { label: "大模型榜", href: "/models" },
   { label: "关于我", href: "/about" },
 ];
+
+function isActive(href: string, pathname: string): boolean {
+  if (href === "/") return pathname === "/";
+  return pathname === href || pathname.startsWith(href + "/");
+}
 
 export default function Navbar() {
   const { setTheme, resolvedTheme } = useTheme();
