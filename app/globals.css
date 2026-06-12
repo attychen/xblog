@@ -410,11 +410,26 @@ figure[data-rehype-pretty-code-figure]:hover .code-copy-btn {
   --pui-grad-to: #c084fc;
   --pui-glow: rgba(124, 58, 237, 0.15);
   --pui-radius: 16px;
+  /* Missing variables added */
+  --pui-bg: #ffffff;
+  --pui-bg-elev: #f4f4f5;
+  --pui-fg: #18181b;
+  --pui-fg-dim: #52525b;
+  --pui-fg-mute: #a1a1aa;
+  --pui-border: rgba(0, 0, 0, 0.08);
+  --pui-border-bright: rgba(124, 58, 237, 0.25);
 }
 
 .dark {
   --pui-glass: rgba(18, 18, 26, 0.78);
   --pui-glow: rgba(124, 58, 237, 0.12);
+  --pui-bg: #09090b;
+  --pui-bg-elev: #18181b;
+  --pui-fg: #fafafa;
+  --pui-fg-dim: #a1a1aa;
+  --pui-fg-mute: #71717a;
+  --pui-border: rgba(255, 255, 255, 0.06);
+  --pui-border-bright: rgba(168, 85, 247, 0.3);
 }
 
 /* PUI Glass Card */
@@ -422,21 +437,19 @@ figure[data-rehype-pretty-code-figure]:hover .code-copy-btn {
   background: var(--pui-glass);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  border: 1px solid color-mix(in srgb, var(--pui-grad-from) 15%, transparent);
+  border: 1px solid rgba(124, 58, 237, 0.15);
   border-radius: var(--pui-radius);
 }
 
 .pui-glass-card {
-  background: var(--pui-glass);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1px solid color-mix(in srgb, var(--pui-grad-from) 12%, transparent);
+  background: var(--pui-bg-elev);
+  border: 1px solid var(--pui-border);
   border-radius: var(--pui-radius);
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .pui-glass-card:hover {
-  border-color: color-mix(in srgb, var(--pui-grad-from) 30%, transparent);
+  border-color: rgba(124, 58, 237, 0.35);
   box-shadow: 0 0 32px var(--pui-glow);
   transform: translateY(-2px);
 }
@@ -728,11 +741,7 @@ figure[data-rehype-pretty-code-figure]:hover .code-copy-btn {
   text-decoration: underline;
 }
 
-/* PUI Page header */
-.pui-page-header {
-  margin-bottom: 32px;
-}
-
+/* PUI Header */
 .pui-page-header h1 {
   font-size: 2rem;
   font-weight: 800;
@@ -742,7 +751,6 @@ figure[data-rehype-pretty-code-figure]:hover .code-copy-btn {
 }
 
 .pui-page-header p {
-  color: var(--pui-fg-dim);
   font-size: 15px;
   margin-top: 8px;
 }
