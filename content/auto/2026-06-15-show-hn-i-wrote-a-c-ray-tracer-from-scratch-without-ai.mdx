@@ -1,0 +1,45 @@
+---
+title: "零AI依赖：从零手写C++光线追踪器Luz"
+date: "2026-06-15"
+excerpt: "Luz是一个完全从零开发的C++20路径追踪器（Path Tracer），零第三方依赖。它支持蒙特卡洛路径追踪（Monte Carlo path tracing）、全局光照（global illumination）、BVH加速（BVH acceleration）、自适应采样（adaptive sampling）、去噪（denoising）、大气散射（atmospheric scattering）、"
+category: "programming"
+tags: ["C++","光线追踪","路径追踪","蒙特卡洛","全局光照","BVH","自适应采样","去噪"]
+original: "https://github.com/themartiano/luz"
+draft: false
+---
+
+## 1. 项目概览
+
+Luz是一个完全从零开发的C++20路径追踪器（Path Tracer），零第三方依赖。它支持蒙特卡洛路径追踪（Monte Carlo path tracing）、全局光照（global illumination）、BVH加速（BVH acceleration）、自适应采样（adaptive sampling）、去噪（denoising）、大气散射（atmospheric scattering）、自定义场景文件以及Blender到Luz的导出器。
+
+## 2. 功能特性
+
+功能包括：蒙特卡洛路径追踪、全局光照、多线程CPU渲染、自适应采样、去噪器（NFOR风格）、球体、平面、矩形、三角形、立方体、体积和OBJ网格；朗伯（Lambertian）、金属（metal）、电介质（dielectric）、自发光（emissive）和各向同性（isotropic）材质；区域光、点光、球光和方向光；自定义.luz场景文件；.blend到.luz转换器；通过CLI或场景文件完全自定义渲染参数；带PDF的重要性采样（importance sampling）；BVH加速，包括带分箱SAH构建（binned SAH construction）和近优先遍历（near-first traversal）的打包网格BVH；带散射的大气模拟；景深、抗锯齿、曝光、对比度、色调映射（tone mapping）、伽马校正（gamma correction）和泛光（bloom）；BMP和TIFF输出；确定性基准测试框架，包含渲染、去噪、后处理和分数分解。
+
+## 3. 系统要求与快速开始
+
+要求：C++20编译器、Make或CMake 3.16+、Python 3（仅用于可选工具/脚本）。快速开始：使用Makefile构建：make；渲染一个捆绑的示例场景：./Luz --file examples/scenes/blender_monkey.luz --samples 50 --resolution 300x300。默认输出为render.bmp。场景文件可以设置outputfilename=...，CLI可以覆盖常见的渲染设置。运行测试套件：make test。
+
+## 4. 基准测试与CMake构建
+
+Luz包含用于渲染、去噪、后处理和总体分数比较的确定性基准测试。运行：make benchmark BENCH_CPUS=1 BENCH_THREADS=1 before.csv；make benchmark BENCH_CPUS=1 BENCH_THREADS=1 after.csv；make benchmark-compare BEFORE=before.csv AFTER=after.csv。详情见docs/benchmarks.md。CMake构建也可用：cmake -S . -B build；cmake --build build；ctest --test-dir build。
+
+## 5. 平台支持与构建优化
+
+支持平台：macOS、Linux、Windows。在macOS和Linux上，Makefile是主要路径。在Windows上，使用CMake配合MSVC或基于MinGW的Makefile目标：make windows。WSL也作为Linux构建环境受支持。发布构建默认针对构建机器进行调优。Makefile启用-O3、-march=native（原生CPU调优）和-flto（链接时优化）。它还启用快速浮点模式（如果编译器/平台支持）。CMake使用相同的发布意图：-O3、原生CPU调优，以及支持时的过程间优化/LTO。这些默认值能产生更快的本地渲染，但使用-march=native构建的二进制文件可能无法在较旧或不同的CPU上运行，LTO可能暴露工具链特定的链接器问题。如果遇到非法指令崩溃、链接器错误或需要更可移植的二进制文件，请禁用激进选项并从干净对象重新构建：make clean；make NATIVE=0 LTO=0。对于CMake构建，关闭优化开关进行配置：cmake -S . -B build -DLUZ_NATIVE_OPTIMIZATIONS=OFF -DLUZ_ENABLE_LTO=OFF；cmake --build build --clean-first。
+
+## 6. CLI用法与自适应采样
+
+用法：./Luz [options]。选项包括：-f, --file PATH加载.luz场景文件；-r, --resolution WxH覆盖渲染分辨率；-s, --samples N覆盖每像素采样数；--adaptive [true|false]启用自适应逐像素采样；--no-adaptive禁用自适应采样；--adaptive-min-samples N自适应停止前的最小采样数；--adaptive-threshold F相对自适应噪声阈值；--adaptive-check-interval N自适应收敛检查间隔；-mlb, --maxLightBounces N覆盖最大光反弹次数；--max-light-bounces N是--maxLightBounces的别名；-t, --threads N使用N个工作线程渲染；--seed N种子随机采样；--gamma true|false切换伽马校正；-tm, --tonemapping true|false切换色调映射；--bloom true|false切换泛光；--exposure EV曝光补偿（以档为单位）；--contrast F显示对比度乘数；--denoise [true|false]写入去噪后的伴随渲染；--no-denoise禁用去噪；-o, --output PATH覆盖渲染输出路径；--denoise-output PATH覆盖去噪输出路径；--render-times写入renderTime.bmp；--benchmark运行内置基准场景；--benchmark-case NAME基准测试用例：default, many-objects, mesh-bvh, diffuse, postprocess, atmosphere, lights, emissive-geometry, primitives-materials, volumes, obj-mesh。自适应采样：--adaptive将--samples视为每像素的最大采样数。每个像素使用渐进式逐像素采样序列，至少渲染--adaptive-min-samples次，然后定期检查亮度和RGB置信区间。非常暗的像素在停止前使用保守的最小值，因此罕见的光贡献不太可能被误认为是收敛的黑色。较低的阈值保留更多细节但花费更多时间。对于最终渲染，从高最大采样数开始，并使用如下值进行调优：./Luz --file exports/stormtroopers.luz --samples 4096 --adaptive --adaptive-min-samples 512 --adaptive-check-interval 64 --adaptive-threshold 0.005 --denoise。
+
+## 7. 去噪、场景文件与Blender导出器
+
+去噪：--denoise启用Luz的NFOR风格特征缓冲区去噪器，并写入一个单独的伴随图像。默认情况下，render.bmp变为render_denoised.bmp；使用--denoise-output PATH选择确切路径。去噪器没有硬性最小分辨率或采样数要求，但它需要足够的信号来估计有用的颜色和特征统计信息。每像素一个采样主要是压力测试：没有逐像素方差估计，因此去噪后的图像可能几乎不变，或者可能平滑错误的细节。预览时至少使用每像素几个采样，判断去噪器质量时最好使用大约16个或更多采样。非常低的分辨率也会使评估产生误导，因为每个局部滤波窗口覆盖了图像太多部分。场景文件：示例场景位于examples/scenes/。网格资源位于assets/objects/。场景文件格式在docs/scene-files.md中有文档说明。.luz文件中的对象路径首先相对于场景文件解析，然后相对于当前工作目录，最后在assets/objects/下解析。这意味着examples/scenes/blender_monkey.luz可以引用../../assets/objects/blender_monkey.obj，并且仍然从仓库根目录运行。OBJ网格也可以偏移并分配场景材质：obj=mesh.obj,(x,y,z),material[ metal=(0.8,0.8,0.8),0.1 ]。Blender导出器：Blender场景可以通过Blender的Python API导出："/Applications/Blender.app/Contents/MacOS/Blender" -b scene.blend --python tools/blender_export_luz.py -- --output exports/scene.luz；./Luz --file exports/scene.luz --threads 8。导出器写入一个.luz文件以及OBJ网格。用法和当前保真度限制在docs/blender-exporter.md中有文档说明。
+
+## 8. 仓库布局、致谢与许可
+
+仓库布局：include/luz/公共头文件；src/core/数学、几何、材质、图像和采样代码；src/renderer/渲染实现；src/scene/场景模型和场景辅助；src/io/场景文件、OBJ、BMP和TIFF加载/写入；src/cli/命令行入口点和标志；examples/scenes/示例.luz场景文件；assets/objects/示例使用的OBJ资源；docs/images/压缩的展示图像；tools/导出和实用脚本；tests/仅标准库的测试程序；docker/基准测试容器。个人说明：特别感谢《Ray Tracing in One Weekend》系列书籍。在Luz的大部分开发过程中，它提供了巨大的灵感和信息，尤其是在AI出现之前。归属：Stormtrooper场景由BlendSwap上的@ScottGraham提供。Bust Statue由BlendSwap上的@geoffreymarchal提供。许可：MIT。见LICENSE。关于：从零开始、零第三方库的C++路径追踪器。主题：cpp, rendering, monte-carlo, global-illumination, computer-graphics, path-tracer, ray-tracer, renderer, bvh, rendering-engine, no-dependencies, from-scratch, ray-tracing, graphics-rendering, path-tracing, physically-based-rendering, denoising, cpp20, adaptive-sampling, zero-dependencies。资源：Readme。许可：MIT license。贡献：贡献。活动：Stars 36 stars, Watchers 1 watching, Forks 0 forks。报告仓库。发布：v0.1.1 Latest Jun 12, 2026。贡献者：语言：C++ 79.7%, Python 10.5%, Shell 8.0%, Makefile 1.4%, Other 0.4%。
+
+---
+
+🔗 **原文链接：[https://github.com/themartiano/luz](https://github.com/themartiano/luz)**
