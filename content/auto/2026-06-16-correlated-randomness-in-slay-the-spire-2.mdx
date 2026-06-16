@@ -1,0 +1,165 @@
+---
+title: "《杀戮尖塔2》中的关联随机性：从诅咒到药水的惊人预测"
+date: "2026-06-16"
+excerpt: "以下是关于《杀戮尖塔2》（单人模式）的三个真实陈述： - 如果你在Underdocks选择Neow's Bones，随机诅咒有约54%的概率是Debt。* - 你不可能从Trash Heap事件中获得Rebound。 - 在Underdocks，你的第一场战斗有76%的概率掉落药水，而在Overgrowth只有4%。** （*假设Neow's Bones的两个遗物都不是New Leaf或Kalei"
+category: "gaming"
+tags: ["杀戮尖塔2","随机数生成器","关联随机性","游戏机制","数据分析"]
+original: "https://tck.mn/blog/correlated-randomness-sts2/"
+draft: false
+---
+
+## 1. 引言：三个真实陈述
+
+以下是关于《杀戮尖塔2》（单人模式）的三个真实陈述：
+- 如果你在Underdocks选择Neow's Bones，随机诅咒有约54%的概率是Debt。*
+- 你不可能从Trash Heap事件中获得Rebound。
+- 在Underdocks，你的第一场战斗有76%的概率掉落药水，而在Overgrowth只有4%。**
+（*假设Neow's Bones的两个遗物都不是New Leaf或Kaleidoscope）
+（**假设你的Neow遗物不给予卡牌或其他遗物）
+（***所有数据基于当前beta补丁v0.107.0）
+什么？！为什么？罪魁祸首是不同随机数生成器（RNG）之间意想不到的关联——知道游戏某个RNG的第一个输出，就能提供信息来预测所有其他RNG的第一个输出。
+
+## 2. 《杀戮尖塔2》的随机数生成器
+
+现在，我将对这个关联现象做一个极其简化的解释。如果你想了解更详细的细节，我会在本文末尾深入探讨。如果你不关心，可以跳过本节，直接看下面所有有趣的例子。
+关联RNG（CRNG）现象在《杀戮尖塔》社区中已经为人所知，因为《杀戮尖塔1》也有类似问题，在Forgotten Arbiter的博客文章中有详细描述。[1] 简而言之，在《尖塔1》中，游戏使用了多个不同的伪随机数生成器，以防止例如战斗内的随机性影响未来的卡牌奖励。然而，它们都被初始化为相同的起始状态，这意味着它们产生相同的数字序列。因此，狡猾的玩家可以关注过去随机事件的结果，从而获取未来随机事件的信息。
+为了避免同样的问题，《尖塔2》将其伪随机数生成器初始化为不同的状态。代码看起来像这样（为教学目的高度简化）：
+Rng UpFront = new Rng(seed + hash("up_front"));
+Rng Shuffle = new Rng(seed + hash("shuffle"));
+Rng UnknownMapPoint = new Rng(seed + hash("unknown_map_point"));
+Rng CombatCardGeneration = new Rng(seed + hash("combat_card_generation"));
+Rng CombatPotionGeneration = new Rng(seed + hash("combat_potion_generation"));
+Rng CombatCardSelection = new Rng(seed + hash("combat_card_selection"));
+Rng CombatEnergyCosts = new Rng(seed + hash("combat_energy_costs"));
+Rng CombatTargets = new Rng(seed + hash("combat_targets"));
+Rng MonsterAi = new Rng(seed + hash("monster_ai"));
+Rng Niche = new Rng(seed + hash("niche"));
+Rng CombatOrbGeneration = new Rng(seed + hash("combat_orbs"));
+Rng TreasureRoomRelics = new Rng(seed + hash("treasure_room_relics"));
+// ...
+游戏中还有更多随机数生成器，为简洁起见我没有列出；值得注意的是，每个事件都有自己的RNG。哈希函数本质上从输入字符串产生一个看似随机的数字，但对于相同的输入，数字总是相同的。所以思路是RNG状态被打乱，但相同的种子仍然总是导致相同的运行。
+问题出现在这些种子被传递给C#中的标准System.Random类时。不幸的是，C#中使用的伪随机数生成算法在起始种子方面几乎是完全线性的。这具体意味着什么有点复杂——我将在本文后面更详细地讨论。但结果是，两个种子相差已知固定量的RNG，它们的输出相差一个更模糊但仍然可利用的量。
+你可能会问，可利用到什么程度？嗯……这里有一大堆CRNG的后果，从有趣但不重要到对游戏玩法有实际影响（有些甚至影响到未察觉此事的休闲玩家！）。
+
+## 3. Neow's Bones与诅咒池的关联
+
+我从引言中的第一个例子开始。如果你在Underdocks选择Neow's Bones，你收到的随机诅咒实际上有以下近似分布：
+Clumsy 0.10%
+Debt 54.25%
+Decay 40.32%
+Doubt 1.50%
+Guilty 0%
+Injury 0%
+Normality 0%
+Regret 0%
+Shame 0%
+Writhe 3.82%
+然而，在Overgrowth，你会从以下分布中获得诅咒：
+Clumsy 0.51%
+Debt 0%
+Decay 0%
+Doubt 0%
+Guilty 0.19%
+Injury 5.53%
+Normality 1.18%
+Regret 0%
+Shame 18.85%
+Writhe 73.74%
+这个对我来说很有趣——Reddit和Discord上的人们都在哀叹他们糟糕的运气，总是从Neow's Bones中roll到Debt。[2] 甚至在发现CRNG之前，我就看到一些帖子坚持认为这似乎比随机更频繁。很难表达我的大脑是如何瞬间自动将它们视为教科书式的确认偏差而忽略的。然而……
+要理解这一点，我们需要关联三个随机性来源：
+- Neow可用的诅咒遗物来自对Neow事件特定RNG的调用，该RNG的种子为seed + 1 + hash("NEOW")。
+- Neow选项总是恰好有一个来自诅咒池的遗物，如维基所述。
+- 选择8个诅咒遗物中的哪一个是对Neow RNG的第一次调用。
+- Neow's Bones的随机诅咒来自对RunState.Rng.Niche的调用，该RNG的种子为seed + hash("niche")。由于New Leaf和Kaleidoscope也调用Niche进行随机性，从Neow's Bones中roll到这两个遗物中的任何一个都会破坏关联。但否则，这将是第一次调用Niche。
+- 第一幕变体（Underdocks或Overgrowth）来自对在StartRunLobby#BeginRunLocally中创建的未命名RNG的调用，该RNG以基础种子为种子。
+由于Neow's Bones来自Neow的诅咒池，你只有在第一次调用Neow RNG落在特定范围内时才会看到它，这对第一次调用Niche的可能范围施加了强约束（与你在第一幕的位置结合时更强）。
+很明显，这种关联对游戏玩法影响很大，即使对于未察觉此事的玩家也是如此。它使Neow's Bones成为一个更差的遗物，极少给出像Clumsy、Guilty和Injury这样危害较小的诅咒，而更频繁地给出像Debt这样更具破坏性的诅咒。
+此时，你可能会想等等，这是否意味着我们可以预测每个Neow遗物的随机性？确实可以！让我们再做一些。
+
+## 4. Large Capsule与Small Capsule的稀有度预测
+
+Large Capsule的第一个遗物永远不会是普通。多么大的增强！更具体地说，在Overgrowth，大约70%是不常见，30%是稀有。在Underdocks，大约37%是不常见，63%是稀有——但有一个警告：Large Capsule在Underdocks幕中只有约1.65%的时间会出现，因为一切都相互关联。（似乎没有人注意到这一点；这是我最初调查这一切时，某人对这个信息的有趣反应。）
+以下是Underdocks中Neow诅咒池选项的具体分布：
+CursedPearl 11.95%
+HeftyTablet 1.32%
+LargeCapsule 1.65%
+LeafyPoultice 12.72%
+NeowsBones 13.01%
+PrecariousShears 23.75%
+SilkenTress 23.22%
+SilverCrucible 12.37%
+在Overgrowth中：
+CursedPearl 12.99%
+HeftyTablet 23.79%
+LargeCapsule 23.24%
+LeafyPoultice 12.39%
+NeowsBones 11.90%
+PrecariousShears 1.35%
+SilkenTress 1.65%
+SilverCrucible 12.70%
+回到Large Capsule，就像Neow's Bones一样，关联对游戏玩法有实际影响。这个遗物比它平均应该有的更好。
+Small Capsule呢？
+由于Small Capsule不是诅咒池遗物，它不像Neow's Bones和Large Capsule那样有内在偏差。然而，这意味着我们可以利用另一个诅咒池遗物的存在来预测Small Capsule遗物的稀有度：
+（表格显示common、uncommon、rare的百分比，按诅咒池遗物和幕分类）
+我保持了与前一节两个图表相同的条形缩放比例——每行的总宽度与该诅咒池遗物在该幕中实际出现的频率成正比。这是为了展示一个简洁的启发式规则：Small Capsule在Underdocks通常给出普通遗物，而在Overgrowth通常给出不常见或稀有遗物。
+
+## 5. Leafy Poultice与Hefty Tablet的卡牌预测
+
+（这些是转化2张和选择一张稀有卡。）
+由于这两个都是诅咒池遗物，它们有内在偏差。但它们都生成多张卡牌，所以我们只能预测第一张。事实证明，Leafy Poultice的第一次转化只有22种可能性（每个角色的80张卡牌池中），其中一些显著更可能。
+（这些图表很大，所以我将它们隐藏在这里。你可以点击每个角色查看可用选项，并决定哪个幕更好。）
+Leafy Poultice Underdocks：
+（列出各角色卡牌及百分比，如Clad的Aggression 3.78%等）
+Leafy Poultice Overgrowth：
+（列出各角色卡牌及百分比，如Clad的MoltenFist 0.64%等）
+类似地，Hefty Tablet的第一个选项在Overgrowth只有11种可能性，而在Underdocks只有3种可能性！这是因为如上所示，Hefty Tablet在Underdocks中首先只出现在约1.3%的情况下，所以看到它是非常强的信息。
+Underdocks：
+（列出卡牌及百分比，如Juggernaut 72.52%等）
+Overgrowth：
+（列出卡牌及百分比，如Juggernaut 4.52%等）
+
+## 6. New Leaf与Arcane Scroll的进一步关联
+
+（这些是转化1张和随机稀有卡。）
+与Small Capsule一样，幕和诅咒池选项都影响这些遗物。包含所有14种幕和诅咒池遗物组合的完整卡牌列表会占用太多空间，所以我只说：你可以将New Leaf的可能转化范围缩小到4到39个选项（80张中），将Arcane Scroll的可能卡牌范围缩小到3到12个选项（25张中），具体取决于你的幕和Neow。
+不过，这里有一个有趣的小细节：如果你在Overgrowth看到Precarious Shears（这相当罕见），那么New Leaf有约70%的概率给出你角色按字母顺序的第一张卡牌，而Arcane Scroll有约65%的概率给出你角色按字母顺序的第一张稀有卡牌。
+好吧，但说实话，在这一点上，这些大多不会真正改变你的游戏方式。不如看看其他一些确实有影响的东西？
+
+## 7. 闪电球与随机目标：战斗中的预测
+
+Underdocks的简单池有两个多敌人战斗：Corpse Slugs和Toadpoles。如果你是Defect，你可能想知道你的第一个闪电球会击中哪里，特别是如果你在第一回合抽到了Dualcast。具体在Underdocks的第一场战斗中，你的第一个球有75%的概率击中左边的敌人。（这适用于如果你使用Dualcast时的释放，或者如果你不使用时的被动。）
+如果你记得你看到了哪个诅咒池，你可以做得更好：
+（表格显示左右概率，如CursedPearl左11.91%等）
+在Corpse Slugs战斗中你可以做得更好，该战斗有随机化的起始攻击模式。我不会在这里列出整个表格，但例如：如果你看到了Precarious Shears，并且右边的Corpse Slug正在施加减益，那么你的球实际上有95%的概率击中右边的那个。
+（顺便说一句，第二层的Corpse Slugs在回合1都攻击的概率不到3%。它们真是太好了！）
+这适用于整个运行的第一个随机战斗目标——例如，你可以预测你在Necrobinder上的第一个Countdown触发，或你在任何人身上的第一个Parrying Shield触发。
+说到第一幕早期，让我们终于回到引言中的另外两个例子。
+
+## 8. Trash Heap与药水掉落：更多实际影响
+
+由于Trash Heap是Underdocks独有的，它有内在偏差。以下是Trash Heap RNG在幕RNG滚动到Underdocks条件下的输出：
+Caltrops 10.14%
+Clash 14.85%
+Distraction 19.97%
+DualWield 13.78%
+Entrench 9.84%
+HelloWorld 9.89%
+Outmaneuver 5.17%
+Rebound 0%
+RipAndTear 6.19%
+Stack 10.17%
+如你所见，在单人游戏中获得Rebound卡牌是绝对不可能的。[3] 如果你关心预测遗物，连续卡牌对分别对应Darkstone Periapt、Dream Catcher、Hand Drill、Maw Bank和The Boot（例如，如果卡牌是Entrench或Hello World，遗物是Hand Drill）。
+如果你想更精确地预测Trash Heap，以下是进一步以你看到的诅咒池遗物为条件的输出（条形图可悬停）：[4]
+（表格显示各诅咒池遗物下卡牌百分比，如CursedPearl下HelloWorld 66.63%等）
+顺便说一句，在发现这个之后，我在网上搜索了关于它的讨论，确实人们注意到他们似乎无法完成他们的图鉴。但我也发现用户@hoge大约一个月前在Discord上发布了一个关于这个问题的准确描述。向他们致敬！
+最后，这是引言中提到的第三点——你的第一场战斗掉落药水的频率是多少？你现在知道套路了：
+（表格显示各诅咒池遗物和幕下药水掉落概率，如CursedPearl[U] 16.85%等）
+再次提醒，Tablet和Capsule在Underdocks极其罕见，而Shears和Tress在Overgrowth极其罕见。考虑到这一点，总体而言，你的第一场战斗在Underdocks掉落药水的概率是76%，而在Overgrowth只有4%！然而，请注意，选择任何生成卡牌奖励或随机遗物的Neow会破坏这种关联，因为它会抢走对奖励RNG的第一次调用。所以Lost Coffer在糟糕的Overgrowth地图上可能看起来比平均水平更有吸引力。
+作为额外信息，第一个?房间是战斗的概率也分布不均：
+（表格显示各诅咒池遗物和幕下战斗概率，如CursedPearl[U] 10.58%等）
+（它大多在幕中平均，Underdocks约9.6%，Overgrowth约10.4%。）
+到目前为止，这里的一切只适用于第一幕。但是——你猜对了——我们可以更进一步……
+
+---
+
+🔗 **原文链接：[https://tck.mn/blog/correlated-randomness-sts2/](https://tck.mn/blog/correlated-randomness-sts2/)**
