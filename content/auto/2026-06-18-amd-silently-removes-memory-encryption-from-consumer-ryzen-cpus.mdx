@@ -1,0 +1,45 @@
+---
+title: "AMD悄然移除消费级Ryzen处理器内存加密功能，用户安全风险未知"
+date: "2026-06-18"
+excerpt: "根据Ars Technica的报道，AMD已悄然从其低端CPU中移除了一项关键安全功能，使得不知情的用户可能面临物理攻击的风险。经过在GitHub上追踪的为期数月的调查，Ben Kilpatrick确认，透明安全内存加密（Transparent Secure Memory Encryption, TSME）功能——该功能可保护CPU免受从连接的内存芯片中窃取数据的物理攻击——突然不再适用于AMD非"
+category: "hardware"
+tags: ["AMD","Ryzen","TSME","内存加密","安全漏洞","AGESA固件","硬件安全"]
+original: "https://www.tomshardware.com/pc-components/cpus/amd-silently-removes-memory-encryption-from-consumer-ryzen-cpus-leaving-users-unaware-that-they-may-be-vulnerable-security-feature-vanishes-after-newer-agesa-firmware-amd-engineers-go-radio-silent-when-pressed-about-the-change"
+draft: false
+---
+
+## 1. 安全功能悄然消失：TSME从消费级CPU中移除
+
+根据Ars Technica的报道，AMD已悄然从其低端CPU中移除了一项关键安全功能，使得不知情的用户可能面临物理攻击的风险。经过在GitHub上追踪的为期数月的调查，Ben Kilpatrick确认，透明安全内存加密（Transparent Secure Memory Encryption, TSME）功能——该功能可保护CPU免受从连接的内存芯片中窃取数据的物理攻击——突然不再适用于AMD非Pro系列以外的CPU。这项详尽的调查涉及与AMD工程师、主板供应商及其他CPU用户的交流，在调查接近尾声时，一名AMD工程师突然中断了讨论，并表示：“抱歉，我对此话题没有更多信息可分享。”截至本报道发布，AMD既未正式承认也未解释该安全功能的消失。
+
+## 2. TSME功能详解：保护内存数据免受物理攻击
+
+TSME是一种保护功能，可加密存储在内存中的数据，使其对物理攻击者无用。AMD最初将该功能添加到其高端CPU中，随后扩展至低端CPU。最终，该功能成为标配，让低端芯片用户确信其作为芯片包的一部分可用。然而，在没有事先通知的情况下，AMD似乎已在这些处理器中废除了该安全功能。根据Ars的报告，公司对此事的唯一官方反应（不包括GitHub讨论）是一封电子邮件回复，称TSME“是仅应用于PRO CPU的安全功能，作为AMD PRO技术的一部分”，值得注意的是，这是公司首次公开声明此类限制，尽管该功能已在消费级芯片上运行多年。然而，尚不清楚这一消失是AMD有意将TSME保留给Pro芯片的政策决定，还是AGESA 1.2.7.0（较新的固件版本）中引入的无意回归。
+
+## 3. 用户难以察觉：Windows上完全不可见，Linux上需大量技术工作
+
+移除的另一个令人担忧的方面是，该功能的消失在Windows机器上完全不可检测，并且在Linux上需要大量的技术工作才能识别。这意味着安全功能被移除，而用户却浑然不知。Kilpatrick，一位自称“注重隐私的Linux爱好者”，首先报告了这一变化。他在安装新操作系统时，使用的是基于Zen 5架构的Ryzen 7 9700X机器。为了确认所有安全保护都已启用，他运行了主机安全ID（Host Security ID, HSI），这是一个评估系统固件和硬件安全配置的审计功能。令他惊讶的是，HSI报告TSME不再受支持，尽管他一直在BIOS设置中启用了该功能。这一矛盾促使他寻找答案。他的第一反应是联系主板制造商MSI，但该公司最初并未给出明确解释。他还向AMD的公共工程GitHub仓库提交了错误报告，最终有两名AMD工程师回应：AMD研究员软件工程师Tom Lendacky和AMD首席软件工程师Mario Limonciello。
+
+## 4. AMD工程师也困惑：建议用户联系主板制造商
+
+有趣的是，两位工程师似乎都没有明确答案来解释该功能为何消失。他们的建议基本相同：在BIOS中禁用并重新启用该选项，如果不起作用，则联系主板制造商，这表明AMD内部人员与报告问题的用户一样困惑。此后，Kilpatrick向MSI施加更大压力，最终说服其工程师进行受控测试。他们发现，消费级Ryzen芯片在较旧的固件版本下启用了TSME，但在较新的版本（AGESA 1.2.7.0）下显示为“不支持”，而CPU的Pro版本无论使用何种固件或主板都支持该功能。这留下了一个大问题：AMD是故意将TSME限制在其Pro芯片上，还是这一变化是意外回归——即较新AGESA版本中引入的固件错误？无论哪种情况，硅片似乎都能够运行该功能。区别在于，用户面对的是AMD应该修复的错误，还是AMD未适当解释的安静产品细分决策。
+
+## 5. MSI测试揭示真相：AGESA标志控制TSME激活
+
+Kilpatrick将这些MSI的发现带回给AMD工程师，并在六周后恢复了讨论。他报告说，MSI的产品营销团队已直接从AMD处得知，TSME仅在Pro系列处理器上受支持。他还转述了MSI的测试结果：一个控制TSME在启动时是否激活的内部AGESA标志，在消费级芯片上返回FALSE，无论BIOS设置如何；但在Pro处理器上，当功能启用时返回TRUE。Kilpatrick随后提出了一件特别尴尬的事情。他提醒Lendacky，该工程师在2020年曾发表评论，确认Ryzen 3700X（一款消费级CPU）应支持TSME。在2025年同一讨论的后续评论中，Lendacky再次推荐使用TSME，同时指出主板BIOS供应商必须公开该选项。因此，AMD自己的工程师多年前就承认该功能在现在被移除的低端芯片上工作，证明Ryzen的支持并非用户臆想。经过更多来回交流后，Kilpatrick直截了当地问，消费级芯片上标志设置为FALSE是硅片级别的限制还是固件策略决定，因为前者是永久性的，后者可能可逆。Limonciello的回复实际上结束了这一章节。他写道：“抱歉，我对此话题没有更多信息可分享。”
+
+## 6. AMD的沉默与历史：TSME从未被公开宣传为消费级功能
+
+公平地说，AMD没有明确迹象表明曾公开宣传TSME作为消费级Ryzen功能。AMD长期以来一直表示，相关的内存保护功能——安全内存加密（Secure Memory Encryption, SME）——仅适用于Pro和EPYC CPU层级。SME由操作系统管理，使用单个密钥，允许操作系统选择性地加密单个内存页面。相比之下，TSME由固件管理，加密所有RAM，无需操作系统参与。激活后，它可防御物理攻击，如冷启动攻击、DRAM接口嗅探和内存模块移除，并在BIOS中启用后静默激活，使其成为两种保护中更实用的一个。目前，AMD未发表任何官方声明。它未确认发生了什么、为何发生、是否真的发生了变化，或者消费级芯片用户现在应期待什么。鉴于TSME多年来在这些低成本处理器上默默工作，以及AMD工程师过去曾将其视为受支持的评论，用户完全有理由将其视为芯片包的一部分。
+
+## 7. 对用户的实际影响：物理攻击场景下的风险
+
+对于大多数消费级Ryzen用户来说，这一变化的实际影响有限。TSME防御物理攻击，即有人物理接触机器或其内存硬件并试图直接从RAM中提取秘密的场景。该功能对于携带敏感笔记本电脑、处理机密工作、依赖全盘加密或在扣押、盗窃或硬件篡改是现实担忧的环境中操作的人来说更为重要。任何在AMD硬件上真正需要内存加密的人，现在似乎都需要Ryzen Pro或EPYC系统，除非AMD澄清情况或恢复支持。
+
+## 8. 社区反应与未来展望：AMD面临压力
+
+社区对此反应强烈。有评论指出，如果攻击者能物理接触设备，用户已经陷入麻烦，但TSME在云环境中尤为重要，因为物理攻击者可能希望保持低调，监听主内存内容成为实际威胁。还有评论质疑AMD为何在此时移除功能，并指出这可能违反英国消费者法。尽管AMD保持沉默，但社区希望公司能重新启用该功能。目前，用户只能选择停留在较旧的AGESA版本上，或等待AMD的进一步行动。
+
+---
+
+🔗 **原文链接：[https://www.tomshardware.com/pc-components/cpus/amd-silently-removes-memory-encryption-from-consumer-ryzen-cpus-leaving-users-unaware-that-they-may-be-vulnerable-security-feature-vanishes-after-newer-agesa-firmware-amd-engineers-go-radio-silent-when-pressed-about-the-change](https://www.tomshardware.com/pc-components/cpus/amd-silently-removes-memory-encryption-from-consumer-ryzen-cpus-leaving-users-unaware-that-they-may-be-vulnerable-security-feature-vanishes-after-newer-agesa-firmware-amd-engineers-go-radio-silent-when-pressed-about-the-change)**
