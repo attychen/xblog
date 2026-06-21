@@ -1,0 +1,143 @@
+---
+title: "Linux异步I/O：epoll与io_uring的深度对比与实战指南"
+date: "2026-06-20"
+excerpt: "首先，我想告诉你我是如何走到这一步的，以及为什么我开始研究Linux上处理异步I/O的不同选项。去年，我和我的学生构建了一个名为TinyGate的反向代理服务器。它非常简单，基于工作线程（worker-based），并且基本运行良好。当然，我并没有期望它非常快，但这是一个教育项目，既然我们制作了一个真正的、接近生产级别的工具，我对此感到非常自豪。但我的学生们并不像我一样高兴——他们想要构建一些真正"
+category: "programming"
+tags: ["epoll","io_uring","Linux","异步I/O","C语言"]
+original: "https://sibexi.co/posts/epoll-vs-io_uring/"
+draft: false
+---
+
+## 1. 研究背景：从TinyGate到异步I/O探索
+
+首先，我想告诉你我是如何走到这一步的，以及为什么我开始研究Linux上处理异步I/O的不同选项。去年，我和我的学生构建了一个名为TinyGate的反向代理服务器。它非常简单，基于工作线程（worker-based），并且基本运行良好。当然，我并没有期望它非常快，但这是一个教育项目，既然我们制作了一个真正的、接近生产级别的工具，我对此感到非常自豪。但我的学生们并不像我一样高兴——他们想要构建一些真正有用的东西，并且对我们的产品存在严重的架构限制、无法超越像nginx和haproxy这样的巨头感到非常失望。所以，他们实际上强迫我一起研究这些工具在底层是如何工作的，以及如何处理异步I/O以减少巨大的开销。长话短说，我们制作了第二个版本的TinyGate，基于epoll。在基准测试中，它仍然输给了nginx/haproxy，但与第一个版本相比，性能有了巨大的提升。但epoll也不是完美的（我将在下面解释），我们最终切换到了io_uring，这导致我们从头开始完全重写了我们的项目。所以，这是一个非常有趣的话题，今天我将分享Linux为你提供的两种用于异步I/O的队列系统的概述。
+
+## 2. epoll的遗产：系统调用开销的困境
+
+当我刚开始为Linux开发时，epoll是一个新特性，基本上没有替代品。每个人都用它来管理异步执行——没有其他选择。问题是，epoll严重依赖系统调用（syscalls）：它告诉你何时可以进行I/O，但你之后仍然必须自己调用read()/write()——每个I/O事件需要两个系统调用，再加上一次性的epoll_ctl注册。每个这样的系统调用都会导致用户态和内核态之间的上下文切换（context switch），一旦你处理大量连接，这就会产生巨大的开销。
+
+## 3. io_uring的崛起：完成模型与零拷贝
+
+但我们有一个解决方案！在epoll进入Linux内核（2002年）大约17年后，io_uring出现了（2019年）！它不告诉你何时可以进行I/O，而是告诉你何时I/O完成——没有轮询循环（polling loop），并且相关的系统调用少得多。内核从你的应用程序和内核之间共享的内存中消费提交（submissions），并将完成结果（completions）发布回同一块共享内存——两者都位于环形缓冲区（ring buffers）中，因此得名。问题在于：默认情况下，你仍然需要调用io_uring_enter()来告诉内核检查提交队列——但一次调用可以提交一批操作并获取一批完成结果，而不是像epoll + read那样每个操作对应一对系统调用。如果你希望在稳定状态下接近零系统调用，可以使用IORING_SETUP_SQPOLL，它会启动一个专用的内核线程来为你轮询提交队列——代价是该线程会消耗CPU（下面会详细说明）。
+
+## 4. 架构对比：就绪模型 vs 完成模型
+
+基本架构：正如我之前所说，epoll在I/O可能时通知你，io_uring在I/O完成时通知你。epoll让每个I/O操作都跨越内核边界，而io_uring让你只支付一次小的设置费用（创建ring）加上每批次的费用（io_uring_enter()调用），而不是每个操作都付费。因此，不是每个I/O对应一对系统调用，而是每批I/O对应一次系统调用——或者，使用SQPOLL，几乎为零。正如你所看到的，当有大量I/O发生时，这节省了很多系统调用。在支持io_uring的相对较新的系统（内核v5.1+，2019年发布）上，通常没有太多理由再使用epoll。从就绪模型（readiness model）到完成模型（completion model）的转变是一个巨大的架构变化——它将大部分工作从你的应用程序移到了内核中。
+
+## 5. 代码实战：epoll示例
+
+当然，我不会不展示一些代码来说明这两个系统是如何工作的。我们将使用C语言。（io_uring示例使用liburing，用户空间辅助库——通过liburing-dev / liburing-devel安装，或者如果你想零依赖，可以直接使用原始的io_uring_setup / io_uring_enter系统调用。）
+
+epoll
+让我们制作一个简单的示例来展示epoll如何工作。我们将创建实例，注册一个文件描述符（在我们的例子中是stdin），并处理传入的事件。
+
+#include &lt;stdio.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;sys/epoll.h&gt;
+#include &lt;stdlib.h&gt;
+
+#define MAX_EVENTS 8
+
+int main() &#123;
+    // 创建epoll实例
+    int epoll_fd = epoll_create1(0);
+    if (epoll_fd == -1) &#123;
+        perror("epoll_create1");
+        return 1;
+    &#125;
+
+    // 注册一个文件描述符（在我们的例子中是stdin）
+    struct epoll_event ev, events[MAX_EVENTS];
+    ev.events = EPOLLIN;
+    ev.data.fd = STDIN_FILENO;
+    if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, STDIN_FILENO, &ev) == -1) &#123;
+        perror("epoll_ctl");
+        return 1;
+    &#125;
+
+    // 阻塞直到有东西可读
+    int n = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
+    if (n == -1) &#123;
+        perror("epoll_wait");
+        return 1;
+    &#125;
+
+    // 对于每个fd，发出一个单独的系统调用来执行I/O
+    for (int i = 0; i &lt; n; i++) &#123;
+        if (events[i].data.fd == STDIN_FILENO) &#123;
+            char buf[256];
+            ssize_t count = read(STDIN_FILENO, buf, sizeof(buf));
+            printf("read %zd bytes\n", count);
+        &#125;
+    &#125;
+
+    // 清理
+    close(epoll_fd);
+    return 0;
+&#125;
+
+正如你所看到的，这个示例总共使用了三个系统调用：epoll_ctl（一次性注册），然后epoll_wait和read用于事件——所以每个实际的I/O事件对应两个系统调用，就像我上面提到的。代码本身很容易理解。
+
+## 6. 代码实战：io_uring示例
+
+现在让我们用io_uring代替epoll来做同样的事情。
+
+#define _GNU_SOURCE
+#include &lt;stdio.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;liburing.h&gt;
+#include &lt;stdlib.h&gt;
+
+int main() &#123;
+    struct io_uring ring;
+    char buf[256];
+
+    // 设置ring
+    if (io_uring_queue_init(8, &ring, 0) &lt; 0) &#123;
+        perror("io_uring_queue_init");
+        return 1;
+    &#125;
+
+    // 在stdin上准备一个READ操作
+    struct io_uring_sqe *sqe = io_uring_get_sqe(&ring);
+    io_uring_prep_read(sqe, STDIN_FILENO, buf, sizeof(buf), 0);
+
+    // 提交读取操作
+    io_uring_submit(&ring);
+
+    // 等待完成
+    struct io_uring_cqe *cqe;
+    if (io_uring_wait_cqe(&ring, &cqe) &lt; 0) &#123;
+        perror("io_uring_wait_cqe");
+        return 1;
+    &#125;
+
+    if (cqe-&gt;res &lt; 0) &#123;
+        fprintf(stderr, "read failed: %d\n", cqe-&gt;res);
+    &#125; else &#123;
+        printf("read %d bytes\n", cqe-&gt;res);
+    &#125;
+
+    // 标记已处理然后清理
+    io_uring_cqe_seen(&ring, cqe);
+    io_uring_queue_exit(&ring);
+    return 0;
+&#125;
+
+我们在这里看到了什么？类似的实例创建步骤。不需要epoll_ctl注册步骤。提交前不需要就绪检查。完成时不需要单独的read()调用。是的，io_uring为此占用的资源少得多——尽管如上所述，在io_uring_submit()和io_uring_wait_cqe()内部仍然隐藏着一个io_uring_enter()调用，除非你使用SQPOLL运行。当你测试这些示例时，请记住，为了简单起见，缺少了一些重要部分。例如，如果stdin从未产生任何数据，它会永远阻塞，而io_uring示例跳过了检查NULL sqe（如果提交队列已满，io_uring_get_sqe()可能返回NULL）。
+
+## 7. io_uring的额外特性：零拷贝与SQPOLL
+
+零拷贝（Zero-copy）。对于真正的零拷贝I/O，提前使用io_uring_register_buffers()注册你的缓冲区——这避免了内核在每次操作时重新映射内存。特别是对于网络发送，查看IORING_OP_SEND_ZC（需要内核6.0+），它完全跳过将缓冲区复制到内核中。
+
+SQPOLL消耗CPU。即使你的队列为空，IORING_SETUP_SQPOLL也会保持一个内核线程旋转和轮询，这会消耗CPU。有一个空闲超时（sq_thread_idle），之后它会退回到睡眠状态，但这并不是免费的。
+
+异步错误处理。错误会异步返回（并且必须处理），作为cqe的res字段的一部分——而不是像正常的同步系统调用那样作为直接返回值。
+
+## 8. 总结：io_uring是现代Linux异步I/O的新标准
+
+io_uring是现代Linux世界中异步I/O的新标准，老实说，在拥有它的系统上，我看不到太多仍然使用epoll的理由。对于现代Linux服务器上的从头开始项目，比如我们的TinyGate重写，io_uring绝对是正确的选择。我是一个坚定的支持者，主张在合理的情况下尽快放弃对旧系统的支持——如果你仍然运行一个7年前发布的内核，在我看来，这不是一个好主意。
+
+---
+
+🔗 **原文链接：[https://sibexi.co/posts/epoll-vs-io_uring/](https://sibexi.co/posts/epoll-vs-io_uring/)**

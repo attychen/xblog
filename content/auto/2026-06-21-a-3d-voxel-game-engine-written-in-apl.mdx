@@ -1,0 +1,45 @@
+---
+title: "用APL语言编写的3D体素游戏引擎"
+date: "2026-06-21"
+excerpt: "这是一个体素游戏（Voxel Game）。最初源于我与自己的一个赌注：APL（A Programming Language，一种数组编程语言）符号体系能否为制作体素游戏提供更简便的方法。该项目目前高度实验性且存在较多Bug。"
+category: "programming"
+tags: ["APL","体素游戏","Dyalog APL","SDL3","3D引擎","开源项目"]
+original: "https://github.com/namgyaaal/avoxelgame"
+draft: false
+---
+
+## 1. 项目概述
+
+这是一个体素游戏（Voxel Game）。最初源于我与自己的一个赌注：APL（A Programming Language，一种数组编程语言）符号体系能否为制作体素游戏提供更简便的方法。该项目目前高度实验性且存在较多Bug。
+
+## 2. 操作控制
+
+W-A-S-D键移动，空格键跳跃，鼠标控制视角，Q键退出，I键切换渲染信息显示，F键开启快速无碰撞模式（noclip），L键在游戏中锁定/解锁鼠标，数字键1-5选择不同方块进行放置。
+
+## 3. 运行环境要求
+
+需要Dyalog APL 20.0版本、C编译器、CMake构建工具，以及Vulkan、DirectX12或Metal图形接口。更多信息请查阅此处。此外还需SDL3、SDL3_ttf和SDL3_image库（在MacOS上可通过brew安装）。
+
+## 4. MacOS/Linux安装与运行
+
+安装依赖并克隆仓库后，需先构建并安装LSE（Lightweight Shared Engine，轻量共享引擎）。例如：cd lse；mkdir build；cd build；cmake ..；make；make install。这会在./libs/目录下安装libLSE.dylib（macOS）或libLSE.so（Linux），以及相关的SDL3库文件。之后可通过./main.apls运行。部分Linux用户的dyalogscript可能位于不同目录，此时需将main.apls中的shebang替换为which dyalogscript指定的路径。
+
+## 5. Windows安装与运行
+
+在Windows上编译所有内容较为复杂，最佳方式是从libsdl3发布版中获取SDL3开发库，并使用cmake-gui进行配置。本仓库的发布版中提供了.dll文件，可将其放入仓库目录下的./libs文件夹。之后可通过Dyalog会话运行游戏，操作如下：]cd ROOT DIRECTORY；]link . create # . / avg；Run state . Play。
+
+## 6. 着色器编译
+
+编译为不同着色器格式的源代码位于./shaders/glsl目录。本仓库已包含编译好的着色器。如需修改，请编辑glsl着色器文件并运行./compile_shaders.sh。注意，这需要安装DirectX Shader Compiler、glslc和spirv-cross工具。
+
+## 7. 已知问题
+
+Windows上存在明显的性能退化问题，正在修复中。Windows目前不支持DirectX12后端。同一会话中无法多次游玩。已知会出现系统错误999！可能存在内存泄漏问题！
+
+## 8. 致谢与项目信息
+
+纹理素材由Madeline Vergani（@RubenVerg）提供。关于本项目：使用Dyalog APL和SDL3编写的体素游戏。主题标签：voxel、apl、voxel-game、dyalog-apl、sdl3。资源：Readme。许可证：MIT许可证。活动：35颗星，0个关注者，1个分支。最新发布：AVG win32-x64 .dlls（2026年5月25日）。语言构成：APL 83.3%，C 11.4%，GLSL 2.4%，Shell 1.7%，CMake 1.2%。
+
+---
+
+🔗 **原文链接：[https://github.com/namgyaaal/avoxelgame](https://github.com/namgyaaal/avoxelgame)**
