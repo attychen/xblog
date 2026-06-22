@@ -1,0 +1,45 @@
+---
+title: "Manticore Search 27.1.5：认证、分片、对话式搜索与更快的向量搜索"
+date: "2026-06-22"
+excerpt: "Manticore Search 27.1.5 已发布。此版本带来了内置的认证与授权（authentication and authorization）、分片表（sharded tables）、对话式搜索（conversational search）、更快的 HNSW 构建、更好的分面（faceting）与聚合（aggregations），以及涵盖 KNN、复制（replication）、协议兼容"
+category: "ai-tools"
+tags: ["Manticore Search","向量搜索","认证授权","分片表","对话式搜索","HNSW","分面聚合"]
+original: "https://manticoresearch.com/blog/manticore-search-27-1-5/"
+draft: false
+---
+
+## 1. 概述
+
+Manticore Search 27.1.5 已发布。此版本带来了内置的认证与授权（authentication and authorization）、分片表（sharded tables）、对话式搜索（conversational search）、更快的 HNSW 构建、更好的分面（faceting）与聚合（aggregations），以及涵盖 KNN、复制（replication）、协议兼容性等多个领域的大量修复。本文总结了从 25.0.1 到 27.1.5 版本的所有更新内容。
+
+## 2. 升级注意事项
+
+请在升级前仔细阅读以下内容：27.0.0 版本增加了内置的认证/授权（auth/authz），启用后会改变访问假设。认证默认不启用，但一旦启用，匿名访问将不再有效。请分阶段推出：先升级远程代理（remote agents）和复制对等节点（replication peers），然后升级查询或管理它们的主节点（masters），并在整个拓扑结构都升级到新版本后才启用认证。分布式远程代理和复制相关操作也需要参与守护进程（daemons）之间匹配存储的认证数据。成功的 JOIN CLUSTER 操作会用捐赠集群（donor cluster）的认证数据替换加入节点（joining node）的本地认证数据。（Issue #2833，PR #3648）26.0.0 版本更改了复制存储布局。现在，传入的复制表（replicated tables）位于常规的 data_dir/&lt;table&gt; 布局下，而不是集群路径（cluster path）。如果你使用自定义路径运行复制集群，升级后可能需要移动或重新同步复制表。只有在采用新布局之前，降级才是安全的。（Issue #4431，PR #4598）如果你单独管理 MCL，请与 Manticore 一起升级。此版本系列经历了多次 MCL 更新，从向量性能工作到多线程 HNSW 构建，再到后来的稳定性修复。不建议将旧库与新守护进程混合使用。（25.2.0、25.15.0、26.0.3、26.3.2、27.1.0）
+
+## 3. 主要亮点：内置认证与授权
+
+Manticore 现在支持用户、密码、Bearer 令牌（bearer tokens）以及跨 MySQL、HTTP/HTTPS、分布式远程代理和复制相关操作的细粒度权限。这使得访问控制成为产品的一等公民，而不是总需要在数据库外部处理的事情。
+
+## 4. 主要亮点：分片表
+
+Manticore 现在可以创建和管理分片表（sharded tables），跨分片分发插入操作，并在一个地方处理更多相关的生命周期管理。这使得大规模写入密集型部署更易于操作，并减少了必须驻留在引擎外部的分片特定逻辑量。
+
+## 5. 主要亮点：对话式搜索
+
+此版本为 Manticore Search 增加了对话式搜索（conversational search）。它通过 CREATE CHAT MODEL 和 CALL CHAT 暴露，因此你可以对现有的向量化表（vectorized table）提问，而无需围绕相同数据构建单独的检索层。在底层，Manticore Search 在 FLOAT_VECTOR 字段上运行 KNN，从该字段的 from='...' 源列构建 LLM 上下文，通过 conversation_uuid 保持对话历史，并返回答案和支持来源。如果你已经在 Manticore 中保存了嵌入向量（embeddings），这将使文档问答和支持式助手的搭建变得容易得多。
+
+## 6. 主要亮点：更快的向量构建与 KNN 改进
+
+向量搜索在整个周期中持续改进。Manticore 提升了 KNN 性能，增加了本地 ONNX 嵌入支持，加速了 ONNX 推理，然后通过多线程索引构建使 HNSW 构建和重建工作快得多。该工作的一些重要步骤：25.1.0 改进了 KNN 距离计算和 AVX-512 加载。25.2.0 在 MCL 中增加了本地 ONNX 嵌入支持，并进一步提升了向量搜索性能。25.14.0 和 25.15.0 增加了多线程 HNSW 构建以及所需的库支持。这里最大的实际改进是更快的自动嵌入（auto-embedding）以及大型向量表更短的构建和重建时间。初始 KNN 构建、块合并（chunk merges）和 ALTER TABLE ... REBUILD KNN 都受到影响。
+
+## 7. 主要亮点：更好的分面与聚合
+
+分面（faceting）和聚合（aggregations）也变得更加有用。facet_filter_mode 使得构建电商风格过滤器更容易，这些过滤器可以在活动过滤下保留已选、可用和不可用的桶（buckets）。在分析方面：date_histogram() 获得了 time_zone 和 offset 参数。Manticore 增加了统计聚合，例如百分位数（percentiles）、百分位排名（percentile_ranks）和 MAD（median absolute deviation）。
+
+## 8. 其他值得注意的改进与错误修复
+
+此版本系列还包括一些较小但有用的新增功能：searchd --check 在启动前验证配置，无副作用。EXIT CLUSTER 允许节点在线离开复制集群而无需重启。dict=keywords_32k 使得可以索引非常长的机器生成令牌（如哈希和消息 ID）而不会静默截断。内置的乌克兰语词形还原器（Ukrainian lemmatizer）扩展了对乌克兰语文本搜索的原生形态支持。Systemd Type=notify 改进了启动和关闭监控。在 systemd 管理下的 searchd 进程现在记录日志到 systemd journal。JOIN 查询现在支持显式的左表列前缀。支持 OpenSearch Dashboards。manticore-load 获得了多查询支持。此版本系列还包括 65 个变更日志中列出的修复。最新的后续版本增加了一些值得指出的修复：27.1.5 修复了获取列式 float_vector 属性时的崩溃问题。27.1.4 修复了从 dict='keywords' 单向升级到 dict=keywords_32k 时的 ALTER TABLE ... RECONFIGURE 和 SHOW CREATE TABLE 问题。27.1.3 将 Buddy 更新到 4.0.1，并在认证下收紧了 Queue 插件突变权限处理。按 doc_id 的 KNN 查询现在能正确保留 offset 和 max_matches。KNN 重排序顺序已修复，因此显式的 ORDER BY 决胜条件（tie-breakers）再次生效。带有 GROUP BY 的列式表混合融合查询（Hybrid fused queries）不再崩溃。复制和节点重新加入的崩溃路径已进一步清理。二进制 MySQL 协议行为在 25.12.1 中已修复，这对于期望真正客户端兼容性的集成很重要。Fluent Bit 批量摄取互操作性已修复，防止成功响应被重放为重复插入。27.1.2 修复了从多个源块构建的普通索引（plain indexes）的 sql_attr_multi 处理。有关完整列表，请参阅变更日志。
+
+---
+
+🔗 **原文链接：[https://manticoresearch.com/blog/manticore-search-27-1-5/](https://manticoresearch.com/blog/manticore-search-27-1-5/)**

@@ -1,0 +1,54 @@
+---
+title: "Deno Desktop：将Web项目打包为跨平台桌面应用"
+date: "2026-06-22"
+excerpt: "Web技术是全球最广为人知的UI工具包。基于Web栈构建的桌面应用（如Electron、Tauri、Electrobun）利用了这一点，但每种方案都有你必须接受的权衡：庞大的二进制文件、缺失的平台支持、没有JavaScript生态系统、没有内置更新机制、没有框架集成。Deno Desktop对这些权衡有明确的立场：默认小巧，完全兼容Node。默认的WebView后端使用操作系统自带的webview"
+category: "programming"
+tags: ["Deno","桌面应用","WebView","跨平台","CEF","自动更新"]
+original: "https://docs.deno.com/runtime/desktop/"
+draft: false
+---
+
+## 1. 为什么选择Deno Desktop
+
+Web技术是全球最广为人知的UI工具包。基于Web栈构建的桌面应用（如Electron、Tauri、Electrobun）利用了这一点，但每种方案都有你必须接受的权衡：庞大的二进制文件、缺失的平台支持、没有JavaScript生态系统、没有内置更新机制、没有框架集成。Deno Desktop对这些权衡有明确的立场：默认小巧，完全兼容Node。默认的WebView后端使用操作系统自带的webview，以实现小巧的二进制文件，同时你仍然可以通过Deno的Node兼容层访问整个npm生态系统。当你需要在macOS、Windows和Linux上实现一致的渲染时，可以选择捆绑的Chromium（CEF）后端。框架自动检测。将Deno Desktop指向Next.js、Astro、Fresh、Remix、Nuxt、SvelteKit、SolidStart、TanStack Start或Vite SSR项目，它会自动运行：在发布模式下运行生产服务器，在--hmr下运行带热重载的开发服务器。将现有Web项目迁移到桌面无需修改任何代码。进程内绑定而非IPC。后端和UI通信通过进程内通道进行，而非基于套接字的IPC。值在跨越调用边界时仍会编码，但你的Deno代码与webview之间没有跨进程往返。从单台机器交叉编译。同一台机器可以为macOS、Windows和Linux构建。后端按需下载，而非本地构建。内置二进制差异自动更新。只需提供一个latest.json清单和bsdiff补丁；运行时自动轮询、应用更新，并在启动失败时自动回滚。
+
+## 2. 你好，桌面
+
+创建一个单文件桌面应用：
+
+main.ts
+
+```typescript
+Deno.serve(() =&gt; new Response("&lt;h1&gt;Hello, desktop&lt;/h1&gt;", &#123;
+  headers: &#123; "content-type": "text/html" &#125;,
+&#125;));
+```
+
+运行命令：
+
+```bash
+deno desktop main.ts
+```
+
+编译后的二进制文件会打开一个窗口，指向绑定到你的Deno.serve()处理器的本地HTTP服务器。直接运行它：
+
+```bash
+./main  # macOS / Linux
+.\main.exe  # Windows
+```
+
+Deno.serve()会自动绑定到webview导航到的地址，因此你无需传递端口或主机名。详情请参见HTTP服务部分。
+
+## 3. 本节内容
+
+配置：deno.json中的desktop块。后端：CEF、webview、raw；如何选择。HTTP服务：Deno.serve()集成和服务模型。框架：Next.js、Astro、Fresh、Remix、Nuxt、SvelteKit等。窗口：Deno.BrowserWindow生命周期、多窗口、事件。绑定：通过绑定从webview调用Deno代码。菜单：应用菜单和上下文菜单。托盘和Dock：系统状态图标和macOS Dock。对话框：prompt()、alert()、confirm()作为原生弹窗。通知：通过Web Notification API实现原生操作系统通知。热模块替换：框架和非框架应用的--hmr。开发者工具：同时附加到Deno运行时和webview的统一开发者工具。自动更新：Deno.autoUpdate()、清单、bsdiff、回滚。错误报告：捕获未捕获的异常和恐慌。分发：交叉编译、输出格式、安装程序。对比：Deno Desktop与Electron、Tauri、Electrobun、Dioxus的关系。Deno Desktop CLI参考：命令、标志和deno.json desktop模式。
+
+最后更新于2026年6月17日。
+
+您找到所需内容了吗？是/否。编辑此页面。我们如何改进此页面？0/2000。GitHub用户名（可选）。如果提供，您将在创建的GitHub问题中被@提及。向我们发送反馈。隐私政策。
+
+此页面：为什么选择Deno Desktop、你好，桌面、本节内容。
+
+---
+
+🔗 **原文链接：[https://docs.deno.com/runtime/desktop/](https://docs.deno.com/runtime/desktop/)**

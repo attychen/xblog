@@ -1,0 +1,29 @@
+---
+title: "为何绘图板品牌不愿合作开发Linux自由开源驱动"
+date: "2026-06-22"
+excerpt: "你可能已经知道，我经常为了YouTube频道的评测与绘图板品牌联系。我通常同意对他们的型号进行详细的视频测试（参见我的硬件标签），但有两个条件：在GNU/Linux上测试绘图板，并且只使用自由/开源软件（Free/Libre and Open Source Software）进行测试，包括驱动。我特别针对那些我觉得有趣的型号这样做，但我也这样做是为了将收到的硬件规格报告给Red Hat的Peter"
+category: "hardware"
+tags: ["绘图板","Linux","开源驱动","Wacom","硬件兼容性"]
+original: "https://www.davidrevoy.com/article1154/why-drawing-tablet-brands-wont-collaborate-on-linux-floss-drivers"
+draft: false
+---
+
+## 1. 背景：我的评测策略与转变
+
+你可能已经知道，我经常为了YouTube频道的评测与绘图板品牌联系。我通常同意对他们的型号进行详细的视频测试（参见我的硬件标签），但有两个条件：在GNU/Linux上测试绘图板，并且只使用自由/开源软件（Free/Libre and Open Source Software）进行测试，包括驱动。我特别针对那些我觉得有趣的型号这样做，但我也这样做是为了将收到的硬件规格报告给Red Hat的Peter Hutterer和Benjamin Tissoire。这样，他们就可以利用他们的udev-hid-bpf项目，将我能够从绘图板中导出的规格转化为GNU/Linux的高质量自由/开源驱动。但我上一次视频评测是一年前了。事实上，在发现完成整个过程（导出规格、测试驱动、测试并形成对绘图板的看法、制作视频评测、撰写技术博客文章）令人疲惫之后，我决定制定一个新策略。新策略：与品牌直接合作。终极捷径！让绘图板品牌直接为GNU/Linux进行合作，并与hid/input团队分享他们的规格。就像Wacom几十年来一直在做的那样。为此，我发送了许多电子邮件，因为像XpPen、Gaomon、Huion这样的品牌，我接触的不是技术部门，而是市场部门。通常，在几封邮件之后，我会得到一种“我们会在内部讨论，如果有兴趣会再联系你”的回复，然后就没了下文。所以，我通常会继续推动和坚持。
+
+## 2. 找到关键联系人：希望与真相
+
+但最近，在与Gaomon的一次讨论中，情况变得更有希望：他们实际上让我联系到了技术人员。一位在深圳绘王趋势科技股份有限公司（Shenzhen Huion Trend Technology Co.,Ltd.）工作的人。Huion？呵呵，并不意外：我早就注意到，在我的评测中，Gaomon、XpPen、Huion和Ugee的专有驱动在Debian软件包中结构相似，并且使用相同的工具。现在我知道是哪个品牌在负责了。所以，我真的觉得通过这个技术联系人，我终于找到了正确的人，而且不仅如此，还是一个可能负责管理四个品牌驱动的人！我迅速向他们发送了所有规格、链接和方法，并邀请他们联系Peter Hutterer和Benjamin Tissoire。在那之后，我真心感到兴奋和自豪：事情正朝着正确的方向发展，所有这些志愿性的邮件工作即将取得成果。答案：礼貌的拒绝。不幸的是，今天早上我收到了一个与我的期望相悖的结论。是Gaomon的市场部门联系了我。以下是相关摘录：“我需要道歉，因为今天我又与我们的技术团队谈过了，我们决定目前不推进Linux驱动项目。我们仔细审查了你分享给我们的项目（https://github.com/linuxwacom/wacom-hid-descriptors）。虽然我们赞赏这一倡议，但我们发现这主要是一个Wacom主导的项目，对GAOMON的潜在影响相当有限。即使我们添加了对我们设备的支持，系统仍然会显示设备为GAOMON型号，但整体设置会显示Wacom品牌。更重要的是，参与需要我们将设备规格直接分享给Wacom——这是我们无法考虑的事情。”
+
+## 3. 真正的问题：开源基础设施中的Wacom品牌烙印
+
+好吧。现在你可能想知道为什么这里会提到Wacom。嗯，因为这是事实：许多仓库都以Wacom命名。这是GNU/Linux上的历史遗留问题。关于这些仓库应该重新命名的争论也已经持续了十年。例如，像Libwacom这样的仓库包含了Dell、Gaomon、HP、Huion、XpPen等更多品牌（来源：https://github.com/linuxwacom/libwacom/tree/master/data），wacom-hid-descriptors也是如此（来源：https://github.com/linuxwacom/wacom-hid-descriptors），在GNU/Linux绘图板驱动基础设施的许多其他深处也是如此。所以，经过仔细研究后，我的技术联系人（代表多个品牌）决定不公开他们的规格，这并不令人惊讶。尤其是当开源基础设施以行业最大竞争对手的品牌命名时。我理解他们的举动。这对Linux绘图板支持意味着什么。所以我很难过，由于一些糟糕的设计决策，这真是一次浪费的机会和时间。我写这篇文章，是希望也许某处的某些高管会对此情况感到担忧，并资助全职开发者来负责这些仓库。因为你无法在基础设施以行业最大竞争对手品牌命名的情况下，建立一个稳固的协作环境。
+
+## 4. 前进之路：一次一块绘图板
+
+至于我，我将回到我之前的方法：一次一块地评测绘图板并记录它们的规格。不幸的是，我没有足够的能力像这样编写C驱动，而且我在这个任务上并非完全独立。我的过程每次都需要Peter和Benjamin有空。如果Huion H610x、XpPen Deco 01V3、Kamvas Pro 19、XpPen Artist Pro 16和19（以及更多）能够兼容，那要归功于他们的努力。我知道，如果有一天我无法及时获得自由/开源驱动来制作视频评测，这个过程就会停止，届时我将不得不使用该品牌的专有驱动来完成工作。当那一天到来时，我可能会停止做硬件评测……但就目前而言，三块绘图板已经在运输途中：两款XpPen型号（他们的高端27英寸型号和即将推出的12英寸型号）和一款11英寸的Gaomon。我可能还会在不久的将来撰写一篇详细的教程，关于如何向udev-hid-bpf项目报告绘图板规格，就像这里记录的那样：https://gitlab.freedesktop.org/libevdev/udev-hid-bpf/-/work_items/54。这就是我所能做的，来推动局势向前发展。一次一块绘图板。
+
+---
+
+🔗 **原文链接：[https://www.davidrevoy.com/article1154/why-drawing-tablet-brands-wont-collaborate-on-linux-floss-drivers](https://www.davidrevoy.com/article1154/why-drawing-tablet-brands-wont-collaborate-on-linux-floss-drivers)**

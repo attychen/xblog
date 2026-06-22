@@ -1,0 +1,29 @@
+---
+title: "window.showDirectoryPicker 开启本地优先应用新纪元"
+date: "2026-06-22"
+excerpt: "Chrome引入了一项新API——window.showDirectoryPicker()，它允许用户授权网站访问其计算机上的某个目录，并读取/写入该目录中的所有内容。目前讨论较多的应用场景包括本地优先的笔记应用：你可以授权它访问一个存放Markdown笔记的文件夹，从而完全掌控自己的数据，而非将数据隐藏在某个云服务中。"
+category: "programming"
+tags: ["Chrome API","本地优先","文件系统","Web开发","AI原型"]
+original: "https://steveharrison.dev/showdirectorypicker-opens-up-a-whole-new-world/"
+draft: false
+---
+
+## 1. 新API简介
+
+Chrome引入了一项新API——window.showDirectoryPicker()，它允许用户授权网站访问其计算机上的某个目录，并读取/写入该目录中的所有内容。目前讨论较多的应用场景包括本地优先的笔记应用：你可以授权它访问一个存放Markdown笔记的文件夹，从而完全掌控自己的数据，而非将数据隐藏在某个云服务中。
+
+## 2. 怀旧UI重现
+
+前几天，我对苹果Aperture的用户界面产生了怀旧之情，想知道Claude能否创建出类似主题的UI。我要求它同时使用window.showDirectoryPicker。结果如下：这让我想起了用Lightroom查看本地文件，但它是一个网页！你还可以在应用内创建文件夹并将照片移入其中，所有操作都在你的文件系统上完成。
+
+## 3. 更广阔的应用前景
+
+但这还远不止于此。想象一下，整个照片和视频编辑应用都可以利用这一功能：在浏览器中呈现强大的用户界面，同时直接处理文件系统上的源文件。人们已经在浏览器中构建基于WebGPU的视频编辑器——我真心希望他们也能充分利用像这样的新本地优先存储机会。
+
+## 4. 原型进阶：节点合成应用
+
+为了进一步推进这个原型，我要求Claude创建一个受苹果Shake启发的简单合成应用。果然，这里有一个基于节点的合成应用，你可以绘制一个多边形，并将其合成到源图像之上。所有这一切都不需要手写一行代码。我们生活在一个令人惊叹的时代！
+
+---
+
+🔗 **原文链接：[https://steveharrison.dev/showdirectorypicker-opens-up-a-whole-new-world/](https://steveharrison.dev/showdirectorypicker-opens-up-a-whole-new-world/)**

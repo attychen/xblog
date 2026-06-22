@@ -1,0 +1,41 @@
+---
+title: "Codex日志Bug可能导致本地SSD每年写入数百TB数据"
+date: "2026-06-22"
+excerpt: "Codex SQLite反馈日志每年可能写入约640TB数据，迅速消耗SSD寿命。问题描述：Codex持续向本地SQLite反馈日志数据库写入大量数据：~/.codex/logs_2.sqlite、~/.codex/logs_2.sqlite-wal、~/.codex/logs_2.sqlite-shm。在我的机器上，运行约21天后，主SSD已写入约37TB数据。进程/文件级别检查显示，Codex"
+category: "programming"
+tags: ["Codex","SQLite","日志","SSD寿命","性能问题","Bug报告","OpenAI"]
+original: "https://github.com/openai/codex/issues/28224"
+draft: false
+---
+
+## 1. 问题概述
+
+Codex SQLite反馈日志每年可能写入约640TB数据，迅速消耗SSD寿命。问题描述：Codex持续向本地SQLite反馈日志数据库写入大量数据：~/.codex/logs_2.sqlite、~/.codex/logs_2.sqlite-wal、~/.codex/logs_2.sqlite-shm。在我的机器上，运行约21天后，主SSD已写入约37TB数据。进程/文件级别检查显示，Codex SQLite日志是主要的持续写入源。这推算下来每年大约640TB。对于1TB SSD来说，这相当于每年约640次全盘写入。一些消费级SSD的额定写入量约为600TBW，因此这可能在不到一年的时间内消耗掉约一个完整硬盘的保修写入寿命。
+
+## 2. 证据与数据
+
+当前logs_2.sqlite中保留的行数：指标值保留行数681,774，估计保留日志内容1,035.6 MiB。级别分布：级别估计MiB字节百分比TRACE 732.5 70.7%，INFO 266.5 25.7%，DEBUG 30.6 3.0%，WARN 5.9 0.6%。最大的目标+级别对：目标级别估计MiB codex_api::endpoint::responses_websocket TRACE 527.4，codex_otel.log_only INFO 141.2，codex_otel.trace_safe INFO 121.2，log TRACE 97.4，codex_client::transport TRACE 60.1，codex_core::stream_events_utils DEBUG 27.5，codex_api::sse::responses TRACE 19.1。主要来源大多是全局TRACE日志、镜像遥测日志以及原始websocket/SSE有效负载日志。仅TRACE就占保留字节的约70.7%。codex_otel.log_only + codex_otel.trace_safe又增加了25.3%。过滤这些类别应该能移除该样本中约96%的保留日志字节，而无需完全禁用反馈日志。
+
+## 3. 高频日志示例
+
+来自最频繁TRACE源的脱敏示例：target=log。这些是高频率保留样本。有意不包含原始websocket/SSE有效负载主体，因为它们可能包含私人对话内容。128,764x TRACE日志：inotify事件：... mask: OPEN, name: Some("ld.so.cache")；37,982x TRACE日志：inotify事件：... mask: OPEN, name: Some("locale.alias")；23,843x TRACE日志：inotify事件：... mask: OPEN, name: Some("passwd")；3,639x TRACE日志：tokio-tungstenite checkout /src/compat.rs:131 AllowStd.with_context；3,505x TRACE日志：tokio-tungstenite checkout /src/lib.rs:245 WebSocketStream.with_context；3,362x TRACE日志：tokio-tungstenite checkout /src/compat.rs:154 Read.read；3,356x TRACE日志：tokio-tungstenite checkout /src/compat.rs:157 Read.with_context read - poll_read；3,230x TRACE日志：tokio-tungstenite checkout /src/lib.rs:294 Stream.poll_next；3,227x TRACE日志：tokio-tungstenite checkout /src/lib.rs:304 Stream.with_context poll_next - read()；3,213x TRACE日志：inotify事件：... mask: OPEN, name: Some("nsswitch.conf")；2,001x TRACE日志：WouldBlock；1,217x TRACE日志：Masked: false；1,169x TRACE日志：Opcode: Data(Text)；1,169x TRACE日志：First: 11000001。来自频繁INFO源的脱敏示例：主要的INFO源大多是重复的OpenTelemetry镜像事件。ID已编辑。843x INFO codex_client::custom_ca: using system root certificates because no CA override environment variable was selected ...；334x INFO codex_otel.trace_safe: session_loop&#123;thread_id= 已编辑 &#125;:submission_dispatch&#123;otel.name="op.dispatch.user_input" submission.id= 已编辑 codex.op="user_input"&#125;:turn&#123;otel.name="session_task.turn" thread.id= 已编辑 ...&#125;；333x INFO codex_otel.log_only: session_loop&#123;thread_id= 已编辑 &#125;:submission_dispatch&#123;otel.name="op.dispatch.user_input" submission.id= 已编辑 codex.op="user_input"&#125;:turn&#123;otel.name="session_task.turn" thread.id= 已编辑 ...&#125;；332x INFO codex_otel.log_only: session_loop&#123;thread_id= 已编辑 &#125;:submission_dispatch&#123;otel.name="op.dispatch.user_input_with_turn_context" submission.id= 已编辑 codex.op="user_input_with_turn_context"&#125;:turn&#123;otel.name="session_task.turn" thread.id= 已编辑 ...&#125;；332x INFO codex_otel.trace_safe: session_loop&#123;thread_id= 已编辑 &#125;:submission_dispatch&#123;otel.name="op.dispatch.user_input_with_turn_context" submission.id= 已编辑 codex.op="user_input_with_turn_context"&#125;:turn&#123;otel.name="session_task.turn" thread.id= 已编辑 ...&#125;。
+
+## 4. 写入放大问题
+
+保留的数据库大小掩盖了真实的写入量。在一个15秒的样本中：指标之前之后保留行数681,774 681,774，最大行ID 5,003,347,015 5,003,383,226。15秒内插入了约36,211行，而保留行数保持不变。这表明存在持续的插入和修剪写入放大：行被插入、索引、写入WAL（预写日志），然后被修剪。
+
+## 5. 可能原因
+
+SQLite反馈日志接收器（sink）安装时使用了全局TRACE默认设置：Targets::new().with_default(Level::TRACE)。这默认将所有目标（target）持久化为TRACE级别，包括依赖/内部日志和大型原始协议有效负载。
+
+## 6. 建议修复方案
+
+保持反馈日志启用，但缩小默认持久化的范围：不要对SQLite反馈日志接收器使用全局TRACE。降低或提高低价值依赖噪声的阈值，特别是target=log、hyper_util、tokio-tungstenite内部、inotify垃圾信息以及低级OpenTelemetry SDK日志。默认避免持久化完整的原始websocket/SSE有效负载。改为存储摘要：事件类型、持续时间、成功/错误、令牌使用情况和有效负载字节长度。除非它们对反馈调试明确有用，否则避免持久化镜像的codex_otel.log_only/codex_otel.trace_safe事件。添加全局日志数据库大小/写入上限。当存在许多线程/进程时，每线程上限是不够的。一个可选的逃生口（escape hatch），例如sqlite_logs_enabled = false，仍然有用，但主要修复应该是更好的默认过滤。
+
+## 7. 相关问题与讨论
+
+流式传输期间由于TRACE日志忽略RUST_LOG导致SQLite WAL写入过多 #17320；Codex Desktop在正常活跃使用期间迅速增长logs_2.sqlite/WAL #24275；app-server: 反馈日志sqlite (logs_N.sqlite)无限制增长——约0.75 GB/天，无保留/轮换 #26374；logs_2.sqlite-wal无限增长，删除后仍保持分配，因为过时/挂起的Codex TUI进程保持已删除的WAL打开 #22444；空闲codex进程的重I/O活动 #20563；Windows WSL2上使用Codex扩展/CLI时的严重磁盘I/O/100%磁盘活动时间 #27020；goals_1.sqlite写入放大：在4 KB数据库上持续写入约11 MB/s（生命周期11 GB） #27911；Codex Desktop在长活动线程上因app-server/renderer内存和TRACE日志搅动而变得无法使用 #21134；app-server: 在跟踪级别从sqlite获取/反馈日志 #12969。
+
+---
+
+🔗 **原文链接：[https://github.com/openai/codex/issues/28224](https://github.com/openai/codex/issues/28224)**
