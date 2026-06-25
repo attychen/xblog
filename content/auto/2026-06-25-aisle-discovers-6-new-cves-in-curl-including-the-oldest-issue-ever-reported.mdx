@@ -1,0 +1,47 @@
+---
+title: "AISLE在Curl中发现6个新CVE，包括有史以来最古老的安全问题"
+date: "2026-06-25"
+excerpt: "Curl运行在超过300亿台设备上。作为全球最重要的软件之一，它促进了操作系统、容器、设备、CI流水线、包管理器、SDK、汽车等之间的数据传输，甚至出现在火星上的NASA Ingenuity直升机中。数十亿用户从未直接运行curl命令，但仍通过其他产品依赖libcurl（curl背后的引擎）。2026年5月11日，curl创始人兼首席开发者Daniel Stenberg宣布，Anthropic的M"
+category: "programming"
+tags: ["Curl","CVE","安全漏洞","AISLE","libcurl"]
+original: "https://aisle.com/blog/aisle-discovers-6-new-cves-in-curl-including-the-oldest-issue-ever-reported"
+draft: false
+---
+
+## 1. 引言：Curl的广泛影响与最新发现
+
+Curl运行在超过300亿台设备上。作为全球最重要的软件之一，它促进了操作系统、容器、设备、CI流水线、包管理器、SDK、汽车等之间的数据传输，甚至出现在火星上的NASA Ingenuity直升机中。数十亿用户从未直接运行curl命令，但仍通过其他产品依赖libcurl（curl背后的引擎）。2026年5月11日，curl创始人兼首席开发者Daniel Stenberg宣布，Anthropic的Mythos模型在curl中发现了一个CVE。他的博客文章引发了一波研究浪潮，导致大量安全报告涌入curl项目，并最终使curl版本发布的CVE数量达到历史最高——18个。AISLE在所有安全组织中领先，贡献了这18个CVE中的6个，以及在curl和libcurl中的其他有效发现。紧随其后的AI驱动组织获得了3个CVE，而使用Anthropic和OpenAI模型的研究人员各发现1个。这些发现进一步验证了AISLE的模型无关系统（model-agnostic system）能够以极低的成本，在任何部署环境中超越前沿模型。所有AISLE的发现都已负责任地披露给curl项目，并在2026年6月24日发布的curl 8.21.0版本中修复。我们敦促所有人更新到最新版本。
+
+## 2. 发现Curl有史以来最古老的安全问题
+
+Curl对安全研究人员特别有吸引力：简单的漏洞早已消失，剩下的难以发现：旧的协议路径、状态重用、回调行为、凭据选择以及容易被遗忘的代码路径。这就是为什么我们在2025年秋季使用AISLE的自主漏洞检测能力来发现漏洞，找到了29个有效发现和5个CVE。AISLE最近识别的6个CVE涵盖了从经典内存生命周期问题到libcurl决定连接、凭据或主机身份是否仍然有效的逻辑错误。其中包括CVE-2026-8932，这是迄今为止报告的最古老的curl漏洞，已有超过25年的历史。它自curl 7.7版本起发布，首次发布于2001年3月22日。
+
+## 3. AISLE发现的总结
+
+值得注意的是，有几个问题只影响libcurl应用程序，而不影响curl命令行工具。这意味着它们影响嵌入在产品深处的代码，用户不知道其存在，并且这些代码可能通过应用程序行为成为攻击目标。
+
+发现区域 | 发生了什么
+CVE-2026-8926 | .netrc凭据处理：当URL提供了用户名但没有密码时，curl可能为同一主机选择属于不同用户的密码（凭据混淆）。
+CVE-2026-8925 | SASL认证：在启用SASL的协议流中，curl可能两次清理和释放同一个GSASL上下文（双重释放）。
+CVE-2026-8932 | mTLS连接重用：即使客户端证书或私钥设置已更改，libcurl可能重用现有连接（认证绕过）。
+CVE-2026-9080 | 多socket回调生命周期：在socket回调内调用curl_easy_pause()可能导致libcurl通过已释放的内部指针写入（释放后使用）。
+CVE-2026-9547 | SSH主机验证：使用libssh后端时，使用主机密钥回调的SCP/SFTP传输可能接受本应被拒绝的服务器密钥类型（不当主机验证）。
+CVE-2026-10536 | HTTP/2流依赖：重置然后清理使用HTTP/2依赖选项的句柄可能导致libcurl接触已释放的状态（释放后使用）。
+
+AISLE还报告了其他几个curl错误，包括三个内存安全问题：
+- 在`curl_easy_duphandle()`中，使用HTTP/2流依赖树时的释放后使用
+- 通过`CURLU_GUESS_SCHEME` + `CURLU_NO_GUESS_SCHEME`流程在urlapi `redirect_url()`中的堆越界读取
+- CURLOPT_HSTS_CTRL在没有共享保护的情况下禁用共享HSTS——释放后使用和双重释放
+并非每个错误都成为CVE，但这些报告属于同一类别。它们都是成熟基础设施代码中的微妙边缘情况，特别是围绕内存安全、状态转换和深奥的API路径。
+
+## 4. 加强模型无关安全系统的论证
+
+AISLE在此版本中获得了18个总发现中的6个，这进一步支持了我们的前提：精心设计的模型无关系统（model-agnostic systems）在网络安全任务上可与高功率前沿模型相媲美。此外，AISLE不仅仅是发现漏洞。其中三个CVE还使用我们平台生成的修复程序进行了修补。这表明网络安全能力是不均衡的：对于定义明确的安全任务，较小的模型可以胜过更大、更昂贵的LLM。值得注意的是，它们可以在本地、完全内部部署的情况下做到这一点，而无需进行API调用。挑战在于匹配模型能力和安全需求。换句话说，AI原生的网络安全主要不是一个计算问题，而是一个工程问题。
+
+## 5. 使用AISLE为安全工程化AI
+
+AISLE的端到端漏洞管理平台在您的部署约束内提供自主安全，从气隙网络到云环境。如果您想了解AI会在您的代码库中发现什么，请与我们联系。我们衷心感谢curl项目在整个披露过程中的专业精神。我们所有的CVE均由AISLE研究团队的Joshua Rogers报告和披露。
+
+---
+
+🔗 **原文链接：[https://aisle.com/blog/aisle-discovers-6-new-cves-in-curl-including-the-oldest-issue-ever-reported](https://aisle.com/blog/aisle-discovers-6-new-cves-in-curl-including-the-oldest-issue-ever-reported)**
