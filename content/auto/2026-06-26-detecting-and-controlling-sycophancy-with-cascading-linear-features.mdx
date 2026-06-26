@@ -1,0 +1,29 @@
+---
+title: "利用级联线性特征检测与控制谄媚行为"
+date: "2026-06-26"
+excerpt: "通过激活引导方法（activation steering methods）解释和控制模型行为，需要大量清晰展示期望或非期望行为的对比样本对（contrastive samples）。这些数据对决定了可解释性框架（interpretability frameworks）能够可靠检测到负责某一行为的模型特征的程度，进而影响引导模型趋向或远离该行为的能力。在本工作中，我们提出了一种迭代数据生成流程（it"
+category: "ai-tools"
+tags: ["人工智能","模型可解释性","激活引导","谄媚行为","级联线性特征"]
+original: "https://arxiv.org/abs/2606.26155"
+draft: false
+---
+
+## 1. 研究背景与问题
+
+通过激活引导方法（activation steering methods）解释和控制模型行为，需要大量清晰展示期望或非期望行为的对比样本对（contrastive samples）。这些数据对决定了可解释性框架（interpretability frameworks）能够可靠检测到负责某一行为的模型特征的程度，进而影响引导模型趋向或远离该行为的能力。在本工作中，我们提出了一种迭代数据生成流程（iterative data generation pipeline），用于隔离负责某一行为的级联线性特征（cascading linear features）。
+
+## 2. 核心方法：级联样本
+
+具体而言，我们展示了如何超越简单的二元样本对（binary pairs of samples），转而隔离那些特征程度随行为线性变化的样本，从而更好地解缠特征（disentanglement of features）。我们聚焦于检测并引导模型远离谄媚行为（sycophancy）——即语言模型优先考虑用户验证的倾向。我们证明，通过级联样本（cascading samples）发现的谄媚特征形成了线性可分子空间（linearly separable subspaces），并且能够选择出比基线方法更清晰对应期望行为的模型激活（model activations）。
+
+## 3. 评估与性能
+
+我们还评估了这些特征在实现检测、确定性评分（deterministic scoring）和稳健引导（robust steering）方面的能力，发现它们要么匹配、要么超越了以LLM为评判（LLM-as-a-judge）和系统提示（system prompting）的基线方法，同时提供了更低的计算需求和更强的可解释性保证（interpretability guarantees）。
+
+## 4. 数据与代码可用性
+
+代码与数据：此 https URL。主题：人工智能（cs.AI）。引用格式：arXiv:2606.26155 [cs.AI]（或 arXiv:2606.26155v1 [cs.AI] 用于此版本）。https://doi.org/10.48550/arXiv.2606.26155。通过DataCite获取arXiv发布的DOI。提交历史：来自Maty Bohacek [查看电子邮件] [v1] 2026年6月23日星期二 20:10:53 UTC（3,346 KB）。全文链接：访问论文：查看PDF，标题为《利用级联线性特征检测与控制谄媚行为》，作者Maty Bohacek等5人。查看PDF、TeX源代码、查看许可。当前浏览上下文：cs.AI 上一页 | 下一页 | 新 | 近期 | 2026年6月。更改为浏览：cs。参考文献、引用、NASA ADS、Google Scholar、Semantic Scholar。导出BibTeX引用。加载中... BibTeX格式引用加载中... 数据提供：书签、书目工具、书目与引用工具、书目浏览器切换、关联论文切换、Litmaps切换、scite智能引用切换、代码数据媒体、与本文关联的代码数据媒体、alphaXiv切换、代码链接切换、CatalyzeX代码查找器、DagsHub切换、GotitPub切换、Huggingface切换、ScienceCast切换、演示、Replicate切换、Hugging Face Spaces切换、TXYZ.AI切换、相关论文推荐与搜索工具、影响花朵链接、核心推荐器切换、作者、机构、主题、关于arXivLabs。arXivLabs：与社区合作者的实验项目。arXivLabs是一个框架，允许合作者直接在我们的网站上开发和共享新的arXiv功能。与arXivLabs合作的个人和组织都接受并认同我们关于开放性、社区、卓越和用户数据隐私的价值观。arXiv致力于这些价值观，并仅与遵守这些价值观的合作伙伴合作。有能为arXiv社区增值的项目想法吗？了解更多关于arXivLabs的信息。这篇论文的作者中哪些是背书人？| 禁用MathJax（什么是MathJax？）
+
+---
+
+🔗 **原文链接：[https://arxiv.org/abs/2606.26155](https://arxiv.org/abs/2606.26155)**
