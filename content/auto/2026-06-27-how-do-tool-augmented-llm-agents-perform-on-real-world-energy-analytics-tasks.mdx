@@ -1,0 +1,33 @@
+---
+title: "工具增强型LLM代理在真实世界能源分析任务中的表现评估"
+date: "2026-06-27"
+excerpt: "在通用和特定领域（包括金融、编程、法律和药物发现）中，已经出现了多种代理基准测试（agentic benchmarks），然而能源领域的评估仍然主要局限于静态知识回忆（static knowledge recall）。对于一个需要实时数据检索、专业监管和市场知识以及多步骤定量推理（multi-step quantitative reasoning）的行业来说，这是一个关键缺口。"
+category: "ai-tools"
+tags: ["LLM代理","能源分析","工具增强","基准测试","人工智能"]
+original: "https://arxiv.org/abs/2606.26346"
+draft: false
+---
+
+## 1. 研究背景与动机
+
+在通用和特定领域（包括金融、编程、法律和药物发现）中，已经出现了多种代理基准测试（agentic benchmarks），然而能源领域的评估仍然主要局限于静态知识回忆（static knowledge recall）。对于一个需要实时数据检索、专业监管和市场知识以及多步骤定量推理（multi-step quantitative reasoning）的行业来说，这是一个关键缺口。
+
+## 2. 研究目标与方法
+
+我们提出了一项关于工具增强型LLM代理（tool-augmented LLM agents）在真实世界能源市场分析任务中的实证研究。我们的评估环境包含243个由专家策划的问题，分为三类：（1）市场数据检索与分析（Market Data Retrieval and Analysis），（2）知识检索与解释（Knowledge Retrieval and Interpretation），以及（3）高级定量建模与决策分析（Advanced Quantitative Modeling and Decision Analytics）。任务包括价格和需求分析、关税影响建模、资产收入和回报估算、对冲策略分析以及优化建模，问题涵盖多个难度级别。
+
+## 3. 工具配置与评估协议
+
+代理配备了一套可配置的领域工具，包括美国主要独立系统运营商（ISOs）的实时电力市场API、监管案卷搜索、公用事业关税数据库、资产优化模型以及基于检索增强生成（retrieval-augmented generation）的能源市场文档处理。我们使用多维评估协议（multi-dimensional evaluation protocol）来评估代理响应，该协议对方法正确性、答案准确性、属性对齐和来源有效性进行评分，并通过类别感知路由（category-aware routing）将评分标准与问题类型匹配。
+
+## 4. 模型比较与关键发现
+
+我们评估了闭源和开源LLM，提供了关于模型能力与领域工具如何在高风险专业领域中相互作用的比较分析。关键成果已公开发布，以支持可重复性和未来研究。
+
+## 5. 论文信息与引用
+
+主题：人工智能（cs.AI）。引用格式：arXiv:2606.26346 [cs.AI]（或此版本的arXiv:2606.26346v1 [cs.AI]）。DOI：https://doi.org/10.48550/arXiv.2606.26346。提交历史：来自David Akinpelu的电子邮件；[v1] 2026年6月24日星期三19:38:21 UTC（80 KB）。全文链接：可访问论文PDF和HTML（实验性）版本。
+
+---
+
+🔗 **原文链接：[https://arxiv.org/abs/2606.26346](https://arxiv.org/abs/2606.26346)**
