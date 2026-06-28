@@ -1,0 +1,87 @@
+---
+title: "Armadillo：用Gleam语言编写的家庭实验室DNS服务器"
+date: "2026-06-28"
+excerpt: "Armadillo 是一款专为家庭实验室（homelab）环境设计的自托管 DNS 服务器，使用 Gleam 语言编写。只需在路由器上将其配置为 DNS 解析器，网络中的所有设备便会自动解析您的本地域名。"
+category: "programming"
+tags: ["DNS服务器","Gleam","家庭实验室","自托管","容器化"]
+original: "https://github.com/vshakitskiy/armadillo"
+draft: false
+---
+
+## 1. 项目概述
+
+Armadillo 是一款专为家庭实验室（homelab）环境设计的自托管 DNS 服务器，使用 Gleam 语言编写。只需在路由器上将其配置为 DNS 解析器，网络中的所有设备便会自动解析您的本地域名。
+
+## 2. 工作原理
+
+当收到 DNS 查询时，服务器首先检查本地记录存储。如果存在匹配的记录，它会立即返回配置的 IP 地址。如果没有匹配的记录，查询会被转发到可配置的上游解析器（upstream resolver），响应结果按 TTL（生存时间）缓存，然后返回给客户端。本地记录存储在 DNS 区域文件（zone file）中，并在启动时加载到 ETS（Erlang Term Storage）中。运行时所有查询解析仅通过 ETS 进行，区域文件在查询处理期间不会被读取。
+
+## 3. 容器镜像与配置
+
+容器镜像可在 ghcr.io/vshakitskiy/armadillo:latest 获取。以下是环境变量及其默认值：
+- DNS_PORT：53，DNS 服务器监听端口
+- DNS_UPSTREAM：8.8.8.8，未知域名的上游解析器
+- DNS_TTL：300，区域记录的默认 TTL（秒）
+- DNS_SOA_MINIMUM：3600，SOA 最小 TTL，用于否定缓存（negative caching）（秒）
+- API_PORT：3000，Web 界面和 REST API 的端口
+- API_SECRET_KEY_BASE：随机密钥，用于签名会话 cookie 的密钥
+- ZONE_FILE：/data/local.zone，DNS 区域文件路径
+将卷挂载到 /data 可跨重启持久化区域文件。如果区域文件不存在，系统会自动创建。
+
+## 4. 部署指南
+
+部署指南可在 examples/ 目录中找到。例如，通过 Podman Quadlet 以 systemd 服务方式运行，并使用 Caddy 作为反向代理。
+
+## 5. 域名命名建议
+
+服务器接受任何域名字符串。但应避免使用 .local，因为它被保留用于 mDNS/Bonjour（RFC 6762），Apple 设备不会将 .local 查询发送到单播 DNS 服务器。.lan 或 .internal 是常见的替代方案。
+
+## 6. 贡献指南
+
+欢迎任何贡献和反馈！欢迎提交 Issue 或 Pull Request。项目包含三个包：server 运行 DNS 解析器和 HTTP API，client 是 Web 界面，shared 包含两者共用的模块。每个包独立开发，在 server/ 目录下运行 gleam run，在 client/ 目录下运行 gleam run -m lustre/dev。开发期间建议使用 direnv 管理本地环境变量。如需在本地绑定到 53 端口而不使用 sudo，可在 BEAM 二进制文件上运行 setcap：
+# 查找二进制文件：$( which erl ) -noshell -eval ' io:format("~s~n",[os:find_executable("beam.smp")]),halt(). '
+# /path/to/beam.smp
+sudo setcap cap_net_bind_service=+ep /path/to/beam.smp
+
+## 7. VPN 环境下的 DNS 解析
+
+以下是我个人在 VPN 环境下遇到 DNS 问题时的笔记。当运行 vless 等 VPN 并处于代理或 tun 模式时，确保 VPN 通过正确的 DNS 解析域名至关重要。假设路由器的 IP 为 192.168.1.1，且 DNS 服务器配置在该 IP 上：
+为 xray 添加路由器作为 DNS 服务器，并直接路由 LAN IP：
+&#123;
+  "dns": &#123;
+    "servers": [
+      &#123;"address": "192.168.1.1", "port": 53&#125;,
+      "1.1.1.1"
+    ]
+  &#125;,
+  "routing": &#123;
+    "rules": [
+      &#123;
+        "ip": ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"],
+        "outboundTag": "direct"
+      &#125;
+    ]
+  &#125;
+&#125;
+为 sing-box 标记本地 DNS 服务器，并通过它路由私有 IP：
+&#123;
+  "dns": &#123;
+    "servers": [
+      &#123;"tag": "dns-local", "address": "192.168.1.1", "detour": "direct"&#125;,
+      &#123;"tag": "dns-remote", "address": "1.1.1.1", "detour": "proxy"&#125;
+    ],
+    "rules": [&#123;"ip_is_private": true, "server": "dns-local"&#125;],
+    "final": "dns-remote"
+  &#125;,
+  "route": &#123;
+    "rules": [&#123;"ip_is_private": true, "outbound": "direct"&#125;]
+  &#125;
+&#125;
+
+## 8. 项目信息
+
+Armadillo 是一个用 Gleam 编写的 DNS 服务器。许可证为 Apache-2.0。项目拥有 12 颗星，0 个关注者，0 个复刻。最新版本为 v1.0.0（2026 年 6 月 12 日发布），另有 2 个早期版本。代码语言占比：Gleam 92.0%，Erlang 4.3%，CSS 1.9%，其他 1.8%。
+
+---
+
+🔗 **原文链接：[https://github.com/vshakitskiy/armadillo](https://github.com/vshakitskiy/armadillo)**

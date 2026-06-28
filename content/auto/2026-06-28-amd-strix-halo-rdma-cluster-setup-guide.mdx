@@ -1,0 +1,219 @@
+---
+title: "AMD Strix Halo RDMA集群搭建指南：双节点vLLM推理配置"
+date: "2026-06-28"
+excerpt: "在两台节点上执行以下步骤： 准备：安装/更新Fedora 43和E810网卡（检查固件：ethtool -i iface）。 BIOS/内核：将iGPU设置为512MB，并应用内核参数（iommu=pt, pci=realloc等）。 SSH：配置节点间的免密码SSH。 网络：分配静态IP（192.168.100.1和192.168.100.2），设置MTU 9000，并在防火墙中信任该接口。 安"
+category: "hardware"
+tags: ["AMD","Strix Halo","RDMA","vLLM","集群","RoCE v2","Fedora"]
+original: "https://github.com/kyuz0/amd-strix-halo-vllm-toolboxes/blob/main/rdma_cluster/setup_guide.md"
+draft: false
+---
+
+## 1. 快速入门（TL;DR）
+
+在两台节点上执行以下步骤：
+准备：安装/更新Fedora 43和E810网卡（检查固件：ethtool -i iface）。
+BIOS/内核：将iGPU设置为512MB，并应用内核参数（iommu=pt, pci=realloc等）。
+SSH：配置节点间的免密码SSH。
+网络：分配静态IP（192.168.100.1和192.168.100.2），设置MTU 9000，并在防火墙中信任该接口。
+安装工具箱：运行./refresh_toolbox.sh（此脚本自动安装支持RDMA的容器和自定义的librccl.so补丁）。
+运行集群：运行start-vllm-cluster。选择“2. 启动Ray集群”（按照TUI提示操作）。选择“4. 启动VLLM服务”并选择您的模型。（对于受限模型，请先导出HF_TOKEN！）
+关键提示：refresh_toolbox.sh脚本会自动检测您的Infiniband/RDMA设备，并自动配置容器以暴露这些设备。
+
+## 2. 概念与架构
+
+为了充分利用Strix Halo集群，理解所涉及的技术很有帮助：
+vLLM：一个高性能推理引擎。为了运行超过单个GPU（或APU）容量的模型，它使用张量并行（Tensor Parallelism, TP）来拆分模型。
+Ray：一个分布式计算框架。vLLM使用Ray来编排集群，管理每个节点上的“工作”进程，并确保它们正确启动。Ray处理控制平面（发出命令）。
+RCCL（ROCm集合通信库）：AMD版的NVIDIA NCCL。该库处理数据平面——具体来说，是GPU之间张量数据的极快同步。当TP=2时，两个节点必须在神经网络的每一层之后交换部分结果。这每秒发生数千次。
+RoCE v2（融合以太网上的RDMA）：一种协议，允许RCCL将数据直接从一台节点的内存写入另一台节点的内存，绕过CPU和操作系统内核。
+无RDMA：延迟约为70-100微秒（TCP/IP开销）。
+有RDMA：延迟约为5微秒。
+为何重要：对于交互式令牌生成，高延迟会严重影响性能。RoCE使两个节点感觉像一台机器。
+
+## 3. 硬件前提条件
+
+节点：2块Framework Desktop主板，搭载AMD Ryzen AI MAX+“Strix Halo”，128GB统一内存。
+网卡：Intel以太网控制器E810-CQDA1（或类似的100GbE QSFP28）。
+连接：直连铜缆（DAC）线缆（例如QSFPTEK 100G QSFP28 DAC）。两个节点无需交换机。
+PCIe提示：Framework主板的PCIe插槽物理上是x4，因此需要使用转接卡来插入16x卡（例如CY PCI-E Express 4x转16x扩展器）。
+测试设置提示：本设置中的一块主板具有修改过的PCIe插槽（由Framework使用超声波刀切割），可直接接受x16卡。不建议用户这样做。转接卡是更便宜、更安全且更简单的解决方案。性能相同（约50Gbps带宽，约5微秒延迟）。
+
+## 4. 主机配置（Fedora）
+
+在两台节点的主机操作系统（Fedora 43）上执行以下步骤。
+已验证的主机配置：
+节点1：内核6.18.5-200.fc43.x86_64，Fedora Linux 43，IP（RDMA接口）192.168.100.1/30
+节点2：内核6.18.6-200.fc43.x86_64，Fedora Linux 43，IP（RDMA接口）192.168.100.2/30
+注意：这些特定内核版本已验证可工作。建议使用Fedora 43。
+4.1 安装软件包
+安装核心RDMA用户空间工具。您不需要专有的Intel驱动程序；内核内置驱动程序即可完美工作。
+以太网驱动程序：ice
+RDMA驱动程序：irdma（RoCE v2 iWARP的统一驱动程序）
+sudo dnf install rdma-core libibverbs-utils perftest
+rdma-core：RDMA子系统的用户空间组件（库、守护进程和配置工具）。
+libibverbs-utils：用于查询RDMA设备的实用程序（例如ibv_devinfo）。
+perftest：一套基准测试工具（例如ib_write_bw, ib_send_lat），用于验证RDMA带宽和延迟。
+4.2 检查原生固件
+使用ethtool检查Intel E810卡的当前固件版本。
+ethtool -i enp194s0np0
+推荐固件：确保您的固件至少与下面显示的版本一样新（固件4.91...）。如果您的固件较旧，请使用Intel®以太网NVM更新工具（E810系列）进行更新。
+示例输出：
+driver: ice
+version: 6.18.5-200.fc43.x86_64
+firmware-version: 4.91 0x800214b5 1.3909.0
+expansion-rom-version:
+bus-info: 0000:c2:00.0
+supports-statistics: yes
+supports-test: yes
+supports-eeprom-access: yes
+supports-register-dump: yes
+supports-priv-flags: yes
+4.3 网络配置
+本指南假设子网为192.168.100.0/30。
+识别您的接口：运行ip link找到您的100GbE卡（例如enp194s0np0）。
+节点1（主节点 - 192.168.100.1）：
+# 启用链接
+sudo ip link set enp194s0np0 up
+# 分配IP
+sudo ip addr add 192.168.100.1/30 dev enp194s0np0
+# 设置MTU（巨型帧）
+sudo nmcli connection modify "rdma0" ethernet.mtu 9000
+sudo nmcli connection up "rdma0"
+节点2（工作节点 - 192.168.100.2）：
+# 启用链接
+sudo ip link set enp194s0np0 up
+# 分配IP
+sudo ip addr add 192.168.100.2/30 dev enp194s0np0
+# 设置MTU
+sudo nmcli connection modify "rdma0" ethernet.mtu 9000
+sudo nmcli connection up "rdma0"
+验证路由：确保两个节点上都存在路由：
+sudo ip route add 192.168.100.0/30 dev enp194s0np0
+验证链接：
+rdma link
+# 输出应显示：state ACTIVE physical_state LINK_UP used_usec X ...
+4.4 BIOS与内核配置
+1. BIOS设置：将iGPU内存分配设置为最小值（512MB）。我们将使用GTT（图形转换表）动态分配系统内存作为GPU的“统一内存”。
+2. 内核参数：更新GRUB以启用统一内存、优化RDMA性能并修复PCI资源分配。
+编辑/etc/default/grub，并在GRUB_CMDLINE_LINUX后追加：
+iommu=pt pci=realloc pcie_aspm=off amdgpu.gttsize=126976 ttm.pages_limit=32505856
+参数说明：
+iommu=pt：将IOMMU设置为“直通”模式。这对性能至关重要，可减少RDMA网卡和iGPU统一内存访问的开销。
+pci=realloc：重新分配PCI BAR。在消费级平台上通常需要，以便为E810或Strix Halo等设备正确映射大地址空间。
+pcie_aspm=off：禁用PCIe主动状态电源管理。防止100GbE连接上的延迟峰值和链路协商问题。
+amdgpu.gttsize=126976：将GPU GTT大小限制为约124GiB（126976MB）。这定义了GPU可以将其视为自己的“VRAM”的系统RAM量。
+ttm.pages_limit=32505856：将转换表管理器限制为约124GiB（以4KB页面计），与GTT大小匹配。
+3. 应用更改：
+sudo grub2-mkconfig -o /boot/grub2/grub.cfg
+sudo reboot
+4.5 防火墙规则
+Ray和NCCL等应用程序使用随机的高端口。最简单的方法是完全信任内部RDMA接口。
+# 将接口永久分配给受信任区域
+sudo firewall-cmd --permanent --zone=trusted --add-interface=enp194s0np0
+# 重新加载防火墙
+sudo firewall-cmd --reload
+
+## 5. 工具箱安装与网络验证
+
+5.1 前提条件：免密码SSH
+集群管理和验证脚本依赖SSH在远程节点上执行命令。您必须在两个节点之间配置免密码SSH（root或具有sudo权限的用户）。
+指南：如何在Linux上设置SSH密钥（DigitalOcean）
+快速检查：在每个节点上运行ssh other-node-ip date。它应该打印日期而不要求输入密码。
+5.2 安装
+此仓库中提供的工具箱容器包含一个关键补丁：一个自定义构建的librccl.so，它为gfx1151（Strix Halo）启用了RDMA支持（https://github.com/kyuz0/rocm-systems/tree/gfx1151-rccl），而上游ROCm软件包中目前缺少此支持。该库使用此仓库中的build-rccl GitHub Action自动编译，生成工件，然后捆绑到Docker容器中。
+要在两个节点上安装工具箱，请运行：
+./refresh_toolbox.sh
+此脚本的作用：
+拉取最新的kyuz0/vllm-therock-gfx1151镜像。
+检测您的主机上是否存在/dev/infiniband。
+创建工具箱，并设置标志以暴露：
+iGPU访问：/dev/dri, /dev/kfd（ROCm必需）
+RDMA访问：/dev/infiniband, --group-add rdma
+内存锁定：--ulimit memlock=-1（DMA必需）
+5.3 验证RDMA连接
+在继续运行集群之前，验证RDMA是否处于活动状态并提供低延迟（约5微秒对比以太网的约70微秒）。
+在主节点上运行提供的验证脚本：
+# 在工具箱内
+/opt/compare_eth_vs_rdma.sh
+预期结果：
+路径：以太网（1G LAN），延迟：0.074毫秒，带宽：0.94 Gbps
+路径：以太网（RoCE网卡），延迟：0.068毫秒，带宽：55.70 Gbps
+路径：RDMA（RoCE），延迟：5.23微秒，带宽：50.64 Gbps
+注意RDMA的巨大延迟下降（从毫秒到微秒）。
+
+## 6. 运行集群
+
+提供了一个TUI工具start-vllm-cluster来管理Ray集群和vLLM。
+6.1 设置验证
+进入工具箱：toolbox enter vllm
+运行集群管理器：start-vllm-cluster
+配置IP（选项1）：确保主节点为192.168.100.1，工作节点为192.168.100.2。
+启动Ray集群（选项2）：
+在节点1上：提示时选择“主节点”。
+在节点2上：提示时选择“工作节点”。
+该脚本实际上运行：
+# 主节点
+export NCCL_SOCKET_IFNAME=rdma_iface
+ray start --head --node-ip-address=192.168.100.1 ...
+# 工作节点
+ray start --address=192.168.100.1:6379 ...
+检查状态（选项3）：确保看到2个节点和足够的GPU资源（例如2.0 GPU）。
+6.2 启动vLLM
+集群激活后（通过选项3检查）：
+在TUI中选择“4. 启动VLLM服务”。
+选择一个模型（例如Meta-Llama-3.1-8B-Instruct）。
+配置菜单：
+张量并行：设置为2（每个节点一个GPU）。
+上下文长度：自动或自定义（例如131072）。
+清除vLLM缓存：如果崩溃后重新启动，选择“是”。
+强制急切模式：选择“是”。为什么？CUDA图在分布式APU集群上可能不稳定并导致死锁。急切模式更安全，但如果您冒险禁用它，可能能挤出1-3%的性能提升。
+启动：选择“启动服务器”。
+重要注意事项：
+首次运行下载：首次运行模型时，集群中的每个节点必须独立下载权重。这可能需要一些时间，具体取决于您的互联网连接。
+受限模型（例如Gemma）：像google/gemma-2-27b-it这样的模型是“受限”的，需要您在Hugging Face上请求访问权限。您必须在运行集群脚本之前导出您的Hugging Face令牌：
+export HF_TOKEN=your_token_here
+start-vllm-cluster
+如果您未提供令牌或未在Hugging Face上接受许可，下载将失败。
+
+## 7. 故障排除与参考
+
+7. 故障排除
+vLLM死锁/挂起
+原因：CUDA图捕获可能在分布式APU节点上冻结。
+修复：在启动菜单中启用“强制急切模式”。
+固件：如果您看到链接问题，请使用Intel标准工具确保您的Intel E810固件是最新的。
+8. 参考与致谢
+Reddit - Strix Halo批处理与张量并行：Hungry_Elk_3276的帖子
+特别感谢用户Hungry_Elk_3276对vLLM RDMA的初步实验，这突显了上游RCCL中缺少gfx1151支持的问题。
+
+## 8. 替代方案：Thunderbolt网络
+
+如果您没有专用的100GbE RDMA网卡，您可以使用高质量的Thunderbolt 4 / USB4线缆直接连接两个节点。这将创建一个thunderbolt0网络接口。虽然它缺乏RDMA的超低微处理器级延迟，但它提供了比标准1GbE/5GbE以太网显著更高的带宽，并且配置更简单。
+注意：thunderbolt-net依赖于标准操作系统内核TCP/IP堆栈。
+8.1 Thunderbolt配置
+1. 建立连接：使用经过认证的Thunderbolt 4或USB4线缆直接连接节点。验证链接是否激活：
+ip link show thunderbolt0
+2. 网络配置（主节点 - 节点1）：使用nmcli配置持久连接，设置静态IP和巨型帧（减少CPU开销）。注意：某些Thunderbolt主机控制器可能不支持巨型帧。
+sudo nmcli connection add type ethernet ifname thunderbolt0 con-name thunderbolt0 ipv4.method manual ipv4.addresses 192.168.2.1/24 mtu 9000
+sudo nmcli connection up thunderbolt0
+3. 网络配置（工作节点 - 节点2）：
+sudo nmcli connection add type ethernet ifname thunderbolt0 con-name thunderbolt0 ipv4.method manual ipv4.addresses 192.168.2.2/24 mtu 9000
+sudo nmcli connection up thunderbolt0
+4. 防火墙规则：为确保Ray和NCCL能通过此链接自由通信：
+# 将接口永久分配给受信任区域
+sudo firewall-cmd --permanent --zone=trusted --add-interface=thunderbolt0
+sudo firewall-cmd --reload
+8.2 通过Thunderbolt运行vLLM
+我们的集群脚本会根据提供的IP动态检测网络接口。无需手动导出环境变量！
+打开工具箱：toolbox enter vllm
+启动集群管理器：start-vllm-cluster
+选择选项1（配置IP）。将主节点IP显式设置为192.168.2.1，工作节点IP设置为192.168.2.2。
+正常启动集群（选项2）。脚本将自动发现并利用thunderbolt0作为Ray编排和GPU同步的后端网络。
+8.3 验证链接
+我已将Thunderbolt支持添加到compare_eth_vs_rdma.sh脚本中。在工具箱内运行它，以查看您的Thunderbolt链接与其他网络接口相比的延迟和带宽。您可以使用-t标志仅对Thunderbolt连接进行基准测试（或使用-e, -r, -i分别测试其他连接）：
+/opt/compare_eth_vs_rdma.sh -t
+您当前无法执行此操作。
+
+---
+
+🔗 **原文链接：[https://github.com/kyuz0/amd-strix-halo-vllm-toolboxes/blob/main/rdma_cluster/setup_guide.md](https://github.com/kyuz0/amd-strix-halo-vllm-toolboxes/blob/main/rdma_cluster/setup_guide.md)**
