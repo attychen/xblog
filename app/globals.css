@@ -846,7 +846,7 @@ figure[data-rehype-pretty-code-figure]:hover .code-copy-btn {
     transition: transform 0.1s ease;
   }
 }
-}
+
 /* Code copy button - always visible on touch devices */
 @media (hover: none) and (pointer: coarse) {
   .code-copy-btn {
