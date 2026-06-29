@@ -40,7 +40,7 @@ export const mdxComponents = {
     return (
       <h1
         id={headingId}
-        className="mt-8 mb-4 scroll-m-20 text-2xl font-bold leading-snug tracking-tight text-gray-900 dark:text-gray-100"
+        className="text-2xl md:text-3xl font-bold leading-snug tracking-tight text-gray-900 dark:text-gray-100"
         {...props}
       />
     );
@@ -51,7 +51,7 @@ export const mdxComponents = {
     return (
       <h2
         id={headingId}
-        className="mt-8 mb-3 scroll-m-24 border-b border-gray-200/80 dark:border-gray-700/80 pb-2 text-xl font-semibold leading-snug tracking-tight text-gray-900 dark:text-gray-100 first:mt-0"
+        className="text-xl md:text-2xl font-semibold leading-snug tracking-tight text-gray-900 dark:text-gray-100 first:mt-0"
         {...props}
       />
     );
@@ -62,7 +62,7 @@ export const mdxComponents = {
     return (
       <h3
         id={headingId}
-        className="mt-6 mb-2 scroll-m-24 text-lg font-semibold leading-snug tracking-tight text-gray-900 dark:text-gray-100"
+        className="text-lg md:text-xl font-semibold leading-snug tracking-tight text-gray-900 dark:text-gray-100"
         {...props}
       />
     );
@@ -91,21 +91,21 @@ export const mdxComponents = {
 
   p: (props: BasicProps) => (
     <p
-      className="text-base leading-7 [&:not(:first-child)]:mt-4 text-gray-700 dark:text-gray-300"
+      className="text-base leading-7 md:leading-8 [&:not(:first-child)]:mt-4 text-gray-700 dark:text-gray-300"
       {...props}
     />
   ),
 
   ul: (props: BasicProps) => (
     <ul
-      className="my-5 ml-6 list-disc [&>li]:mt-2 text-gray-900 dark:text-gray-100"
+      className="my-5 ml-4 md:ml-6 list-disc [&>li]:mt-2 text-gray-900 dark:text-gray-100"
       {...props}
     />
   ),
 
   ol: (props: BasicProps) => (
     <ol
-      className="my-5 ml-6 list-decimal [&>li]:mt-2 text-gray-900 dark:text-gray-100"
+      className="my-5 ml-4 md:ml-6 list-decimal [&>li]:mt-2 text-gray-900 dark:text-gray-100"
       {...props}
     />
   ),

@@ -83,7 +83,7 @@ export default function Navbar() {
                   return (
                     <motion.div key={link.href} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}>
                       <Link href={link.href} onClick={() => setOpen(false)}
-                        className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-colors duration-150 ${
+                        className={`flex items-center px-4 py-4 text-sm font-medium rounded-xl transition-colors duration-150 ${
                           active ? "bg-[rgba(124,58,237,0.08)] dark:bg-[rgba(168,85,247,0.1)] text-[#7c3aed] dark:text-[#a855f7]"
                             : "text-gray-600 dark:text-gray-400 active:bg-[rgba(124,58,237,0.04)] dark:active:bg-[rgba(168,85,247,0.04)]"
                         }`}>

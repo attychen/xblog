@@ -1,4 +1,4 @@
-/* =========================================================
+﻿/* =========================================================
    Tailwind CSS v4
    ========================================================= */
 @import "tailwindcss";
@@ -11,7 +11,7 @@
    ========================================================= */
 body {
   font-size: 15px;
-  line-height: 1.6;
+  line-height: 1.65;
   letter-spacing: 0.01em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -26,6 +26,12 @@ h1, h2, h3, h4 {
 h1 {
   font-size: 1.75rem;
   font-weight: 800;
+}
+@media (min-width: 768px) {
+  h1 { font-size: 2.25rem; }
+}
+@media (min-width: 1024px) {
+  h1 { font-size: 2.5rem; }
 }
 
 h2 {
@@ -96,7 +102,9 @@ button, a, [role="button"] {
   --foreground: 244 244 245;
 
   --primary: 96 165 250;
+  --primary-foreground: 15 23 42;
   --secondary: 39 39 42;
+  --secondary-foreground: 244 244 245;
 
   --muted: 39 39 42;
   --muted-foreground: 161 161 170;
@@ -194,6 +202,12 @@ button:disabled {
   max-width: 72rem;
   margin-inline: auto;
   padding-inline: 1rem;
+}
+@media (min-width: 640px) {
+  .container-custom { padding-inline: 1.5rem; }
+}
+@media (min-width: 1024px) {
+  .container-custom { padding-inline: 2rem; }
 }
 
 /* =========================================================
@@ -356,8 +370,7 @@ code[data-line-numbers] > [data-line]::before {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 1.75rem;
-  height: 1.75rem;
+  width: 2.5rem; height: 2.5rem;
   border-radius: 0.375rem;
   color: rgb(156 163 175);
   background: transparent;
@@ -781,4 +794,33 @@ figure[data-rehype-pretty-code-figure]:hover .code-copy-btn {
 
 .pui-search-input {
   padding-left: 40px;
+}
+
+/* Mobile touch feedback */
+@media (max-width: 767px) {
+  .pui-glass-card:hover {
+    transform: none;
+    box-shadow: none;
+  }
+  .pui-glass-card:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+  }
+}
+/* Code copy button - always visible on touch devices */
+@media (hover: none) and (pointer: coarse) {
+  .code-copy-btn {
+    opacity: 0.7 !important;
+  }
+  figure[data-rehype-pretty-code-figure]:hover .code-copy-btn {
+    opacity: 1 !important;
+  }
+}
+/* Page content fade-in */
+main {
+  animation: pageIn 0.3s ease-out;
+}
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
