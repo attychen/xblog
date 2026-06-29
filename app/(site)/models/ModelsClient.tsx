@@ -134,7 +134,7 @@ export default function ModelsClient({ models }: { models: HFModel[] }) {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400">
+                      <span className="text-[11px] px-2 py-0.5 rounded-md bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 whitespace-nowrap">
                         {getModelCategory(m)}
                       </span>
                     </td>
@@ -166,7 +166,7 @@ export default function ModelsClient({ models }: { models: HFModel[] }) {
           {filtered.map((m, i) => (
             <div
               key={m.id}
-              className="pui-glass-card p-4 space-y-3"
+              className="px-4 py-3 border-b border-black/[0.04] dark:border-white/[0.06]"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2 min-w-0">
@@ -198,7 +198,7 @@ export default function ModelsClient({ models }: { models: HFModel[] }) {
               <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 flex-wrap">
                 <span className="flex items-center gap-1"><Star className="w-3.5 h-3.5" /> {formatNum(m.likes)}</span>
                 <span className="flex items-center gap-1"><GitFork className="w-3.5 h-3.5" /> {formatNum(m.downloads)}</span>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400">
+                <span className="text-[11px] px-2 py-0.5 rounded-md bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 whitespace-nowrap">
                   {getModelCategory(m)}
                 </span>
               </div>
