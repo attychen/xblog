@@ -1,7 +1,8 @@
-import type { Metadata, Viewport } from "next";
+﻿import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/provider/ThemeProvider";
 import Navbar from "@/components/layout/Navbar";
+import MobileBottomNav from "@/components/layout/MobileBottomNav";
 import Footer from "@/components/layout/Footer";
 import ObservabilityClient from "@/components/ui/ObservabilityClient";
 import localFont from "next/font/local";
@@ -186,7 +187,8 @@ export default function RootLayout({
         <ThemeProvider>
           <ObservabilityClient />
           <Navbar />
-          <main className="flex-1 pt-6">
+          <MobileBottomNav />
+          <main className="flex-1 pt-6 pb-20 md:pb-0">
             {children}
           </main>
           <Footer />

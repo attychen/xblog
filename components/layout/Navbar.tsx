@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import Link from "next/link";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
@@ -27,7 +27,7 @@ export default function Navbar() {
   return (
     <>
       <nav className="fixed top-0 left-0 right-0 z-50 px-4 sm:px-6 lg:px-8 py-3 
-                      bg-white/70 dark:bg-[#0a0a0f]/70 backdrop-blur-2xl 
+                      bg-white/70 dark:bg-[#0a0a0f]/70 backdrop-blur-xl saturate-180 
                       border-b border-[rgba(124,58,237,0.08)] dark:border-[rgba(168,85,247,0.08)]">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group">
@@ -62,7 +62,7 @@ export default function Navbar() {
               {isDark ? <SunIcon className="w-5 h-5 text-gray-400" /> : <MoonIcon className="w-5 h-5 text-gray-500" />}
             </button>
             <button onClick={() => setOpen((v) => !v)}
-              className="md:hidden p-2.5 rounded-xl active:bg-[rgba(124,58,237,0.1)] dark:active:bg-[rgba(168,85,247,0.1)] transition-colors duration-150 cursor-pointer"
+              className="hidden p-2.5 rounded-xl active:bg-[rgba(124,58,237,0.1)] dark:active:bg-[rgba(168,85,247,0.1)] transition-colors duration-150 cursor-pointer"
               aria-label="菜单">
               {open ? <XIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" /> : <MenuIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />}
             </button>

@@ -75,44 +75,83 @@ button, a, [role="button"] {
   --font-site-mono: "SFMono-Regular", "SF Mono", "Cascadia Mono",
     "Noto Sans Mono CJK SC", "Microsoft YaHei Mono", "PingFang SC", monospace;
 
-  /* Colors - Light */
-  --background: 255 255 255;
+  /* Colors - Light with glass tint */
+  --background: 248 246 255;
   --foreground: 17 24 39;
 
-  --primary: 59 130 246;
+  --primary: 124 58 237;
   --primary-foreground: 255 255 255;
 
-  --secondary: 244 244 245;
-  --secondary-foreground: 9 9 11;
+  --secondary: 240 237 250;
+  --secondary-foreground: 17 24 39;
 
   --muted: 244 244 245;
   --muted-foreground: 113 113 122;
 
-  --border: 229 229 230;
-  --ring: 59 130 246;
+  --border: rgba(0, 0, 0, 0.08);
+  --ring: 124 58 237;
 
-  --radius: 0.5rem;
+  --radius: 16px;
 
   /* Background Gradient */
   --gradient-bg: linear-gradient(180deg, #f8f6ff 0%, #f0edfa 50%, #faf8ff 100%);
+  
+  /* Glass morphism tokens - light */
+  --glass-bg: rgba(255, 255, 255, 0.78);
+  --glass-bg-hover: rgba(255, 255, 255, 0.9);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --glass-border-hover: rgba(124, 58, 237, 0.25);
+  --glass-highlight: rgba(255, 255, 255, 0.8);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  --glass-shadow-hover: 0 16px 48px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  
+  /* Accent colors */
+  --accent-cyan: #00d4ff;
+  --accent-magenta: #ff2d92;
+  --accent-amber: #ffb347;
+  --accent-purple: #7c3aed;
+  
+  /* Gradient */
+  --gradient-holographic: linear-gradient(135deg, var(--accent-purple), var(--accent-magenta), var(--accent-amber));
+  --gradient-glow: radial-gradient(ellipse at center, rgba(124, 58, 237, 0.1), transparent 70%);
 }
 
 .dark {
-  --background: 15 23 42;
-  --foreground: 244 244 245;
+  /* Glass UI React inspired dark tokens */
+  --background: 10 10 15;
+  --foreground: 255 255 255;
 
-  --primary: 96 165 250;
-  --primary-foreground: 15 23 42;
+  --primary: 0 212 255;
+  --primary-foreground: 10 10 15;
   --secondary: 39 39 42;
-  --secondary-foreground: 244 244 245;
+  --secondary-foreground: 255 255 255;
 
-  --muted: 39 39 42;
-  --muted-foreground: 161 161 170;
+  --muted: 20 20 29;
+  --muted-foreground: 180 180 200;
 
-  --border: 39 39 42;
-  --ring: 96 165 250;
+  --border: rgba(255, 255, 255, 0.08);
+  --ring: 0 212 255;
 
-  --gradient-bg: linear-gradient(180deg, #0a0a0f 0%, #0f0d1a 50%, #0a0a0f 100%);
+  --gradient-bg: linear-gradient(180deg, #0a0a0f 0%, #0d0d18 50%, #0a0a0f 100%);
+  
+  /* Glass morphism tokens */
+  --glass-bg: rgba(255, 255, 255, 0.06);
+  --glass-bg-hover: rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-border-hover: rgba(255, 255, 255, 0.15);
+  --glass-highlight: rgba(255, 255, 255, 0.12);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --glass-shadow-hover: 0 16px 48px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  
+  /* Accent colors - holographic */
+  --accent-cyan: #00d4ff;
+  --accent-magenta: #ff2d92;
+  --accent-amber: #ffb347;
+  --accent-purple: #a855f7;
+  
+  /* Gradient */
+  --gradient-holographic: linear-gradient(135deg, var(--accent-cyan), var(--accent-magenta), var(--accent-amber));
+  --gradient-glow: radial-gradient(ellipse at center, rgba(0, 212, 255, 0.15), transparent 70%);
 }
 
 /* =========================================================
@@ -469,7 +508,7 @@ figure[data-rehype-pretty-code-figure]:hover .code-copy-btn {
 
 /* PUI Gradient Text */
 .pui-grad-text {
-  background: linear-gradient(135deg, var(--pui-grad-from), var(--pui-grad-via), var(--pui-grad-to));
+  background: var(--gradient-holographic);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -800,12 +839,13 @@ figure[data-rehype-pretty-code-figure]:hover .code-copy-btn {
 @media (max-width: 767px) {
   .pui-glass-card:hover {
     transform: none;
-    box-shadow: none;
+    box-shadow: var(--glass-shadow);
   }
   .pui-glass-card:active {
     transform: scale(0.98);
     transition: transform 0.1s ease;
   }
+}
 }
 /* Code copy button - always visible on touch devices */
 @media (hover: none) and (pointer: coarse) {
@@ -823,4 +863,8 @@ main {
 @keyframes pageIn {
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
+}
+/* Safe area for bottom nav (iPhone notch) */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0);
 }
