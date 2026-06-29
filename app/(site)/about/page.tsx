@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import Image from 'next/image';
 import { useEffect, useState, useRef } from 'react';
 import { PROFILE } from '@/config/profile';
@@ -50,6 +50,7 @@ export default function AboutPage() {
                 {PROFILE.email && (
                   <a href={`mailto:${PROFILE.email}`} className="hover:text-blue-600 dark:hover:text-blue-400">✉️ {PROFILE.email}</a>
                 )}
+                {PROFILE.wechat && <span>💬 微信: {PROFILE.wechat}</span>}
               </div>
             </div>
           </div>

@@ -1,4 +1,4 @@
-export const PROFILE = {
+﻿export const PROFILE = {
   name: '法舟记',
   location: '',
   email: '',
@@ -12,4 +12,5 @@ export const PROFILE = {
   experiences: [] as { company: string; role: string; period?: string; bullets?: string[] }[],
 
   skills: [] as string[],
+  wechat: 'attychen',
 };

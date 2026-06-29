@@ -1,4 +1,4 @@
-import fs from "fs";
+﻿import fs from "fs";
 import matter from "gray-matter";
 import path from "path";
 import { z } from "zod";
@@ -108,12 +108,17 @@ export function getAllPosts(): Post[] {
 
   const posts = files
     .map((filePath) => {
-      const fileContent = fs.readFileSync(filePath, "utf-8");
-      const { frontmatter } = parseFrontmatter(fileContent, filePath);
-      const slug = getSlugFromPath(filePath);
-      return toPost(slug, frontmatter);
+      try {
+        const fileContent = fs.readFileSync(filePath, "utf-8");
+        const { frontmatter } = parseFrontmatter(fileContent, filePath);
+        const slug = getSlugFromPath(filePath);
+        return toPost(slug, frontmatter);
+      } catch (err) {
+        console.warn(`[content] Skipped failed file: ${filePath}`, err instanceof Error ? err.message : err);
+        return null;
+      }
     })
-    .filter((post) => !post.draft);
+    .filter((post): post is Post => post !== null && !post.draft);
 
   return sortPostsByDate(posts);
 }

@@ -25,13 +25,9 @@ export default function ArticleList({ posts }: { posts: Post[] }) {
 
   return (
     <div className="space-y-4 mt-4">
-      {/* 桌面端：分页 */}
       <div className="hidden md:block space-y-4">
         {paged.map((post) => (
-          <div
-            key={post.slug}
-            className="pui-glass-card p-5"
-          >
+          <div key={post.slug} className="pui-glass-card p-5">
             <ArticleCard post={post} />
           </div>
         ))}
@@ -67,13 +63,9 @@ export default function ArticleList({ posts }: { posts: Post[] }) {
         )}
       </div>
 
-      {/* 移动端：懒加载 */}
       <div className="md:hidden space-y-4">
         {mobilePosts.map((post) => (
-          <div
-            key={post.slug}
-            className="pui-glass-card p-5"
-          >
+          <div key={post.slug} className="pui-glass-card p-5">
             <ArticleCard post={post} />
           </div>
         ))}
@@ -82,11 +74,10 @@ export default function ArticleList({ posts }: { posts: Post[] }) {
           <div className="text-center pt-2">
             <button
               onClick={() => setMobileCount((c) => c + PAGE_SIZE)}
-              onPointerDown={(e) => { e.preventDefault(); setMobileCount((c) => c + PAGE_SIZE); }}
               className="w-full py-4 text-sm font-semibold text-blue-600 dark:text-blue-400
                          border border-dashed border-gray-300 dark:border-gray-600 rounded-xl
-                         hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors
-                         cursor-pointer select-none active:bg-gray-100 dark:active:bg-gray-700"
+                         active:bg-gray-100 dark:active:bg-gray-700 transition-colors
+                         cursor-pointer select-none"
             >
               加载更多（{posts.length - mobileCount} 条）
             </button>

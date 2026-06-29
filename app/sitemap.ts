@@ -1,4 +1,4 @@
-import { MetadataRoute } from "next";
+﻿import { MetadataRoute } from "next";
 import { getAllPosts } from "@/lib/post";
 import { getDynamicCategories } from "@/constant";
 
@@ -52,7 +52,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   // 分类页面
   const categoryRoutes: MetadataRoute.Sitemap = Object.keys(categories).map(
     (slug) => ({
-      url: `${baseUrl}/blog/${slug}`,
+      url: `${baseUrl}/blog/category/${slug}`,
       lastModified: new Date(),
       changeFrequency: "weekly" as const,
       priority: 0.5,
