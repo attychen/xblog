@@ -23,29 +23,29 @@ export default function Navbar() {
   const isDark = resolvedTheme === "dark";
 
   return (
-    <nav className="hidden md:block fixed top-0 left-0 right-0 z-50 px-4 sm:px-6 lg:px-8 py-3 
-                    bg-white/70 dark:bg-[#0a0a0f]/70 backdrop-blur-xl saturate-180 
-                    border-b border-[rgba(124,58,237,0.08)] dark:border-[rgba(168,85,247,0.08)]">
-      <div className="max-w-6xl mx-auto flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 group">
-          <span className="text-lg sm:text-xl font-bold tracking-tight bg-gradient-to-r from-[#7c3aed] via-[#a855f7] to-[#c084fc] bg-clip-text text-transparent">
+    <nav className="hidden md:block fixed top-0 left-0 right-0 z-50 px-4 lg:px-8 
+                    bg-white/60 dark:bg-[#0a0a0f]/60 backdrop-blur-2xl saturate-200
+                    border-b border-black/[0.06] dark:border-white/[0.08]">
+      <div className="max-w-6xl mx-auto flex items-center justify-between h-16">
+        <Link href="/" className="flex items-center gap-2">
+          <span className="text-xl font-bold tracking-tight text-black dark:text-white">
             法舟记
           </span>
         </Link>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
           {NAV_LINKS.map((link) => {
             const active = isActive(link.href, pathname);
             return (
               <Link key={link.href} href={link.href}
-                className="relative px-4 py-2 text-sm font-medium rounded-xl transition-all duration-200">
+                className="relative px-3 py-1.5 text-sm rounded-lg transition-all duration-200">
                 <span className={`relative z-10 transition-colors duration-200 ${
-                  active ? "text-[#7c3aed] dark:text-[#a855f7]"
-                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
+                  active ? "text-black dark:text-white font-medium"
+                    : "text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white"
                 }`}>{link.label}</span>
                 {active && (
                   <motion.div layoutId="nav-indicator"
-                    className="absolute inset-0 bg-[rgba(124,58,237,0.08)] dark:bg-[rgba(168,85,247,0.1)] rounded-xl"
-                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                    className="absolute inset-0 bg-black/[0.04] dark:bg-white/[0.06] rounded-lg"
+                    transition={{ type: "spring", stiffness: 500, damping: 35 }}
                   />
                 )}
               </Link>
@@ -53,9 +53,9 @@ export default function Navbar() {
           })}
           <button 
             onClick={() => setTheme(isDark ? "light" : "dark")}
-            className="ml-2 p-2.5 rounded-xl hover:bg-[rgba(124,58,237,0.06)] dark:hover:bg-[rgba(168,85,247,0.06)] transition-all duration-200 cursor-pointer"
+            className="ml-2 p-2 rounded-lg hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-all cursor-pointer"
             aria-label="切换主题">
-            {isDark ? <SunIcon className="w-5 h-5 text-gray-400" /> : <MoonIcon className="w-5 h-5 text-gray-500" />}
+            {isDark ? <SunIcon className="w-4 h-4 text-gray-500" /> : <MoonIcon className="w-4 h-4 text-gray-500" />}
           </button>
         </div>
       </div>

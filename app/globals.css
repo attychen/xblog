@@ -835,15 +835,22 @@ figure[data-rehype-pretty-code-figure]:hover .code-copy-btn {
   padding-left: 40px;
 }
 
-/* Mobile touch feedback */
+/* Mobile - no glass effect */
 @media (max-width: 767px) {
+  .pui-glass-card {
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .pui-glass-card::before {
+    display: none;
+  }
   .pui-glass-card:hover {
     transform: none;
-    box-shadow: var(--glass-shadow);
-  }
-  .pui-glass-card:active {
-    transform: scale(0.98);
-    transition: transform 0.1s ease;
+    box-shadow: none;
   }
 }
 
