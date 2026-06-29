@@ -16,7 +16,7 @@ export async function fetchTopModels(): Promise<HFModel[]> {
   try {
     // full=false 速度快，拿基础字段；再用 pipeline_tag 做分类筛选
     const url =
-      "https://huggingface.co/api/models?sort=likes&direction=-1&limit=30&filter=text-generation&full=true";
+      "https://huggingface.co/api/models?sort=downloads&direction=-1&limit=50&filter=text-generation&full=true";
     const res = await fetch(url, {
       headers: { "User-Agent": "Fazhouji/1.0" },
       next: { revalidate: 86400 },

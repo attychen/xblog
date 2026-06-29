@@ -47,7 +47,7 @@ export default function ModelsClient({ models }: { models: HFModel[] }) {
             大模型榜
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            HuggingFace 开源文本生成模型 · 按社区热度排序 · 每日刷新
+            HuggingFace 开源文本生成模型 · 按下载量排序 · 实时更新
           </p>
         </div>
 
