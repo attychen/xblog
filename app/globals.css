@@ -493,18 +493,9 @@ figure[data-rehype-pretty-code-figure]:hover .code-copy-btn {
   border-radius: var(--pui-radius);
 }
 
-.pui-glass-card {
-  background: var(--pui-bg-elev);
-  border: 1px solid var(--pui-border);
-  border-radius: var(--pui-radius);
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
 
-.pui-glass-card:hover {
-  border-color: rgba(124, 58, 237, 0.35);
-  box-shadow: 0 0 32px var(--pui-glow);
-  transform: translateY(-2px);
-}
+
+
 
 /* PUI Gradient Text */
 .pui-grad-text {
@@ -1009,29 +1000,7 @@ main {
   }
 }
 
-/* =========================================================
-   Card List Optimization (Mobile)
-   ========================================================= */
-@media (max-width: 767px) {
-  /* Tighter card spacing */
-  .pui-glass-card {
-    margin-bottom: 0;
-  }
-  
-  /* Better card padding */
-  .pui-glass-card.p-3 {
-    padding: 0.875rem;
-  }
-  
-  /* Smooth card transitions */
-  .pui-glass-card {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-  }
-  
-  .pui-glass-card:active {
-    transform: scale(0.99);
-  }
-}
+
 /* =========================================================
    Mobile UI
    ========================================================= */
@@ -1044,5 +1013,62 @@ main {
   /* Better tap targets */
   a, button {
     -webkit-tap-highlight-color: transparent;
+  }
+}
+/* =========================================================
+   Glass Card - Unified (glass-ui-react style)
+   ========================================================= */
+.pui-glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  box-shadow: var(--glass-shadow);
+  position: relative;
+  transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.pui-glass-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--glass-highlight), transparent);
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+.pui-glass-card:hover {
+  background: var(--glass-bg-hover);
+  border-color: var(--glass-border-hover);
+  box-shadow: var(--glass-shadow-hover);
+  transform: translateY(-2px);
+}
+
+/* Mobile glass - lighter */
+@media (max-width: 767px) {
+  .pui-glass-card {
+    background: rgba(255, 255, 255, 0.5) !important;
+    backdrop-filter: blur(12px) saturate(150%) !important;
+    -webkit-backdrop-filter: blur(12px) saturate(150%) !important;
+    border: 1px solid rgba(0, 0, 0, 0.04) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03) !important;
+  }
+  .dark .pui-glass-card {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15) !important;
+  }
+  .pui-glass-card::before {
+    display: none !important;
+  }
+  .pui-glass-card:hover {
+    transform: none !important;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03) !important;
+  }
+  .pui-glass-card:active {
+    transform: scale(0.98) !important;
+    transition: transform 0.1s ease !important;
   }
 }
