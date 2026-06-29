@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import ArticleCard from "./ArticleCard";
@@ -17,36 +17,37 @@ export default function ArticleList({ posts }: { posts: Post[] }) {
 
   if (posts.length === 0) {
     return (
-      <div className="pui-glass-card p-8 text-center">
-        <p className="text-gray-500 dark:text-gray-400">No articles yet. Check back soon!</p>
+      <div className="pui-glass-card p-6 text-center">
+        <p className="text-gray-500 dark:text-gray-400">暂无文章，敬请期待！</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4 mt-4">
-      <div className="hidden md:block space-y-4">
+    <div className="space-y-3 mt-4">
+      {/* Desktop */}
+      <div className="hidden md:block space-y-3">
         {paged.map((post) => (
-          <div key={post.slug} className="pui-glass-card p-5">
+          <div key={post.slug} className="pui-glass-card p-4">
             <ArticleCard post={post} />
           </div>
         ))}
 
         {totalPages > 1 && (
-          <div className="flex items-center justify-center gap-2 pt-4">
+          <div className="flex items-center justify-center gap-1.5 pt-4">
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700
+              className="px-3 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-700
                          text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700
                          disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            >上一页</button>
+            >← 上一页</button>
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
               <button
                 key={n} onClick={() => setPage(n)}
-                className={`w-8 h-8 text-sm rounded-lg transition-colors ${
+                className={`w-8 h-8 text-xs rounded-lg transition-all duration-200 ${
                   n === page
-                    ? "bg-black text-white dark:bg-white dark:text-black font-semibold"
+                    ? "bg-[#7c3aed] dark:bg-[#00d4ff] text-white dark:text-black font-semibold shadow-md"
                     : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
                 }`}
               >{n}</button>
@@ -54,34 +55,32 @@ export default function ArticleList({ posts }: { posts: Post[] }) {
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700
+              className="px-3 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-700
                          text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700
                          disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            >下一页</button>
-            <span className="text-xs text-gray-400 dark:text-gray-500 ml-2">{page}/{totalPages}</span>
+            >下一页 →</button>
+            <span className="text-[11px] text-gray-400 dark:text-gray-500 ml-2 font-mono">{page}/{totalPages}</span>
           </div>
         )}
       </div>
 
-      <div className="md:hidden space-y-4">
+      {/* Mobile */}
+      <div className="md:hidden space-y-3">
         {mobilePosts.map((post) => (
-          <div key={post.slug} className="pui-glass-card p-5">
+          <div key={post.slug} className="pui-glass-card p-3">
             <ArticleCard post={post} />
           </div>
         ))}
 
         {hasMore && (
-          <div className="text-center pt-2">
-            <button
-              onClick={() => setMobileCount((c) => c + PAGE_SIZE)}
-              className="w-full py-4 text-sm font-semibold text-blue-600 dark:text-blue-400
-                         border border-dashed border-gray-300 dark:border-gray-600 rounded-xl
-                         active:bg-gray-100 dark:active:bg-gray-700 transition-colors
-                         cursor-pointer select-none"
-            >
-              加载更多（{posts.length - mobileCount} 条）
-            </button>
-          </div>
+          <button
+            onClick={() => setMobileCount((c) => c + PAGE_SIZE)}
+            className="w-full py-3 text-xs font-medium text-[#7c3aed] dark:text-[#00d4ff]
+                       border border-dashed border-[#7c3aed]/30 dark:border-[#00d4ff]/30 rounded-xl
+                       active:scale-[0.98] transition-all duration-150 cursor-pointer"
+          >
+            加载更多 · 还有 {posts.length - mobileCount} 条
+          </button>
         )}
       </div>
     </div>
