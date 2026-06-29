@@ -1,6 +1,6 @@
 import { SkillClient } from './SkillClient';
 
-// GitHub trending: 最近一周创建的最热开源项目
+// GitHub trending: 最近一天创建的最热开源项目
 // 使用 GitHub Search API（无需认证即可 60 req/h）
 export const revalidate = 86400; // 每天刷新一次
 
@@ -26,7 +26,7 @@ interface GitHubRepo {
 
 async function fetchTrendingRepos(): Promise<GitHubRepo[]> {
   // 获取最近 7 天创建的最热项目
-  const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const url = `https://api.github.com/search/repositories?q=created:>${since}&sort=stars&order=desc&per_page=30`;
 
   const token = process.env.GITHUB_TOKEN || process.env.GITHUB_PAT;
