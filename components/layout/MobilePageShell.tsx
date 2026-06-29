@@ -12,12 +12,11 @@ const PAGE_TITLES: Record<string, string> = {
 export default function MobilePageShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const title = PAGE_TITLES[pathname] || "";
-  const isHome = pathname === "/" || pathname === "/blog";
 
   return (
     <>
-      <ScrollAwareNavbar title={title} showLogo={isHome} />
-      <div className="pt-14 md:pt-0">
+      <ScrollAwareNavbar title={title} />
+      <div className="md:hidden pt-14">
         {children}
       </div>
     </>

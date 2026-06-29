@@ -1,8 +1,7 @@
 ﻿'use client';
 import Link from "next/link";
-import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { SunIcon, MoonIcon } from "lucide-react";
 import { useTheme } from "next-themes";
 
@@ -24,7 +23,7 @@ export default function Navbar() {
   const isDark = resolvedTheme === "dark";
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 px-4 sm:px-6 lg:px-8 py-3 
+    <nav className="hidden md:block fixed top-0 left-0 right-0 z-50 px-4 sm:px-6 lg:px-8 py-3 
                     bg-white/70 dark:bg-[#0a0a0f]/70 backdrop-blur-xl saturate-180 
                     border-b border-[rgba(124,58,237,0.08)] dark:border-[rgba(168,85,247,0.08)]">
       <div className="max-w-6xl mx-auto flex items-center justify-between">
@@ -33,7 +32,7 @@ export default function Navbar() {
             法舟记
           </span>
         </Link>
-        <div className="hidden md:flex items-center gap-1">
+        <div className="flex items-center gap-1">
           {NAV_LINKS.map((link) => {
             const active = isActive(link.href, pathname);
             return (
@@ -52,13 +51,13 @@ export default function Navbar() {
               </Link>
             );
           })}
+          <button 
+            onClick={() => setTheme(isDark ? "light" : "dark")}
+            className="ml-2 p-2.5 rounded-xl hover:bg-[rgba(124,58,237,0.06)] dark:hover:bg-[rgba(168,85,247,0.06)] transition-all duration-200 cursor-pointer"
+            aria-label="切换主题">
+            {isDark ? <SunIcon className="w-5 h-5 text-gray-400" /> : <MoonIcon className="w-5 h-5 text-gray-500" />}
+          </button>
         </div>
-        <button 
-          onClick={() => setTheme(isDark ? "light" : "dark")}
-          className="p-3 rounded-xl active:scale-95 transition-all duration-150 cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
-          aria-label="切换主题">
-          {isDark ? <SunIcon className="w-5 h-5 text-gray-400" /> : <MoonIcon className="w-5 h-5 text-gray-500" />}
-        </button>
       </div>
     </nav>
   );
