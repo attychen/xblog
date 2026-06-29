@@ -16,9 +16,7 @@ export default function MobilePageShell({ children }: { children: React.ReactNod
   return (
     <>
       <ScrollAwareNavbar title={title} />
-      <div className="md:hidden pt-14">
-        {children}
-      </div>
+      {children}
     </>
   );
 }

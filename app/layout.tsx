@@ -192,7 +192,7 @@ export default function RootLayout({
           <Navbar />
           <MobilePageShell>
             <MobileBottomNav />
-            <main className="flex-1 pt-14 md:pt-6 pb-20 md:pb-0">
+            <main className="flex-1 pt-14 md:pt-20 pb-20 md:pb-0">
               <PageTransition>{children}</PageTransition>
             </main>
           </MobilePageShell>
