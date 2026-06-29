@@ -10,8 +10,19 @@ const FOOTER_LINKS = [
 export default function Footer() {
   return (
     <footer className="mt-20 border-t border-[#7c3aed]/10 dark:border-[#7c3aed]/20 pui-glass rounded-none">
-      <div className="max-w-6xl mx-auto px-4 py-10">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
+      {/* Mobile: minimal footer */}
+      <div className="md:hidden px-4 py-6 text-center">
+        <Link href="/" className="font-bitcount text-lg font-semibold text-gray-800 dark:text-gray-200">
+          法舟记
+        </Link>
+        <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">
+          © {new Date().getFullYear()} 以代码为舟，渡技术之海
+        </p>
+      </div>
+
+      {/* Desktop: full footer */}
+      <div className="hidden md:block max-w-6xl mx-auto px-4 py-10">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           <div className="space-y-2">
             <Link href="/" className="font-bitcount text-xl font-semibold text-gray-800 dark:text-gray-200">
               法舟记
