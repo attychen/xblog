@@ -68,6 +68,9 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://fazhouji.vercel.app"),
+  other: {
+    "Cache-Control": "no-cache, no-store, must-revalidate",
+  },
   title: {
     default: "法舟记 — 技术与思考的笔记",
     template: "%s | 法舟记",

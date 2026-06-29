@@ -56,22 +56,19 @@ export default function ArticleList({ posts }: { posts: Post[] }) {
         )}
       </div>
 
-      {/* Mobile - Instagram style full-width */}
+      {/* Mobile - clean reading, no cards */}
       <div className="md:hidden">
-        {mobilePosts.map((post, i) => (
-          <div 
-            key={post.slug} 
-            className="px-4 py-4 border-b border-black/[0.04] dark:border-white/[0.06]"
-          >
-            <ArticleCard post={post} />
+        {mobilePosts.map((post) => (
+          <div key={post.slug} className="px-4 py-3 border-b border-black/[0.04] dark:border-white/[0.06]">
+            <ArticleCard post={post} compact />
           </div>
         ))}
 
         {hasMore && (
-          <div className="px-4 py-6">
+          <div className="px-4 py-5">
             <button
               onClick={() => setMobileCount((c) => c + PAGE_SIZE)}
-              className="w-full py-3 text-[13px] font-medium text-gray-500 dark:text-gray-400
+              className="w-full py-2.5 text-[13px] font-medium text-gray-500 dark:text-gray-400
                          rounded-xl active:scale-[0.98] transition-all duration-200
                          bg-gray-100/80 dark:bg-white/[0.05]"
             >

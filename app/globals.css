@@ -1045,27 +1045,26 @@ main {
   transform: translateY(-2px);
 }
 
-/* Mobile glass - lighter */
+/* Mobile glass - subtle */
 @media (max-width: 767px) {
   .pui-glass-card {
-    background: rgba(255, 255, 255, 0.5) !important;
-    backdrop-filter: blur(12px) saturate(150%) !important;
-    -webkit-backdrop-filter: blur(12px) saturate(150%) !important;
-    border: 1px solid rgba(0, 0, 0, 0.04) !important;
-    border-radius: 12px !important;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03) !important;
+    background: rgba(255, 255, 255, 0.4) !important;
+    backdrop-filter: blur(8px) saturate(120%) !important;
+    -webkit-backdrop-filter: blur(8px) saturate(120%) !important;
+    border: 1px solid rgba(0, 0, 0, 0.03) !important;
+    border-radius: 10px !important;
+    box-shadow: 0 1px 8px rgba(0, 0, 0, 0.02) !important;
   }
   .dark .pui-glass-card {
-    background: rgba(255, 255, 255, 0.04) !important;
-    border-color: rgba(255, 255, 255, 0.05) !important;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15) !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-color: rgba(255, 255, 255, 0.04) !important;
+    box-shadow: 0 1px 8px rgba(0, 0, 0, 0.1) !important;
   }
   .pui-glass-card::before {
     display: none !important;
   }
   .pui-glass-card:hover {
     transform: none !important;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03) !important;
   }
   .pui-glass-card:active {
     transform: scale(0.98) !important;
