@@ -868,3 +868,152 @@ main {
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
+/* =========================================================
+   WeChat-style Article Typography (Mobile)
+   ========================================================= */
+@media (max-width: 767px) {
+  /* Article content - no borders, max space */
+  .prose-mobile article,
+  article.mdx-content {
+    padding: 0;
+    margin: 0;
+  }
+  
+  /* Headings - WeChat style */
+  .prose-mobile h1,
+  article.mdx-content h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.4;
+    margin: 2rem 0 1rem;
+    color: rgb(var(--foreground));
+  }
+  
+  .prose-mobile h2,
+  article.mdx-content h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1.4;
+    margin: 1.75rem 0 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    color: rgb(var(--foreground));
+  }
+  
+  .dark .prose-mobile h2,
+  .dark article.mdx-content h2 {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+  }
+  
+  .prose-mobile h3,
+  article.mdx-content h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    line-height: 1.5;
+    margin: 1.5rem 0 0.5rem;
+  }
+  
+  /* Paragraphs - comfortable reading */
+  .prose-mobile p,
+  article.mdx-content p {
+    font-size: 1rem;
+    line-height: 1.85;
+    margin: 1.25rem 0;
+    color: rgb(var(--foreground) / 0.85);
+    letter-spacing: 0.02em;
+  }
+  
+  /* Lists */
+  .prose-mobile ul,
+  .prose-mobile ol,
+  article.mdx-content ul,
+  article.mdx-content ol {
+    margin: 1rem 0;
+    padding-left: 1.5rem;
+  }
+  
+  .prose-mobile li,
+  article.mdx-content li {
+    font-size: 1rem;
+    line-height: 1.8;
+    margin: 0.5rem 0;
+  }
+  
+  /* Blockquotes - WeChat style */
+  .prose-mobile blockquote,
+  article.mdx-content blockquote {
+    margin: 1.5rem 0;
+    padding: 1rem 1rem 1rem 1rem;
+    border-left: 3px solid #7c3aed;
+    background: rgba(124, 58, 237, 0.05);
+    border-radius: 0 8px 8px 0;
+    font-style: normal;
+    color: rgb(var(--foreground) / 0.8);
+  }
+  
+  .dark .prose-mobile blockquote,
+  .dark article.mdx-content blockquote {
+    background: rgba(124, 58, 237, 0.1);
+  }
+  
+  /* Code inline */
+  .prose-mobile code,
+  article.mdx-content code {
+    font-size: 0.875em;
+    padding: 0.15em 0.4em;
+    background: rgba(124, 58, 237, 0.08);
+    border-radius: 4px;
+    color: #7c3aed;
+  }
+  
+  .dark .prose-mobile code,
+  .dark article.mdx-content code {
+    background: rgba(168, 133, 247, 0.15);
+    color: #a855f7;
+  }
+  
+  /* Images */
+  .prose-mobile img,
+  article.mdx-content img {
+    margin: 1.5rem auto;
+    border-radius: 8px;
+  }
+  
+  /* Links */
+  .prose-mobile a,
+  article.mdx-content a {
+    color: #7c3aed;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+  }
+  
+  .dark .prose-mobile a,
+  .dark article.mdx-content a {
+    color: #a855f7;
+  }
+}
+
+/* =========================================================
+   Card List Optimization (Mobile)
+   ========================================================= */
+@media (max-width: 767px) {
+  /* Tighter card spacing */
+  .pui-glass-card {
+    margin-bottom: 0;
+  }
+  
+  /* Better card padding */
+  .pui-glass-card.p-3 {
+    padding: 0.875rem;
+  }
+  
+  /* Smooth card transitions */
+  .pui-glass-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .pui-glass-card:active {
+    transform: scale(0.99);
+  }
+}

@@ -1,7 +1,7 @@
 ﻿import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/provider/ThemeProvider";
-import Navbar from "@/components/layout/Navbar";
+import MobilePageShell from "@/components/layout/MobilePageShell";
 import MobileBottomNav from "@/components/layout/MobileBottomNav";
 import PageTransition from "@/components/ui/PageTransition";
 import Footer from "@/components/layout/Footer";
@@ -187,11 +187,12 @@ export default function RootLayout({
       >
         <ThemeProvider>
           <ObservabilityClient />
-          <Navbar />
+          <MobilePageShell>
           <MobileBottomNav />
           <main className="flex-1 pt-6 pb-20 md:pb-0">
           <PageTransition>{children}</PageTransition>
           </main>
+          </MobilePageShell>
           <Footer />
         </ThemeProvider>
       </body>
