@@ -23,12 +23,15 @@ export default function Navbar() {
   const isDark = resolvedTheme === "dark";
 
   return (
-    <nav className="hidden md:block fixed top-0 left-0 right-0 z-50 px-4 lg:px-8 
-                    bg-white/60 dark:bg-[#0a0a0f]/60 backdrop-blur-2xl saturate-200
-                    border-b border-black/[0.06] dark:border-white/[0.08]">
-      <div className="max-w-6xl mx-auto flex items-center justify-between h-16">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="text-xl font-bold tracking-tight text-black dark:text-white">
+    <nav className="hidden md:block fixed top-0 left-0 right-0 z-50 
+                    bg-white/60 dark:bg-[#0a0a0f]/60 
+                    backdrop-blur-2xl saturate-[1.8]
+                    border-b border-black/[0.06] dark:border-white/[0.08]
+                    shadow-[0_1px_0_0_rgba(255,255,255,0.5)_inset] dark:shadow-[0_1px_0_0_rgba(255,255,255,0.05)_inset]">
+      <div className="max-w-6xl mx-auto flex items-center justify-between h-16 px-4 lg:px-8">
+        <Link href="/" className="flex items-center gap-2 group">
+          <span className="text-xl font-bold tracking-tight text-black dark:text-white 
+                         group-hover:opacity-80 transition-opacity">
             法舟记
           </span>
         </Link>
