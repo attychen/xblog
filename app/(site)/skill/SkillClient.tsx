@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useMemo } from 'react';
 import Image from 'next/image';
@@ -75,8 +75,8 @@ export function SkillClient({ repos }: { repos: GitHubRepo[] }) {
   }, [repos, search, langFilter]);
 
   return (
-    <div className="pt-20 pb-16">
-      <div className="max-w-6xl mx-auto px-4 space-y-6">
+    <div className="pt-14 md:pt-20 pb-16">
+      <div className="max-w-6xl mx-auto md:px-4 space-y-4 md:space-y-6">
         {/* Header */}
         <div className="space-y-2">
           <h1 className="text-3xl font-bold font-bitcount tracking-[0.2em] pui-grad-text transition-colors">

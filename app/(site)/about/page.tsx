@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import Image from 'next/image';
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { PROFILE } from '@/config/profile';
@@ -112,7 +112,7 @@ export default function AboutPage() {
   };
 
   return (
-    <div className="pt-20 pb-16">
+    <div className="pt-14 md:pt-20 pb-16">
       <div className="max-w-4xl mx-auto px-4 space-y-8">
 
         {/* 个人信息卡片 */}

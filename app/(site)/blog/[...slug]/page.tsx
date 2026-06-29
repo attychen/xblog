@@ -1,4 +1,4 @@
-import { renderMDX } from "@/lib/mdx";
+﻿import { renderMDX } from "@/lib/mdx";
 import { getAllPosts, getPostBySlug, normalizeTags } from "@/lib/post";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -92,7 +92,7 @@ export default async function BlogPostPage({ params }: BlogPageProps) {
     const posts = getPostsByCategory(slug);
 
     return (
-      <div className="pt-20 pb-16">
+      <div className="pt-14 md:pt-20 pb-16">
         <div className="max-w-5xl mx-auto px-4 space-y-8">
           <header className="space-y-3">
             <p className="text-3xl font-bitcount tracking-[0.2em] text-gray-800 dark:text-gray-400 font-semibold transition-colors">

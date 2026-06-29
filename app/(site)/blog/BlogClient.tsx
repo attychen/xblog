@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import ArticleList from "@/components/card/ArticleList";
 import { getDynamicCategories, getColorStyle } from "@/constant";
 import Link from "next/link";
@@ -24,8 +24,8 @@ export default function BlogClient({ posts }: { posts: Post[] }) {
   const dynamicCategories = useMemo(() => getDynamicCategories(posts), [posts]);
 
   return (
-    <div className="pt-20 pb-16">
-      <div className="max-w-5xl mx-auto px-4 space-y-8">
+    <div className="pt-14 md:pt-20 pb-16">
+      <div className="max-w-5xl mx-auto md:px-4 space-y-4 md:space-y-8">
         <div className="space-y-2">
           <h1 className="text-3xl font-bold font-bitcount tracking-[0.2em] pui-grad-text font-semibold transition-colors">AI动态</h1>
           <p className="text-gray-600 dark:text-gray-400 transition-colors">
@@ -54,7 +54,7 @@ export default function BlogClient({ posts }: { posts: Post[] }) {
             placeholder="搜索文章..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full px-4 py-3 pl-12 rounded-xl border border-gray-200 bg-white/90 backdrop-blur-sm
+            className="w-full px-4 py-3 pl-11 rounded-xl border-0 bg-gray-100 dark:bg-white/[0.06]
                        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
                        dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder-gray-400
                        transition-all"
