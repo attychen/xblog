@@ -1,0 +1,176 @@
+---
+title: "Herdr：终端内的AI代理多路复用器"
+date: "2026-06-29"
+excerpt: "Herdr 是一个驻留在终端中的代理多路复用器（agent multiplexer）。它支持工作区（workspaces）、标签页（tabs）和窗格（panes）。原生鼠标支持：点击、拖拽、拆分。每个代理的状态一目了然：阻塞中、工作中、已完成。支持分离和重新连接，代理在后台持续运行。无需 GUI 应用，无需 Electron，无需仅限 Mac 的原生封装。你看到的是代理自己的终端，而不是他人对它的"
+category: "ai-tools"
+tags: ["终端多路复用器","AI代理","开发者工具","Rust","CLI"]
+original: "https://github.com/ogulcancelik/herdr"
+draft: false
+---
+
+## 1. 概述与安装
+
+Herdr 是一个驻留在终端中的代理多路复用器（agent multiplexer）。它支持工作区（workspaces）、标签页（tabs）和窗格（panes）。原生鼠标支持：点击、拖拽、拆分。每个代理的状态一目了然：阻塞中、工作中、已完成。支持分离和重新连接，代理在后台持续运行。无需 GUI 应用，无需 Electron，无需仅限 Mac 的原生封装。你看到的是代理自己的终端，而不是他人对它的转译。
+
+安装方式：
+- 在 Linux/macOS 上运行：`curl -fsSL https://herdr.dev/install.sh | sh`
+- 在 Windows 预览版 Beta 上运行：`powershell -ExecutionPolicy Bypass -c "irm https://herdr.dev/install.ps1 | iex"`
+- 或通过 Homebrew 安装：`brew install herdr`
+- 或通过 mise 安装：`mise use -g herdr`（如果 mise 报告未找到 herdr，请更新 mise 后重试；较旧版本的 mise 早于 herdr 注册条目；`mise use -g github:ogulcancelik/herdr` 可作为临时回退方案）
+- 或从 releases 页面下载稳定的 Linux/macOS 二进制文件。原生 Windows 二进制文件仅为预览版 Beta 构建。
+
+## 2. 快速入门与核心概念
+
+在工作目录中启动 Herdr：`herdr`。Herdr 启动或连接到一个后台会话服务器（session server）。当会话没有工作区时，Herdr 会自动打开一个。在根窗格中运行一个代理。按 `ctrl+b`，然后按 `shift+n` 创建另一个工作区；按 `ctrl+b`，然后按 `v` 或 `-` 拆分窗格；按 `ctrl+b`，然后按 `c` 创建标签页；按 `ctrl+b`，然后按 `w` 切换工作区。按 `ctrl+b q` 分离客户端。服务器和窗格进程会继续运行。打开另一个终端并再次运行 `herdr` 以重新连接。
+
+核心概念：
+- 服务器与客户端：默认情况下，herdr 连接到一个后台服务器。分离仅关闭客户端。`herdr server stop` 停止默认服务器并终止其窗格。命名会话（Named sessions）是独立的服务器命名空间：当你需要完全独立的运行时状态时，使用 `herdr session attach work`、`herdr session stop work` 和 `herdr session list`。
+- 工作区、标签页、窗格：工作区是项目级容器。标签页在工作区内对窗格进行分组。窗格是真实的终端进程，而非重写的代理视图。
+- 复制：Herdr 复制窗格文本，而非侧边栏。在窗格内拖拽选择，双击单词或令牌，或按 `prefix+[` 进入键盘复制模式。在复制模式下，使用 `h/j/k/l`、`w/b/e` 和 `&#123;/&#125;` 移动，使用 `v` 或空格开始选择，使用 `y` 或回车复制，使用 `q` 或 Esc 退出。在 PuTTY 和某些 SSH 终端中，拖拽时按住 Shift 可使用终端自身的选择功能，Shift + 右键点击可粘贴。
+- 更新与恢复：`herdr update` 安装新二进制文件，但正在运行的服务器会继续使用旧进程，直到被停止或移交。停止旧服务器以使用新版本。停止会退出窗格进程。运行 `herdr server stop`，然后再次运行 `herdr` 以用于默认会话。对于命名会话，运行 `herdr session stop name`，然后再次运行 `herdr session attach name`。`herdr update --handoff` 是实验性功能，尝试将活动窗格（包括开发服务器等前台进程）从旧服务器迁移到新服务器。安装了当前官方集成后，受支持的代理窗格可以在服务器重启或更新后从其原生代理会话重新启动。
+
+## 3. 键绑定与代理感知
+
+Herdr 使用显式的键绑定字符串。`prefix+n` 表示按下配置的前缀键，然后按 `n`。`ctrl+alt+n`、`cmd+k`、`alt+1` 和功能键组合是直接的终端模式快捷键，无需前缀。普通的直接可打印键（如 `n`）会干扰正常打字，因此除非你故意想要一个带修饰键的直接绑定，否则请使用 `prefix+n`。
+
+代理感知：侧边栏显示阻塞中、工作中、已完成和空闲状态。默认情况下，通过进程名称和终端输出来检测。官方集成可以添加用于恢复的原生会话标识、语义状态报告，或两者兼有。
+
+更新通知：当新版本可用时，Herdr 会通知你。手动运行：`herdr update`。`herdr update` 适用于由 Herdr 自身安装程序管理的安装。Homebrew、mise 和 Nix 安装通过 `brew upgrade herdr`、`mise upgrade herdr` 或你的 Nix 工作流进行更新，如果会话仍在运行旧服务器，则使用相同的停止并重新运行流程。Linux 和 macOS 直接安装可以选择开发预览版构建：`herdr channel set preview`，并返回稳定版：`herdr channel set stable`。Windows Beta 安装目前仅限预览版。有关完整的更新、重启、恢复和移交矩阵，请参阅安装文档和会话状态文档。Linux 和 macOS 直接安装默认使用稳定更新通道。Windows Beta 安装默认使用预览版。要在下一个稳定版发布前测试来自 master 的预览版构建：`herdr channel set preview`。要将 Linux 和 macOS 直接安装返回稳定版：`herdr channel set stable`。对于直接安装，更改通道也会检查该通道并安装其最新二进制文件。如果更新失败，请运行 `herdr update` 从配置的通道重试。预览版仅适用于由 Herdr 更新程序管理的直接安装。Homebrew、mise 和 Nix 保持稳定版，并通过其包管理器更新。
+
+## 4. 对比与远程连接
+
+对比：
+- tmux：持久会话 ✓，分离/重新连接 ✓，窗格、标签页、工作区 ✓，代理感知 —，驻留在终端中 ✓，真实终端视图 ✓，原生鼠标 —，轻量级二进制文件 ✓，代理可编排 ?
+- GUI 管理器：持久会话 —，分离/重新连接 —，窗格、标签页、工作区 ✓，代理感知 ✓，驻留在终端中 —，真实终端视图 —，原生鼠标 ✓，轻量级二进制文件 —，代理可编排 ?
+- herdr：持久会话 ✓，分离/重新连接 ✓，窗格、标签页、工作区 ✓，代理感知 ✓，驻留在终端中 ✓，真实终端视图 ✓，原生鼠标 ✓，轻量级二进制文件 ✓，代理可编排 ✓
+
+tmux 提供了持久性和窗格，但它是在代理出现之前构建的。GUI 管理器显示代理状态，但它们让你离开终端并使用其包装的视图。herdr 是一个集持久性和感知于一体的工具，不会妨碍你。
+
+远程连接：Herdr 可通过普通 SSH 工作。在远程主机上运行它，分离，然后稍后重新连接：`ssh you@yourserver herdr`。你也可以从本地终端连接，而无需先打开 shell：`herdr --remote workbox` 或 `herdr --remote ssh://you@yourserver:2222`。远程连接默认添加回退 SSH 保活（keepalives），同时保留你自己的 SSH 配置。设置 `[remote].manage_ssh_config = false` 以使用纯 SSH。直接连接将当前终端连接到一个服务器拥有的终端：`herdr agent attach target` 或 `herdr terminal attach terminal_id`。有关远程键绑定、命名会话和移交的详细信息，请参阅持久性和远程文档。
+
+## 5. 代理感知与终端体验
+
+代理感知：侧边栏显示哪些代理处于阻塞、工作或完成状态。工作区汇总到其最紧急的状态，以便你可以一目了然地扫描整个列表。状态：🔴 阻塞中——代理需要输入或批准；🟡 工作中——代理正在积极运行；🔵 已完成——工作完成，你尚未查看；🟢 空闲——已完成且已查看。检测通过读取前台进程和终端输出来工作。零配置，无需钩子。官方的 Claude Code、Codex、GitHub Copilot CLI、Devin、Droid、Kimi Code CLI、QoderCLI 和 Cursor Agent CLI 集成提供会话恢复标识；Pi、OMP、Kimi Code CLI、Opencode、Kilo Code CLI、Hermes 和自定义 Socket 集成可以报告自己的状态。
+
+终端体验：不是 GUI 窗口，不是 Web 仪表板，不是 Electron。Herdr 在你已经使用的任何终端内运行。单个 Rust 二进制文件，无依赖项。可在 tmux 内部作为外部终端环境工作。
+
+你得到什么：
+- 工作区——围绕 Git 仓库或文件夹名称组织，每个都有自己的标签页和窗格
+- 标签页——在 Socket API 和 CLI 中是一等公民
+- 复制友好——拖拽选择窗格文本，双击令牌，或使用键盘复制模式（`prefix+[`、`h/j/k/l`、`&#123;/&#125;`、`v` 和 `y`）
+- 通知——后台事件的声音和提示；标签感知抑制
+- 18 个内置主题——Catppuccin、Terminal、Tokyo Night、Gruvbox、One、Solarized、Kanagawa、Rosé Pine、Vesper 以及主要调色板的浅色变体
+- 会话持久性——窗格进程在客户端分离后继续存在；会话在完全重启后恢复窗格，并可选保留最近的屏幕历史
+- 代理也可以使用 Herdr：本地 Unix Socket 允许代理创建工作区、拆分或缩放窗格、生成辅助进程、读取输出以及等待状态变化。从 Socket API 文档和 SKILL.md 开始。
+
+## 6. 受支持的代理与集成
+
+自动检测开箱即用。进程名称匹配加上终端输出启发式。
+
+代理状态检测：
+- Pi：空闲/完成 ✓，工作中 ✓，阻塞中 ✓
+- Claude Code：空闲/完成 ✓，工作中 ✓，阻塞中 ✓
+- Codex：空闲/完成 ✓，工作中 ✓，阻塞中 ✓
+- Droid：空闲/完成 ✓，工作中 ✓，阻塞中 ✓
+- Amp：空闲/完成 ✓，工作中 ✓，阻塞中 ✓
+- Opencode：空闲/完成 ✓，工作中 ✓，阻塞中 ✓
+- Grok CLI：空闲/完成 ✓，工作中 ✓，阻塞中 ✓
+- Hermes Agent：空闲/完成 ✓，工作中 ✓，阻塞中 ✓
+- Kilo Code CLI：空闲/完成 ✓，工作中 ✓，阻塞中 ✓
+- Devin CLI：空闲/完成 ✓，工作中 ✓，阻塞中 ✓
+- Cursor Agent：空闲/完成 ✓，工作中 ✓，阻塞中 ✓
+- Antigravity CLI：空闲/完成 ✓，工作中 ✓，阻塞中 ✓
+- Kimi Code CLI：空闲/完成 ✓，工作中 ✓，阻塞中 ✓
+- GitHub Copilot CLI：空闲/完成 ✓，工作中 ✓，阻塞中 ✓
+- QoderCLI：空闲/完成 ✓，工作中 ✓，阻塞中 ✓
+- Kiro CLI：空闲/完成 ✓，工作中 ✓，阻塞中 —
+
+已检测但未完全测试：Gemini CLI、Cline。对于内置列表之外的代理，herdr 仍然可以作为具有工作区、窗格和平铺功能的终端多路复用器工作。自定义集成可以通过 Socket API 报告代理标签。请参阅 Socket API 文档。
+
+直接集成：官方集成有两个角色。Claude Code、Codex、GitHub Copilot CLI、Devin、Droid、QoderCLI 和 Cursor Agent CLI 报告用于原生恢复的会话标识，而其状态仍来自屏幕检测。Pi、OMP、Kimi Code CLI、Opencode、Kilo Code CLI 和 Hermes 报告语义状态和会话标识。
+
+安装方式：
+`herdr integration install pi`
+`herdr integration install omp`
+`herdr integration install claude`
+`herdr integration install codex`
+`herdr integration install copilot`
+`herdr integration install devin`
+`herdr integration install droid`
+`herdr integration install kimi`
+`herdr integration install opencode`
+`herdr integration install kilo`
+`herdr integration install hermes`
+`herdr integration install qodercli`
+`herdr integration install cursor`
+
+有关设置详细信息，请参阅集成文档。
+
+## 7. 键绑定与配置
+
+按 `ctrl+b` 进入前缀模式。默认操作是前缀优先且类似 tmux：
+- `prefix+c`：新标签页
+- `prefix+n` / `prefix+p`：下一个/上一个标签页
+- `prefix+1..9`：切换标签页
+- `prefix+w`：工作区导航
+- `prefix+g`：会话导航器
+- `prefix+shift+n`：新工作区
+- `prefix+shift+g`：新工作树
+- `prefix+shift+w`：重命名工作区
+- `prefix+shift+d`：关闭工作区
+- `prefix+h/j/k/l`：聚焦窗格
+- `prefix+shift+h/j/k/l`：交换窗格
+- `prefix+v` / `prefix+minus`：拆分窗格
+- `prefix+x`：关闭窗格
+- `prefix+b`：切换侧边栏
+- `prefix+z`：缩放窗格
+- `prefix+r`：调整大小模式
+- `prefix+q`：分离
+
+鼠标在整个过程中都受支持。调整大小模式使用 `h`/`l` 调整宽度，`j`/`k` 调整高度，`esc` 退出。完整语法、可选操作、索引绑定和自定义命令绑定位于配置文档中。
+
+配置文件：`~/.config/herdr/config.toml`。运行 `herdr --default-config` 打印完整默认配置。应用内设置涵盖主题、声音和提示偏好。Herdr 将日志写入 `~/.config/herdr/`；在持久会话模式下，`herdr-client.log` 和 `herdr-server.log` 通常是可用的文件。完整配置和日志记录详细信息位于配置文档中。
+
+## 8. 文档、开发与许可
+
+文档：
+- 快速入门——第一个会话、窗格、复制和命名会话
+- 安装——安装、更新、Homebrew、mise 和 Nix
+- 会话状态——分离、重启恢复、代理恢复和实时移交
+- 配置——键绑定、主题、通知、环境变量
+- 集成——Pi、OMP、Claude Code、Codex、Cursor Agent CLI、GitHub Copilot CLI、Droid、Kimi Code CLI、Opencode、Kilo Code CLI、Hermes、QoderCLI 集成
+- SKILL.md——可重用的代理技能
+- Socket API——Socket 协议和 CLI 参考
+- 代理指令：如果你是帮助此仓库的 AI 代理，请在做出更改前阅读 AGENTS.md，并在提出问题或 PR 前阅读 CONTRIBUTING.md。
+
+开发：
+```
+git clone https://github.com/ogulcancelik/herdr
+cd herdr
+cargo build --release
+./target/release/herdr
+just test        # 单元测试
+just check       # 格式化、测试和维护检查
+```
+
+赞助：Herdr 是全职、公开开发的，背后没有收入。赞助直接资助开发、稳定性以及通往真正代理运行时的道路。→ 成为赞助商 · 企业/合作：hey@herdr.dev · 有关层级，请参阅 SPONSORS.md。谢谢 🐑
+
+许可：Herdr 采用双重许可：
+- 开源：GNU Affero General Public License v3.0 或更高版本（AGPL-3.0-or-later）。
+- 商业：对于无法遵守 AGPL 的组织，提供商业许可。联系方式：hey@herdr.dev
+
+关于：驻留在终端中的代理多路复用器。herdr.dev
+
+主题：agent、rust、tmux、cli、terminal、ai、devtools、tui、developer-tools、multiplexer、workspace-manager、codex、ai-agents、terminal-ui、terminal-multiplexer、coding-agents、agent-orchestration、claude-code
+
+资源：Readme、License、Contributing
+
+活动：Stars 8.2k、Watchers 20、Forks 503
+
+发布：65 个版本，v0.7.1 最新（2026 年 6 月 24 日）+ 64 个版本
+
+语言：Rust 89.8%、MDX 2.2%、Python 2.0%、CSS 1.2%、TypeScript 1.2%、HTML 1.1%、其他 2.5%
+
+---
+
+🔗 **原文链接：[https://github.com/ogulcancelik/herdr](https://github.com/ogulcancelik/herdr)**
