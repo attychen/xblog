@@ -166,7 +166,7 @@ export default function ModelsClient({ models }: { models: HFModel[] }) {
           {filtered.map((m, i) => (
             <div
               key={m.id}
-              className="px-4 py-3 border-b border-black/[0.04] dark:border-white/[0.06]"
+              className="liquid-glass rounded-xl p-4"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2 min-w-0">

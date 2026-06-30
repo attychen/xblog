@@ -25,7 +25,7 @@ export default function HomeClient({ posts }: { posts: Post[] }) {
               <Link
                 key={key}
                 href={`/blog/category/${key}`}
-                className="flex-shrink-0 px-3 py-1.5 bg-gray-100 dark:bg-white/[0.06] 
+                className="flex-shrink-0 px-3 py-1.5 liquid-glass 
                            text-[12px] font-medium text-gray-700 dark:text-gray-300 
                            rounded-full active:scale-95 transition-all duration-200"
               >
