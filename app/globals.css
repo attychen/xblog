@@ -1188,3 +1188,9 @@ main {
   letter-spacing: -0.02em;
   line-height: 1.1;
 }
+/* Mobile background fix */
+@media (max-width: 767px) {
+  body {
+    background-attachment: scroll !important;
+  }
+}
