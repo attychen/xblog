@@ -1189,3 +1189,16 @@ main {
     background-attachment: scroll !important;
   }
 }
+/* Content visibility fallback - ensures content shows even without animation */
+main > div,
+main > div > div {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Ensure flex layout works on mobile */
+html, body {
+  height: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
