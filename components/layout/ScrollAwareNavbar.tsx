@@ -2,7 +2,6 @@
 import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import { SunIcon, MoonIcon } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 
 interface ScrollAwareNavbarProps {
   title?: string;
@@ -12,51 +11,35 @@ export default function ScrollAwareNavbar({ title }: ScrollAwareNavbarProps) {
   const { setTheme, resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
   const [showTitle, setShowTitle] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
+  const [visible, setVisible] = useState(true);
+  const [lastY, setLastY] = useState(0);
 
   useEffect(() => {
     const onScroll = () => {
       const y = window.scrollY;
-      setScrolled(y > 20);
       setShowTitle(y > 60 && !!title);
+      // Hide on scroll down, show on scroll up
+      if (y > lastY && y > 80) {
+        setVisible(false);
+      } else {
+        setVisible(true);
+      }
+      setLastY(y);
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, [title]);
+  }, [title, lastY]);
 
   return (
-    <nav className={`md:hidden fixed top-0 left-0 right-0 z-50 px-3 py-2 transition-all duration-300 ${
-      scrolled ? 'pt-2' : 'pt-3'
-    }`}>
-      <div className={`liquid-glass rounded-2xl px-4 py-2.5 flex items-center justify-between transition-all duration-300 ${
-        scrolled ? 'shadow-lg' : ''
-      }`}>
-        <div className="flex items-center min-w-0 flex-1">
-          <AnimatePresence mode="wait">
-            {showTitle ? (
-              <motion.span
-                key="page-title"
-                initial={{ opacity: 0, y: -8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                className="text-[15px] font-medium text-black dark:text-white truncate"
-              >
-                {title}
-              </motion.span>
-            ) : (
-              <motion.span
-                key="brand"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="text-[15px] font-semibold text-black dark:text-white"
-              >
-                法舟记
-              </motion.span>
-            )}
-          </AnimatePresence>
-        </div>
+    <nav 
+      className={`md:hidden fixed top-0 left-0 right-0 z-50 px-3 py-2 transition-transform duration-300 ${
+        visible ? 'translate-y-0' : '-translate-y-full'
+      }`}
+    >
+      <div className="liquid-glass rounded-2xl px-4 py-2.5 flex items-center justify-between">
+        <span className="text-[15px] font-semibold text-black dark:text-white truncate">
+          {showTitle ? title : '法舟记'}
+        </span>
         <button 
           onClick={() => setTheme(isDark ? "light" : "dark")}
           className="p-2 -mr-2 rounded-full active:scale-90 transition-transform duration-150"
