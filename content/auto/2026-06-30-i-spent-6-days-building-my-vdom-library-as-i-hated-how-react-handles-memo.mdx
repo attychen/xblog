@@ -1,0 +1,37 @@
+---
+title: "Tyaff：六天打造替代React的轻量级VDOM库，解决memo痛点"
+date: "2026-06-30"
+excerpt: "Tyaff Tyaff — 一个用于JavaScript的VDOM库（VDOM library for JavaScript）。它是纯JavaScript（ES6+）编写的轻量级React替代方案，拥有自己的虚拟DOM（virtual DOM）和极简主义哲学。与React的关键区别在于：memo()仅阻塞当前组件——子组件独立继续自己的更新链，使优化变得可预测；支持任何来源的可变数据（Mutabl"
+category: "programming"
+tags: ["虚拟DOM","React替代","JavaScript库","前端框架","性能优化"]
+original: "https://vflash.github.io/Tyaff/"
+draft: false
+---
+
+## 1. 项目概述与核心理念
+
+Tyaff Tyaff — 一个用于JavaScript的VDOM库（VDOM library for JavaScript）。它是纯JavaScript（ES6+）编写的轻量级React替代方案，拥有自己的虚拟DOM（virtual DOM）和极简主义哲学。与React的关键区别在于：memo()仅阻塞当前组件——子组件独立继续自己的更新链，使优化变得可预测；支持任何来源的可变数据（Mutable data）——组件可以直接读取全局存储（global store）、单例（singleton）或window，无需属性逐层传递（props drilling）；基于拉取（Pull-based）的上下文（context），无需Provider/Consumer——任何组件通过context: &#123; key() &#123; ... &#125; &#125;声明自己为提供者，子组件通过this.context(key)请求值；Props作为第一个参数——像init(props)、memo(props)、render(&#123; title, items &#125;)这样的签名允许在定义时直接解构props；键（Keys）在整个渲染过程中唯一——这允许在不同父组件之间移动组件时保留实例和状态。
+
+## 2. 主要特性
+
+紧凑且高性能——最小的API表面（minimal API surface）、自定义差异/补丁算法（custom diff/patch algorithm）、通过微任务（microtask）批量更新（batching updates）；针对批量操作优化——反转、交换、重新父级化比React更快；动态上下文树（Dynamic context tree）——分层提供者系统，通过HTML标签自动传播；基于工厂的组件（Factory-based components）——统一的创建模式、自动方法绑定、灵活的生命周期；支持延迟挂载的门户（Portals with deferred mounting）——挂载到带有锚节点的任意DOM容器；键系统（Key system）——用户定义的键在整个渲染过程中唯一，自动基于路径的键；带键的片段（Fragment with key）——无需包装器即可对子元素分组，并支持移动组。
+
+## 3. 安装与快速开始
+
+安装：npm install tyaff。快速开始：import &#123; h , Component , mount &#125; from ' tyaff ' ; const Counter = Component (&#123; count : 0 , increment () &#123; this . update (&#123; count : this . count + 1 &#125;); &#125;, render () &#123; return h ( ' div ' , null , h ( ' p ' , null , ' Counter: ' + this . count ), h ( ' button ' , &#123; onClick : this . increment &#125;, ' + ' ) ); &#125; &#125;); mount ( Counter , document . getElementById ( ' app ' ));
+
+## 4. 示例：带上下文的组件
+
+const ThemeProvider = Component (&#123; theme : ' light ' , context : &#123; theme () &#123; return this . theme ; &#125;, toggleTheme () &#123; this . theme = this . theme === ' light ' ? ' dark ' : ' light ' ; this . update (); &#125; &#125;, render () &#123; return h ( ' div ' , null , this . props . children ); &#125; &#125;); const ThemedButton = Component (&#123; render () &#123; const theme = this . context ( ' theme ' ); return h ( ' button ' , &#123; className : ' btn- ' + theme &#125;, ' Button ' ); &#125; &#125;); mount ( h ( ThemeProvider , null , h ( ThemedButton ) ), document . body );
+
+## 5. 示例：全局存储
+
+// store.js export const store = &#123; count : 0 &#125;; // app.js import &#123; store &#125; from ' ./store.js ' ; import &#123; h , Component , mount , refresh &#125; from ' tyaff ' ; const Counter = Component (&#123; render () &#123; return h ( ' div ' , null , ' Count: ' , store . count ); &#125; &#125;); mount ( Counter , document . getElementById ( ' app ' )); // Update store . count = 55 ; await refresh (); // all components will re-read the store
+
+## 6. 资源与致谢
+
+资源：文档（Documentation）——完整的API描述、使用示例、生命周期、上下文、门户、优化；在线示例（Live example）——浏览器中的交互式演示；基准测试（Benchmark）——tyaff与React的性能对比（14个场景）；更新日志（Changelog）——项目的新内容。致谢：本项目展示了人机协作：人类——架构、设计决策、代码审查、愿景；Qwen——开发、优化、文档、视觉设计；GLM——开发、优化；Gemini——研究与分析（通过搜索）。浏览器支持：Chrome 86+、Firefox 78+、Safari 14+、所有支持ES6模块的现代浏览器。许可证：MIT。本网站是开源的。改进此页面。
+
+---
+
+🔗 **原文链接：[https://vflash.github.io/Tyaff/](https://vflash.github.io/Tyaff/)**
