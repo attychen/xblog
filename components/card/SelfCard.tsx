@@ -1,39 +1,42 @@
-import Link from "next/link";
-import { PROFILE } from "@/config/profile";
+﻿import Link from "next/link";
+import Image from "next/image";
 
 interface SelfCardProps {
-  postCount?: number;
-  categoryCount?: number;
+  postCount: number;
+  categoryCount: number;
 }
 
-export default function SelfCard({ postCount = 0, categoryCount = 0 }: SelfCardProps) {
+export default function SelfCard({ postCount, categoryCount }: SelfCardProps) {
   return (
-    <section className="w-full border-b border-[#7c3aed]/10 dark:border-[#7c3aed]/20 pb-5">
-      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div className="max-w-2xl text-black dark:text-white">
-          <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
-              <span className="pui-grad-text">{PROFILE.name}&apos;s notes</span>
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight md:text-4xl pui-grad-text">
-            AI 大模型、智能体与前沿探索
-          </h1>
-          <p className="mt-3 max-w-xl text-sm leading-relaxed text-gray-600 dark:text-gray-400 md:text-base">
-            记录大语言模型、AI Agent、开源模型的最新进展与深度思考。持续关注技术前沿，保持好奇。
+    <div className="liquid-glass rounded-2xl p-6 md:p-8">
+      <div className="flex items-center gap-4 mb-4">
+        <Image
+          src="/logo.png"
+          alt="法舟记"
+          width={48}
+          height={48}
+          className="w-12 h-12 rounded-xl"
+        />
+        <div>
+          <h2 className="text-xl md:text-2xl font-bold text-black dark:text-white">
+            法舟记
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            AI 大模型与前沿技术笔记
           </p>
         </div>
-
-        <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
-          <span className="font-mono">{postCount} articles</span>
-          <span className="h-1 w-1 rounded-full bg-gray-400 dark:bg-gray-500" />
-          <span className="font-mono">{categoryCount} topics</span>
-          <Link
-            href="/about"
-            className="ml-0 inline-flex items-center rounded-full border border-black/20 px-3 py-1.5 text-sm font-semibold text-black transition-colors hover:bg-black hover:text-white dark:border-white/25 dark:text-white dark:hover:bg-white dark:hover:text-black md:ml-2"
-          >
-            About
-          </Link>
-        </div>
       </div>
-    </section>
+      <div className="flex gap-4 text-sm">
+        <span className="text-gray-500 dark:text-gray-400">
+          <span className="font-semibold text-black dark:text-white">{postCount}</span> 篇文章
+        </span>
+        <span className="text-gray-500 dark:text-gray-400">
+          <span className="font-semibold text-black dark:text-white">{categoryCount}</span> 个分类
+        </span>
+      </div>
+      <Link href="/about" className="inline-block mt-4 text-sm text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors">
+        了解更多 →
+      </Link>
+    </div>
   );
 }

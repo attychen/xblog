@@ -28,7 +28,7 @@ export default function ArticleList({ posts }: { posts: Post[] }) {
       {/* Desktop */}
       <div className="hidden md:block space-y-3">
         {paged.map((post) => (
-          <div key={post.slug} className="pui-glass-card p-5">
+          <div key={post.slug} className="liquid-glass rounded-2xl p-5">
             <ArticleCard post={post} />
           </div>
         ))}

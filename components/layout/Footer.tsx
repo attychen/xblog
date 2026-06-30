@@ -19,12 +19,8 @@ export default function Footer() {
       </div>
 
       {/* Desktop: glass footer */}
-      <div className="hidden md:block 
-                      bg-white/40 dark:bg-[#0a0a0f]/40 
-                      backdrop-blur-2xl saturate-[1.8]
-                      border-t border-black/[0.06] dark:border-white/[0.08]
-                      shadow-[inset_0_1px_0_0_rgba(255,255,255,0.3)] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]">
-        <div className="max-w-6xl mx-auto px-4 lg:px-8 py-10">
+      <div className="hidden md:block px-4 lg:px-8 pb-8">
+        <div className="max-w-6xl mx-auto liquid-glass rounded-2xl p-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             <div className="space-y-2">
               <Link href="/" className="text-xl font-bold text-gray-800 dark:text-gray-200">
@@ -68,7 +64,7 @@ export default function Footer() {
               </div>
             </div>
           </div>
-          <div className="mt-8 pt-6 border-t border-black/[0.04] dark:border-white/[0.06] text-center text-xs text-gray-400 dark:text-gray-500">
+          <div className="mt-8 pt-6 border-t border-black/[0.06] dark:border-white/[0.08] text-center text-xs text-gray-400 dark:text-gray-500">
             © {new Date().getFullYear()} 法舟记 · 以代码为舟，渡技术之海
           </div>
         </div>

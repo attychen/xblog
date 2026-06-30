@@ -25,12 +25,12 @@ export default function ScrollAwareNavbar({ title }: ScrollAwareNavbarProps) {
   }, [title]);
 
   return (
-    <nav className={`md:hidden fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-      scrolled 
-        ? 'bg-white/95 dark:bg-[#0a0a0f]/95 backdrop-blur-2xl border-b border-black/[0.04] dark:border-white/[0.06]'
-        : 'bg-white/80 dark:bg-[#0a0a0f]/80 backdrop-blur-xl'
+    <nav className={`md:hidden fixed top-0 left-0 right-0 z-50 px-3 py-2 transition-all duration-300 ${
+      scrolled ? 'pt-2' : 'pt-3'
     }`}>
-      <div className="px-4 h-11 flex items-center justify-between">
+      <div className={`liquid-glass rounded-2xl px-4 py-2.5 flex items-center justify-between transition-all duration-300 ${
+        scrolled ? 'shadow-lg' : ''
+      }`}>
         <div className="flex items-center min-w-0 flex-1">
           <AnimatePresence mode="wait">
             {showTitle ? (

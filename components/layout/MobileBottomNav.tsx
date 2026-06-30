@@ -21,11 +21,8 @@ export default function MobileBottomNav() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden safe-area-bottom">
-      <div className="bg-white/95 dark:bg-[#0a0a0f]/95 
-                      backdrop-blur-2xl saturate-[1.8]
-                      border-t border-black/[0.04] dark:border-white/[0.06]
-                      shadow-[inset_0_1px_0_0_rgba(255,255,255,0.5)] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]">
-        <div className="flex items-center justify-around h-14 max-w-lg mx-auto">
+      <div className="mx-3 mb-3 liquid-glass rounded-2xl px-2 py-1.5">
+        <div className="flex items-center justify-around">
           {TABS.map((tab) => {
             const active = isActive(tab.href, pathname);
             const Icon = tab.icon;
@@ -33,10 +30,10 @@ export default function MobileBottomNav() {
               <Link
                 key={tab.href}
                 href={tab.href}
-                className="flex flex-col items-center justify-center gap-0.5 w-16 h-full relative"
+                className="flex flex-col items-center justify-center gap-0.5 w-16 h-12 relative"
               >
                 <Icon
-                  className={`w-6 h-6 transition-all duration-300 ${
+                  className={`w-5 h-5 transition-all duration-300 ${
                     active 
                       ? "text-black dark:text-white scale-110" 
                       : "text-gray-400 dark:text-gray-500"

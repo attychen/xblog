@@ -1,34 +1,31 @@
-'use client';
-import Link from "next/link";
-import { getDynamicCategories } from "@/constant";
+﻿import Link from "next/link";
 import type { Post } from "@/types";
+import { getDynamicCategories } from "@/constant";
 
-interface CategoryCardProps {
-  posts: Post[];
-}
-
-export default function CategoryCard({ posts }: CategoryCardProps) {
+export default function CategoryCard({ posts }: { posts: Post[] }) {
   const categories = getDynamicCategories(posts);
+  const entries = Object.entries(categories);
 
-  if (Object.keys(categories).length === 0) return null;
+  if (entries.length === 0) return null;
 
   return (
-    <div className="sticky top-24">
-      <div className="pui-glass-card p-5">
-        <h2 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-4 tracking-wide uppercase">
-          Categories
-        </h2>
-        <div className="flex flex-col gap-1">
-          {Object.entries(categories).map(([key, meta]) => (
-            <Link
-              key={key}
-              href={`/blog/${key}`}
-              className="px-3 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            >
+    <div className="liquid-glass rounded-2xl p-5 sticky top-24">
+      <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
+        分类
+      </h3>
+      <div className="space-y-2">
+        {entries.map(([key, meta]) => (
+          <Link
+            key={key}
+            href={`/blog/category/${key}`}
+            className="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors"
+          >
+            <span className="text-sm text-gray-600 dark:text-gray-400">
               {meta.name}
-            </Link>
-          ))}
-        </div>
+            </span>
+            
+          </Link>
+        ))}
       </div>
     </div>
   );
