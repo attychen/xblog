@@ -2,7 +2,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useTheme } from "next-themes";
 import { SunIcon, MoonIcon } from "lucide-react";
-import Link from "next/link";
 
 interface ScrollAwareNavbarProps {
   title?: string;
@@ -36,10 +35,17 @@ export default function ScrollAwareNavbar({ title }: ScrollAwareNavbarProps) {
     return () => window.removeEventListener("scroll", onScroll);
   }, [title]);
 
-  const toggleTheme = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setTheme(isDark ? "light" : "dark");
-  };
+  // Use native DOM event instead of React onClick
+  useEffect(() => {
+    const btn = document.getElementById('mobile-theme-toggle');
+    if (!btn) return;
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setTheme(isDark ? "light" : "dark");
+    };
+    btn.addEventListener('click', handler);
+    return () => btn.removeEventListener('click', handler);
+  }, [isDark, setTheme]);
 
   return (
     <nav className={`md:hidden fixed top-0 left-0 right-0 z-50 px-3 py-2 transition-transform duration-300 ${visible ? 'translate-y-0' : '-translate-y-full'}`}>
@@ -47,9 +53,9 @@ export default function ScrollAwareNavbar({ title }: ScrollAwareNavbarProps) {
         <span className="text-[15px] font-semibold text-black dark:text-white truncate">
           {showTitle ? title : '法舟记'}
         </span>
-        <a href="#" onClick={toggleTheme} className="p-2 -mr-2 rounded-full block" aria-label="切换主题" style={{ WebkitTapHighlightColor: 'transparent' }}>
+        <div id="mobile-theme-toggle" style={{ padding: '8px', cursor: 'pointer', WebkitTapHighlightColor: 'transparent' }}>
           {isDark ? <SunIcon className="w-[18px] h-[18px] text-gray-500" /> : <MoonIcon className="w-[18px] h-[18px] text-gray-500" />}
-        </a>
+        </div>
       </div>
     </nav>
   );

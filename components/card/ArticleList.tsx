@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ArticleCard from "./ArticleCard";
 import type { Post } from "@/types";
 
@@ -14,6 +14,18 @@ export default function ArticleList({ posts }: { posts: Post[] }) {
   const paged = posts.slice(start, start + PAGE_SIZE);
   const mobilePosts = posts.slice(0, mobileCount);
   const hasMore = mobileCount < posts.length;
+
+  // Native DOM event for mobile load more
+  useEffect(() => {
+    const btn = document.getElementById('mobile-load-more');
+    if (!btn) return;
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setMobileCount((c) => c + PAGE_SIZE);
+    };
+    btn.addEventListener('click', handler);
+    return () => btn.removeEventListener('click', handler);
+  }, [mobileCount]);
 
   if (posts.length === 0) {
     return (

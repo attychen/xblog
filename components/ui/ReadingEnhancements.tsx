@@ -1,5 +1,5 @@
 ﻿'use client';
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { ChevronUp, List } from "lucide-react";
 import type { HeadingItem } from "@/lib/headings";
 
@@ -11,6 +11,7 @@ export default function ReadingEnhancements({ headings }: { headings: HeadingIte
   const hasHeadings = headings.length > 0;
   const headingIds = useMemo(() => headings.map((h) => h.id), [headings]);
 
+  // Scroll progress
   useEffect(() => {
     const onScroll = () => {
       const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
@@ -21,6 +22,7 @@ export default function ReadingEnhancements({ headings }: { headings: HeadingIte
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Heading observer
   useEffect(() => {
     if (!headingIds.length) return;
     const observer = new IntersectionObserver(
@@ -34,6 +36,40 @@ export default function ReadingEnhancements({ headings }: { headings: HeadingIte
     return () => observer.disconnect();
   }, [headingIds]);
 
+  // Native TOC toggle
+  useEffect(() => {
+    const btn = document.getElementById('toc-btn');
+    if (!btn) return;
+    const handler = (e: Event) => { e.preventDefault(); setTocOpen(v => !v); };
+    btn.addEventListener('click', handler);
+    btn.addEventListener('touchend', handler as EventListener);
+    return () => { btn.removeEventListener('click', handler); btn.removeEventListener('touchend', handler as EventListener); };
+  }, []);
+
+  // Native close TOC
+  useEffect(() => {
+    if (!tocOpen) return;
+    const closeBtn = document.getElementById('toc-close');
+    if (!closeBtn) return;
+    const handler = (e: Event) => { e.preventDefault(); setTocOpen(false); };
+    closeBtn.addEventListener('click', handler);
+    closeBtn.addEventListener('touchend', handler as EventListener);
+    return () => { closeBtn.removeEventListener('click', handler); closeBtn.removeEventListener('touchend', handler as EventListener); };
+  }, [tocOpen]);
+
+  // Native back to top
+  const backToTop = useCallback(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
+  useEffect(() => {
+    const btn = document.getElementById('back-to-top');
+    if (!btn) return;
+    btn.addEventListener('click', backToTop);
+    btn.addEventListener('touchend', backToTop as EventListener);
+    return () => { btn.removeEventListener('click', backToTop); btn.removeEventListener('touchend', backToTop as EventListener); };
+  }, [backToTop]);
+
   return (
     <>
       {/* Progress bar */}
@@ -41,38 +77,26 @@ export default function ReadingEnhancements({ headings }: { headings: HeadingIte
         <div className="h-full bg-orange-400/80 dark:bg-orange-500/80 transition-[width] duration-100" style={{ width: `${progress}%` }} />
       </div>
 
-      {/* Mobile TOC - floating button + panel */}
+      {/* Mobile TOC */}
       {hasHeadings && (
         <div className="md:hidden">
-          {/* Floating TOC button */}
-          <a href="#" onClick={(e) => { e.preventDefault(); setTocOpen(!tocOpen); }}
-             className="fixed bottom-20 right-4 z-40 w-11 h-11 rounded-full liquid-glass flex items-center justify-center"
-             aria-label="文章目录"
-             style={{ WebkitTapHighlightColor: 'transparent' }}
-          >
+          <div id="toc-btn" className="fixed bottom-20 right-4 z-40 w-11 h-11 rounded-full liquid-glass flex items-center justify-center cursor-pointer" aria-label="文章目录" style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}>
             <List className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-          </a>
+          </div>
 
-          {/* TOC panel */}
           {tocOpen && (
             <div className="fixed inset-x-4 bottom-32 z-40 liquid-glass rounded-2xl p-4 max-h-[50vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">目录</span>
-                <a href="#" onClick={(e) => { e.preventDefault(); setTocOpen(false); }} className="text-xs text-gray-400" style={{ WebkitTapHighlightColor: "transparent" }}>关闭</a>
+                <div id="toc-close" className="text-xs text-gray-400 cursor-pointer" style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation', padding: '4px 8px' }}>关闭</div>
               </div>
               <nav>
                 <ul className="space-y-1">
                   {headings.map((h) => (
                     <li key={h.id}>
-                      <a
-                        href={`#${h.id}`}
-                        onClick={() => setTocOpen(false)}
-                        className={`block py-2 px-3 rounded-lg text-sm transition-colors ${
-                          activeId === h.id
-                            ? "bg-orange-100/50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300"
-                            : "text-gray-600 dark:text-gray-400 active:bg-gray-100 dark:active:bg-gray-800"
-                        } ${h.level === 3 ? "pl-6 text-[13px]" : ""}`}
-                      >
+                      <a href={`#${h.id}`} onClick={() => setTocOpen(false)}
+                        className={`block py-2 px-3 rounded-lg text-sm transition-colors ${activeId === h.id ? "bg-orange-100/50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300" : "text-gray-600 dark:text-gray-400"} ${h.level === 3 ? "pl-6 text-[13px]" : ""}`}
+                        style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}>
                         {h.text}
                       </a>
                     </li>
@@ -84,7 +108,7 @@ export default function ReadingEnhancements({ headings }: { headings: HeadingIte
         </div>
       )}
 
-      {/* Desktop TOC sidebar */}
+      {/* Desktop TOC */}
       {hasHeadings ? (
         <aside className="hidden xl:block fixed right-6 top-28 z-40 w-56 liquid-glass rounded-2xl p-4">
           <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">目录</p>
@@ -92,14 +116,7 @@ export default function ReadingEnhancements({ headings }: { headings: HeadingIte
             <ul className="space-y-1.5">
               {headings.map((h) => (
                 <li key={h.id}>
-                  <a
-                    href={`#${h.id}`}
-                    className={`block rounded-md px-2 py-1.5 text-sm transition ${
-                      activeId === h.id
-                        ? "bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300"
-                        : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
-                    } ${h.level === 3 ? "ml-3 text-[13px]" : ""}`}
-                  >
+                  <a href={`#${h.id}`} className={`block rounded-md px-2 py-1.5 text-sm transition ${activeId === h.id ? "bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300" : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"} ${h.level === 3 ? "ml-3 text-[13px]" : ""}`}>
                     {h.text}
                   </a>
                 </li>
@@ -111,13 +128,9 @@ export default function ReadingEnhancements({ headings }: { headings: HeadingIte
 
       {/* Back to top */}
       {showTopButton && (
-        <button
-          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          className="fixed right-5 bottom-20 md:bottom-5 z-50 w-11 h-11 rounded-full bg-black/80 dark:bg-white/80 text-white dark:text-black flex items-center justify-center active:scale-95 transition-all"
-          aria-label="返回顶部"
-        >
+        <div id="back-to-top" className="fixed right-5 bottom-20 md:bottom-5 z-50 w-11 h-11 rounded-full bg-black/80 dark:bg-white/80 text-white dark:text-black flex items-center justify-center cursor-pointer" aria-label="返回顶部" style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}>
           <ChevronUp size={18} />
-        </button>
+        </div>
       )}
     </>
   );
