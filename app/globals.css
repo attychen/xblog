@@ -869,11 +869,8 @@ figure[data-rehype-pretty-code-figure]:hover .code-copy-btn {
   }
 }
 /* Page content fade-in */
-main {
-  animation: pageIn 0.3s ease-out;
-}
-@keyframes pageIn {
-  from { opacity: 0; transform: translateY(4px); }
+main { opacity: 1; }
+
   to { opacity: 1; transform: translateY(0); }
 }
 /* Safe area for bottom nav (iPhone notch) */
