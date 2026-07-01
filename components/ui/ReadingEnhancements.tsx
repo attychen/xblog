@@ -45,20 +45,20 @@ export default function ReadingEnhancements({ headings }: { headings: HeadingIte
       {hasHeadings && (
         <div className="md:hidden">
           {/* Floating TOC button */}
-          <button
-            onClick={() => setTocOpen(!tocOpen)}
-            className="fixed bottom-20 right-4 z-40 w-11 h-11 rounded-full liquid-glass flex items-center justify-center active:scale-95 transition-all"
-            aria-label="文章目录"
+          <a href="#" onClick={(e) => { e.preventDefault(); setTocOpen(!tocOpen); }}
+             className="fixed bottom-20 right-4 z-40 w-11 h-11 rounded-full liquid-glass flex items-center justify-center"
+             aria-label="文章目录"
+             style={{ WebkitTapHighlightColor: 'transparent' }}
           >
             <List className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-          </button>
+          </a>
 
           {/* TOC panel */}
           {tocOpen && (
             <div className="fixed inset-x-4 bottom-32 z-40 liquid-glass rounded-2xl p-4 max-h-[50vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">目录</span>
-                <button onClick={() => setTocOpen(false)} className="text-xs text-gray-400">关闭</button>
+                <a href="#" onClick={(e) => { e.preventDefault(); setTocOpen(false); }} className="text-xs text-gray-400" style={{ WebkitTapHighlightColor: "transparent" }}>关闭</a>
               </div>
               <nav>
                 <ul className="space-y-1">
