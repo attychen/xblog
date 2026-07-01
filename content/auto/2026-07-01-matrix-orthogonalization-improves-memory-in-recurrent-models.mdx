@@ -1,0 +1,37 @@
+---
+title: "矩阵正交化提升循环模型记忆能力"
+date: "2026-07-01"
+excerpt: "← 返回所有文章 | 主页 矩阵正交化提升循环模型记忆能力 06-30-2026 本研究由 Paradigm 资助。Transformer 展现出卓越的关联记忆（associative recall, AR）能力：注意力机制使每个 token 能直接访问其前面的 token，这一机制是其他架构（如循环神经网络，RNNs）难以匹敌的。但在某些领域，我们无法承受 Transformer 的二次注意力开"
+category: "ai-tools"
+tags: ["矩阵正交化","循环神经网络","关联记忆","mLSTM","噪声关联记忆"]
+original: "https://ayushtambde.com/blog/matrix-orthogonalization-improves-memory-in-recurrent-models/"
+draft: false
+---
+
+## 1. 背景与问题
+
+← 返回所有文章 | 主页 矩阵正交化提升循环模型记忆能力 06-30-2026 本研究由 Paradigm 资助。Transformer 展现出卓越的关联记忆（associative recall, AR）能力：注意力机制使每个 token 能直接访问其前面的 token，这一机制是其他架构（如循环神经网络，RNNs）难以匹敌的。但在某些领域，我们无法承受 Transformer 的二次注意力开销。一个例子是 Dreamer 风格的长时域强化学习（long-horizon RL）。对于这类应用，我们需要让循环神经网络发挥作用，但又不愿放弃关联记忆能力。目前已知最适合关联记忆的 RNN 是 mLSTM，它是 LSTM 的一种变体，维护一个矩阵记忆（matrix memory）。在 MQAR 基准测试中，mLSTM 相比基线模型展现出显著提升的召回能力。然而，纯召回能力可能不足以衡量循环性能。在环境转换可能带有噪声的领域，一个有用的代理测试是噪声关联记忆（noisy associative recall, NAR）。由于 MQAR 不衡量 NAR，我们可以参考 MAD 的噪声 AR 任务套件。以下是一个任务示例：0 9 3 10 12 13 15 14 0 9 5 8 2 9 这里，键 0 映射到值 9，键 3 映射到值 10，等等。MAD 生成器对键、值和干扰项使用不同的 token 范围。因此，如果键是 0-5，那么 token 12-15 是干扰项。一个擅长 NAR 的模型应在第 10 个位置预测 9，因为它已看到开头的 0 - 9，同时忽略插入的干扰 token。
+
+## 2. 灵感来源：Muon 优化器
+
+那么，如何改进循环 NAR 呢？我们可以借鉴 Muon 的一些思想，Muon 是一种在语言建模中非常成功的优化器。Muon 对其动量进行正交化（orthogonalizes），起到均衡表示方向的作用。它防止少数强方向主导更新，并提升弱方向。特别相关的是最近的研究表明，Muon 在尾端关联记忆学习（tail-end associative memory learning）方面优于 Adam。其思想是，这种均衡防止了较弱的记忆被挤出。受此启发，我们决定测试在读取期间对 mLSTM 记忆矩阵进行正交化，并使用这一额外过程进行训练，是否能提升 NAR 性能。
+
+## 3. 实验设置
+
+我们在 MAD 噪声 AR 样本上，将 mLSTM 基线模型与其正交化变体进行下一个 token 预测的比较。训练和评估使用 MAD 噪声召回（noisy-recall），在多种词汇大小和序列长度下，将 frac_noise 设置为 0.8。所有模型使用 AdamW（betas = 0.9, 0.999，weight_decay = 0.01）训练 2000 步，批次大小为 64。学习率通过扫描 3e-4、1e-3、3e-3 和 1e-2 为每个任务设置选择。我们在每一步生成新的训练批次，并为每个实验维护一个独立的固定验证集。对于正交化，我们使用 Frobenius 范数（eps = 1e-6）进行归一化，并应用五次 Newton-Schulz 迭代。我们允许梯度流经该过程。关键的是，我们不将正交化的记忆写回，因为我们发现这会降低性能。我们仅将其用于读取。我们实验的完全可复现代码可在此处找到。图 1. 正交化 mLSTM 算法。图 2. 训练步数 vs. 验证准确率。
+
+## 4. 实验结果
+
+$$ \small \begin&#123;array&#125;&#123;lccc&#125; \hline \text&#123;设置&#125; & \text&#123;正交化&#125; & \text&#123;基线&#125; & \Delta \\ \hline \text&#123;vocab 80, len 512&#125; & 87.5 \pm 12.4\ (20/24) & 69.1 \pm 17.8\ (17/24) & +18.4 \pm 18.1 \\ \text&#123;vocab 80, len 768&#125; & 91.7 \pm 11.4\ (22/24) & 75.9 \pm 12.0\ (13/24) & +15.7 \pm 16.8 \\ \text&#123;vocab 80, len 1024&#125; & 98.5 \pm 2.4\ (23/24) & 83.3 \pm 13.6\ (19/24) & +15.2 \pm 14.0 \\ \text&#123;vocab 96, len 768&#125; & 62.4 \pm 18.4\ (14/24) & 22.0 \pm 14.4\ (4/24) & +40.4 \pm 17.6 \\ \text&#123;vocab 96, len 1024&#125; & 68.5 \pm 18.3\ (16/24) & 23.1 \pm 15.3\ (4/24) & +45.4 \pm 18.6 \\ \hline \end&#123;array&#125; $$ 图 3. MAD 噪声召回结果。条目为 2000 步时的最终验证准确率，24 个种子的均值 +/- 95% 置信区间；括号内显示准确率高于 80% 的种子数。Delta 按种子配对计算。vocab 80 的参数为 77,716，vocab 96 的参数为 80,740。正交化运行使用学习率 3e-3；基线仅在 vocab 80、序列长度 768 时使用学习率 1e-2，其他情况使用 3e-3。
+
+## 5. 分析与讨论
+
+我们发现，正交化全面提升了成功率和平均准确率。有趣的是，随着我们进入 vocab-96 设置，差距似乎扩大，这表明正交化在最困难的 NAR 任务（原始 mLSTM 难以应对）中帮助最大。在后两种情况下（vocab 96，序列长度 768/1024），正交化将 mLSTM 从失败边缘（4/24 个解决种子）提升到显著更可靠的性能（14-16 个解决种子）。这对于我们本意是一个小干预来说，效果惊人。Newton-Schulz 在固定参数数量下为我们带来了额外收益，但以额外的 FLOPs 和挂钟时间为代价。
+
+## 6. 局限与未来方向
+
+我们应谨慎，不要对这些结果过度解读。它们仅适用于小模型设置，且 NAR 是一个合成任务。值得研究的是，NAR 的收益是否能转化为更大模型在真实世界基准上的收益。感谢 Dan Robinson、Alpin Yukseloglu 和 Glen Taggart 在撰写本文时提供的反馈和建议。
+
+---
+
+🔗 **原文链接：[https://ayushtambde.com/blog/matrix-orthogonalization-improves-memory-in-recurrent-models/](https://ayushtambde.com/blog/matrix-orthogonalization-improves-memory-in-recurrent-models/)**
