@@ -1211,3 +1211,28 @@ html, body {
   min-height: 100vh;
   min-height: 100dvh;
 }
+/* Mobile touch fix - backdrop-filter compatibility */
+@media (max-width: 767px) {
+  .liquid-glass,
+  .liquid-glass-strong,
+  .liquid-glass button,
+  .liquid-glass a,
+  .liquid-glass-strong button,
+  .liquid-glass-strong a {
+    touch-action: manipulation;
+    -webkit-touch-callout: none;
+    pointer-events: auto;
+    cursor: pointer;
+  }
+  
+  /* Remove backdrop-filter on mobile to fix touch */
+  .liquid-glass {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+  
+  .liquid-glass-strong {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+}
