@@ -1236,3 +1236,15 @@ html, body {
     backdrop-filter: none !important;
   }
 }
+/* Page content - ensure touch works */
+.page-content {
+  opacity: 1;
+  visibility: visible;
+  position: relative;
+  z-index: 1;
+}
+
+/* Override any motion.div styles that might block events */
+.page-content * {
+  pointer-events: auto;
+}
