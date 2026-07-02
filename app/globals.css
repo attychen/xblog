@@ -870,9 +870,6 @@ figure[data-rehype-pretty-code-figure]:hover .code-copy-btn {
 }
 /* Page content fade-in */
 main { opacity: 1; }
-
-  to { opacity: 1; transform: translateY(0); }
-}
 /* Safe area for bottom nav (iPhone notch) */
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0);
