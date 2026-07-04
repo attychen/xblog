@@ -1,4 +1,4 @@
-﻿import type { Metadata, Viewport } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/provider/ThemeProvider";
 import Navbar from "@/components/layout/Navbar";
@@ -7,6 +7,7 @@ import MobileBottomNav from "@/components/layout/MobileBottomNav";
 import PageTransition from "@/components/ui/PageTransition";
 import Footer from "@/components/layout/Footer";
 import ObservabilityClient from "@/components/ui/ObservabilityClient";
+import { Analytics } from "@vercel/analytics/next";
 import localFont from "next/font/local";
 
 const bitcountFont = localFont({
@@ -90,6 +91,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           </MobilePageShell>
           <Footer />
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
