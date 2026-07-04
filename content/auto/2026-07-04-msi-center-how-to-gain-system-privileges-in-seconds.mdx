@@ -1,0 +1,90 @@
+---
+title: "MSI Center：如何在数秒内获取系统权限"
+date: "2026-07-04"
+excerpt: "在发现AMD和ASUS的OEM软件中存在严重漏洞后，我决定拓展视野，寻找更多游戏产品中的问题。最终我选择了MSI Center，因为它似乎预装在MSI所有笔记本电脑和预装台式机上，这意味着我发现的任何漏洞都可能产生广泛影响。"
+category: "security"
+tags: ["MSI Center","权限提升","命名管道","3DES加密","漏洞报告","系统安全","OEM软件"]
+original: "https://mrbruh.com/msicenter/"
+draft: false
+---
+
+## 1. 引言：从AMD和ASUS到MSI的探索
+
+在发现AMD和ASUS的OEM软件中存在严重漏洞后，我决定拓展视野，寻找更多游戏产品中的问题。最终我选择了MSI Center，因为它似乎预装在MSI所有笔记本电脑和预装台式机上，这意味着我发现的任何漏洞都可能产生广泛影响。
+
+## 2. 下载与提取：获取离线安装包
+
+此过程的第一步始终是下载离线安装程序。许多此类公司要么阻止安装程序在不支持的硬件上运行，要么只允许安装其软件的一小部分。获取离线安装程序副本后，你需要用Detect-It-Easy扫描它并祈祷。如果运气好，它可能会直接告诉你MSI Center是用什么软件打包的。在我们的案例中，我们很幸运，它告诉我们MSI Center使用了名为Inno Setup的工具进行打包。有一种专门针对这种情况的工具叫innoextract。提取安装程序及其包含的.appxbundle（它只是一个.zip文件）后，就该反编译可执行文件了。
+
+## 3. 反编译：170个可执行文件的挑战
+
+总共有170个可执行文件（包括DLL），其中大部分是用C#编写的。对于它们，我编写了一个bash脚本，使用ilspycmd对所有文件进行反编译。
+
+find . ( -name "*.exe" -o -name "*.dll" ) -exec file &#123;&#125; + | grep Mono | wc -l
+find . ( -name "*.exe" -o -name "*.dll" ) -exec file &#123;&#125; + | grep -v Mono | wc -l
+
+对于其余用C++编写的文件，我选择了大约10个最有趣的文件，将它们放入IDA，然后将完整的反编译结果导出为.c文件。完成所有这些后，我得出的结论是文件数量实在太多，无法逐一查看。相反，我只能搜索常见的弱点，并希望能有所发现。我grep的一个关键词是CreateNamedPipe（命名管道是计算机上不同进程相互通信的一种方式）。
+
+## 4. 漏洞：MSI笔记本基础服务的命名管道
+
+MSI的笔记本基础服务（Notebook Foundation service）在启动时生成一个命名管道，任何经过身份验证的用户都可以与之交互。
+
+CreateNativePipeSecurity("D:(A;OICI;GRGW;;;AU)(A;OICI;GA;;;BA)");
+CreateNamedPipe("\\\\.\\pipe\\MSI_SERVICE_2", PIPE_ACCESS_DUPLEX);
+
+它提供以下可触发的命令：
+
+- 握手（Handshake）：要调用/与以下命令交互，你需要注册你的应用程序。你只需提供一个任意的客户端名称，该名称将在调用其他命令时作为参数提供。
+- 注册表（Registry）：这允许你以LocalSystem（最高权限）读取、写入和删除任何注册表项。
+- WMI（Windows Management Instrumentation，Windows管理规范）：这允许你监控系统硬件并更改系统设置（例如，Windows Defender设置和排除项）。
+- PC:REXE：以LocalSystem身份运行任何可执行文件及任意参数。
+- KEXE：以LocalSystem身份终止系统上的任何可执行文件。
+
+正如你可能已经猜到的，向任何授权用户（包括没有本地管理员权限的用户）暴露这些工具是极其危险的。它们可能被恶意软件滥用，以禁用Windows Defender或获取系统级权限。
+
+## 5. 概念验证（PoC）：利用3DES加密的漏洞
+
+从历史上看，MSI主要依赖安全通过模糊性（security by obscurity）来防止被利用。他们创建了一个自定义协议来与管道通信，并要求所有消息使用3DES（按当今标准已过时且不安全的密码）进行加密。
+
+1. 打开到MSI_SERVICE_2命名管道的连接。
+2. 使用随机字符串（例如ABCD123）注册一个应用程序。
+3. 使用3DES加密你的PC:REXE命令，并将客户端名称作为密钥。
+4. 笔记本基础服务会尝试通过尝试所有已注册的客户端名称来暴力破解解密，直到成功。
+5. 如果解密成功，它会以LocalSystem身份运行有效载荷。
+
+对于我创建的概念验证，我只让它启动cmd.exe来展示它可以用于提升权限。然而，恶意软件可能会运行任意PowerShell命令或脚本。
+
+你的浏览器不支持视频lmao
+
+我最近发现，此漏洞还可以通过局域网上的SMB远程触发，导致远程代码执行（RCE）。但是，由于命名管道仅响应经过身份验证的用户，成功利用需要目标计算机的有效登录凭据。
+
+## 6. 报告过程：邮箱满与Gamers Nexus的帮助
+
+当我通过MSI的PSIRT邮箱发送此漏洞报告时，收到了一个令人担忧的回复：
+
+远程服务器返回'554 5.2.2 mailbox full; STOREDRV.Deliver.Exception: QuotaExceededException.MapiExceptionShutoffQuotaExceeded;'
+
+这基本上意味着接收漏洞报告的邮箱已满，拒绝接收任何额外的邮件。它不仅拒绝接收我的漏洞报告，而且可能已经持续了未知的时间，并且也丢弃了其他人的漏洞报告，而不仅仅是我的。
+
+由于这一令人担忧的情况，我开始联系我的联系人，寻找能够帮助解决此问题的MSI员工。最终，运营Gamers Nexus的Steve Burke帮助我联系到了一位MSI员工。然而，事实证明所有这些努力都是徒劳的，因为尽管他们的邮件服务器给出了完全相反的印象，但我的报告实际上最终还是成功送达了MSI。
+
+在这个小插曲之后，与MSI的合作体验实际上相当愉快。在我报告漏洞后的两天内，他们就为该漏洞准备了补丁，并告诉我它将与哪个MSI Center版本捆绑，以及他们计划何时发布新版本。
+
+## 7. 后续：CVE申请与捐赠
+
+不幸的是，MSI没有能力为此发布CVE，因此他们建议我通过MITRE或第三方CNA申请一个。截至撰写本文时，大约已经过去一个月，我的提交仍在VulDB审核中。他们表示，由于大量新提交，等待时间约为4周，希望审核能很快结束。
+
+到目前为止，对于我向Google、ASUS、AMD、TP-Link、Netgear、MSI（以及更多公司）报告的漏洞，他们总共支付了0美元的漏洞赏金。如果你觉得这篇文章有趣或有用，可以通过我的Ko-fi请我喝杯咖啡：https://ko-fi.com/mrbruhh
+
+## 8. 时间线（DD/MM/YYYY）
+
+09/05/2026 - 发现漏洞
+10/05/2026 - 报告漏洞
+12/05/2026 - MSI回复并表示已创建补丁
+01/06/2026 - MSI Center 2.0.70.0发布
+03/06/2026 - 通过VulDB申请CVE-2026-XXXX
+01/07/2026 - 禁运结束
+
+---
+
+🔗 **原文链接：[https://mrbruh.com/msicenter/](https://mrbruh.com/msicenter/)**
