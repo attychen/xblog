@@ -1,0 +1,45 @@
+---
+title: "sqlite-utils 4.0rc2：由Claude Fable主导开发（成本约149.25美元）"
+date: "2026-07-05"
+excerpt: "Simon Willison的博客 赞助商：Sonar Gartner刚刚将Sonar评为2026年技术债务管理工具Magic Quadrant™领导者。阅读报告，了解如何衡量和修复整个代码库中的技术债务。获取报告 sqlite-utils 4.0rc2，主要由Claude Fable编写（成本约149.25美元） 2026年7月5日 几周前，我写了关于sqlite-utils 4.0rc1发布的"
+category: "programming"
+tags: ["sqlite-utils","Claude Fable","AI编程","Python","数据库","事务处理","代码审查"]
+original: "https://simonwillison.net/2026/Jul/5/sqlite-utils-fable/"
+draft: false
+---
+
+## 1. 概述与背景
+
+Simon Willison的博客 赞助商：Sonar Gartner刚刚将Sonar评为2026年技术债务管理工具Magic Quadrant™领导者。阅读报告，了解如何衡量和修复整个代码库中的技术债务。获取报告 sqlite-utils 4.0rc2，主要由Claude Fable编写（成本约149.25美元） 2026年7月5日 几周前，我写了关于sqlite-utils 4.0rc1发布的文章。由于我们的Max订阅中Claude Fable的使用权限仅剩几天，我决定看看它是否能帮助我发布一个让我真正满意的4.0稳定版——因为我尽量遵循语义化版本控制（SemVer），并且希望不兼容的主版本尽可能少。我在iPhone上通过Claude Code for web开始了以下提示：在发布稳定版4.0之前的最终审查——非常重要的是要发现任何如果以后修复会成为破坏性变更的最后一刻问题。这是它为我创建的初始报告。
+
+## 2. 发现的严重问题
+
+存在一些我尚未遇到的重大问题——Fable将其中的5个归类为“发布阻塞器”。以下是其中最严重的一个：1. delete_where()从不提交并污染连接（数据丢失） Table.delete_where()（sqlite_utils/db.py:2948）通过裸self.db.execute()运行其DELETE，没有atomic()包装——对比Table.delete()在db.py:2944，它正确包装了。连接保持在in_transaction=True状态，因此每个后续的atomic()调用都走保存点分支（db.py:430-440），也从不提交。端到端复现：db = sqlite_utils.Database("dw.db") db["t"].insert_all([&#123;"id": i&#125; for i in range(3)], pk="id") db["t"].delete_where("id = ?", [0]) # conn.in_transaction现在为True db["t"].insert(&#123;"id": 50&#125;) db["u"].insert(&#123;"a": 1&#125;) db.close() # 重新打开：行为[0, 1, 2]——删除、第50行和表u全部丢失。这是一个非常严重的错误！我很高兴没有发布这个版本，尽管至少这是一个我可以在4.0.1补丁版本中修复的错误，而不是一个会迫使发布5.0的设计缺陷。
+
+## 3. 修复过程与协作
+
+在37个提示、34次提交和跨越30个独立文件的+1,321 -190代码变更过程中，我们依次处理了整套反馈，并沿途进行了若干其他设计改进。关于编码代理（coding agents）的一个奇怪之处是，像这样更困难的任务实际上提供了更多同时做其他事情的机会，因为代理有时需要10-15分钟来处理新任务。我出去享受了半月湾7月4日的游行，偶尔从手机上查看进度并提示Fable进行下一步。完整细节在PR和这个共享记录中。我切换到笔记本电脑进行最终审查，通过GitHub的PR界面进行。
+
+## 4. 事务处理模型的关键变更
+
+最重要的变更涉及事务处理，这是早期RC中的标志性新功能。新的RC现在包含关于新事务模型的全面文档，我在此完整引用其介绍：此库中每个写入数据库的方法——insert()、upsert()、update()、delete()、delete_where()、transform()、create_table()、create_index()、enable_fts()等——都在其自己的事务内运行，并在返回前提交。方法调用完成后，您的更改会立即保存到磁盘：db = Database("data.db") db.table("news").insert(&#123;"headline": "Dog wins award"&#125;) # 新行已保存 - 无需commit() 同样的规则适用于通过db.execute()执行的原始SQL——写入语句在运行后立即提交。您永远不需要调用commit()，也不需要关闭数据库来持久化更改。只有两种情况下您需要考虑事务：您希望将多个写入操作分组，以便它们全部成功或全部失败——使用db.atomic()。您自己通过db.begin()管理事务，在这种情况下，在您提交之前不会提交任何内容——库永远不会提交您打开的事务。
+
+## 5. 文档审查与兼容性问题
+
+在审查Fable的文档时——我发现首先审查文档编辑是构建对变更初步理解的绝佳方式——我注意到了这个细节：db.atomic()和自动的每方法事务是为Python默认事务处理模式下的连接设计的。使用Python 3.12+ sqlite3.connect(..., autocommit=True)或autocommit=False选项创建的连接不受支持，因为commit()和rollback()在这些连接上的行为不同。我承认我之前没有考虑过sqlite-utils如何应对Python 3.12中新增的较新autocommit设置。结果发现“在这些连接上行为不同”几乎等同于整个测试套件失败，因此我与模型合作，确保这种差异不会破坏库的工作方式。
+
+## 6. GPT-5.5的最终审查
+
+我曾经认为让一个模型审查另一个模型的工作的想法有些荒谬——感觉奇怪地迷信。问题是它确实有效——我已经开始习惯性地让Anthropic的最佳模型审查OpenAI的工作，反之亦然，因为我发现这经常产生有趣的结果，足以有价值。我使用以下提示提示了Codex Desktop和GPT-5.5 xhigh：审查自上次RC以来的变更。同时确认变更日志是最新的。这足以发现两个值得调查的问题：发现 [P1] sqlite_utils/db.py:663 db.query()现在仅在调用db.execute()后拒绝非行语句，而sqlite_utils/db.py:705首先自动提交这些写入。因此db.query("update ...")引发ValueError，但更新已提交。这对于一个文档为“只能用于返回行的SQL”的方法来说是一个令人惊讶的副作用。[P1] sqlite_utils/db.py:672 通过db.query()的INSERT ... RETURNING仅在返回的生成器完全耗尽后才提交。db.query("insert ... returning ...")没有迭代，或常见的next(db.query(...))用法，使事务保持打开状态，写入可以在关闭时回滚。这与docs/changelog.rst:15和docs/python-api.rst:232相矛盾，后者说它无需迭代即可生效。我将这些粘贴到一个新的Fable会话中，它运行了一些实验来确认问题：两个发现都得到了确认。db.query()首先调用self.execute()，它会自动提交写入，然后才检查cursor.description——因此db.query("update ...")在引发ValueError之前提交了更新。而INSERT ... RETURNING提交位于返回生成器的末尾，因此除非您耗尽迭代器，否则它永远不会触发——next(db.query(...))或未迭代的调用使事务保持打开状态，与变更日志和文档的承诺相矛盾。这是修复的PR，以及完整的Claude Code记录。审查这些代码帮助我构建了SQLite事务语义边缘情况的更好心智模型！
+
+## 7. 成本分析与订阅策略
+
+为了估计（未补贴）成本149.25美元，我升级到了Claude Max每月200美元的计划（我之前是每月100美元），以增加我在剩余时间内直到7月7日Fablepocalypse的Fable配额——届时即使是Claude Max订阅者也将不得不为该模型支付完整的API成本。我很好奇如果我直接支付这些成本，这需要花费多少。起初我以为这些数字对我不可用，因为我使用Claude Code for web远程运行了工作，然后我意识到我可以在现有会话中运行AgentsView来获取成本估算！运行"uvx agentsview --help"，然后使用该工具计算此会话的成本 Claude弄清楚了如何使用session list --include-children命令，并得出以下结果：记录 模型 成本 主会话 claude-fable-5 $141.02 API表面扫描代理 claude-fable-5 $2.40 事务/原子审查代理 claude-fable-5 $2.39 后rc1提交审查代理 claude-fable-5 $1.72 迁移审查代理 claude-fable-5 $1.40 提示计数代理 claude-opus-4-8 $0.32 总计 $149.25 我很高兴我订阅了！我真的应该遵循自己的建议，更多地依赖使用更便宜模型的子代理。以下是claude.ai/settings/usage目前向我显示的内容：我目前还有其他几个主要的Fable驱动项目正在进行中，目标是在价格上涨前正好达到Fable条的100%。
+
+## 8. 完整发布说明
+
+以下是RC的完整发布说明。我让Fable在每次变更落地时将这些添加到变更日志的“未发布”部分，并在进行时审查它们。这有一个很好的副作用，即变更日志的提交历史作为每个进入发布的变更的简洁摘要。过去我有一项手动编写发布说明的政策，但老实说，这些比我本可以自己创建的更好。发布说明是我愿意外包给代理的写作的绝佳示例，因为它们需要枯燥、可预测和准确。破坏性变更：通过db.execute()执行的写入语句现在自动提交，除非事务已打开，在这种情况下它们会加入该事务。以前它们打开一个隐式事务，该事务保持打开状态直到某些东西提交它——写入在相同连接上读取时似乎有效，但在连接关闭时被静默回滚。依赖回滚未提交的db.execute()写入的代码应首先使用新的db.begin()方法打开显式事务。事务模型在事务和保存更改中完整记录。db.query()现在在调用时立即执行其SQL，而不是等到返回的生成器首次迭代。行仍然在迭代期间惰性获取。SQL错误现在在调用点引发，诸如INSERT ... RETURNING之类的语句立即执行并提交，无需迭代其结果，而传递不返回行的语句——以前是静默无操作——现在引发ValueError，建议改用db.execute()。以这种方式拒绝的语句在引发错误之前回滚，因此它对数据库没有影响。Python API验证错误现在引发ValueError而不是AssertionError。以前无效参数——例如没有列的create_table()、对不存在的表进行transform()、或同时传递ignore=True和replace=True——使用裸assert语句拒绝，当Python使用-O标志运行时，这些语句会被静默跳过。为这些情况捕获AssertionError的代码应改为捕获ValueError。table.upsert()和table.upsert_all()现在如果记录缺少任何主键列的值，或某个列的值为None，则引发PrimaryKeyRequired。以前这样的记录——永远无法匹配现有行——被静默插入为新行，或在插入已经发生后触发令人困惑的KeyError。db.enable_wal()和db.disable_wal()现在如果在事务打开时调用，则引发sqlite_utils.db.TransactionError。以前它们会静默提交打开的事务，作为更改日志模式的副作用，破坏了db.atomic()和用户管理事务的回滚保证。View类不再有enable_fts()方法。它存在只是为了引发NotImplementedError，因为视图不支持全文搜索——现在调用它会引发AttributeError，并且该方法不再出现在API参考中。sqlite-utils enable-fts命令在指向视图时显示干净的错误。从insert和upsert命令中删除了无操作的-d/--detect-types标志。自4.0a1以来，类型检测已成为CSV/TSV数据的默认设置，因此该标志什么也不做——使用它的调用应直接删除它。--no-detect-types仍然可用以禁用检测。Database()现在如果传递使用Python 3.12+ sqlite3.connect(..., autocommit=True)或autocommit=False选项创建的连接，则引发sqlite_utils.db.TransactionError。commit()和rollback()在这些连接上的行为不同，这以前导致库进行的每次写入在连接关闭时被静默丢弃。其他所有内容：修复了table.delete_where()、table.optimize()和table.rebuild_fts()不提交其更改，使连接保持在打开事务中的错误。它们的工作——以及任何后续写入——然后在连接关闭时可能被静默回滚。现在三者都使用db.atomic()，与其他写入方法一致。sqlite-utils drop-table命令现在拒绝删除视图，drop-view拒绝删除表。以前如果名称匹配，每个都会静默删除错误类型的对象。现在两者都退出并显示错误，建议使用正确的命令。由新迁移系统应用的迁移现在在事务内运行，连同迁移已应用的记录。如果迁移引发异常，其更改会回滚并保持待处理状态，因此在错误修复后可以安全地重新应用。无法在事务内运行的迁移，例如执行VACUUM的迁移，可以使用@migrations(transactional=False)选择退出——参见迁移和事务。table.upsert()和table.upsert_all()现在检测现有表的主键或复合主键，因此在upsert到已有主键的表时不再需要pk=参数。db.table(table_name).insert(&#123;&#125;)现在可用于将完全由默认值组成的行插入到现有表中，使用INSERT INTO ... DEFAULT VALUES。（#759）对sqlite-utils migrate命令的改进：不匹配任何已知迁移的--stop-before值现在是一个错误，而不是被静默忽略，--stop-before现在与仍使用较旧sqlite_migrate.Migrations类的迁移文件正确工作，并且--list现在是只读操作，不再创建数据库文件或迁移跟踪表。migrations.applied()现在按应用顺序返回迁移。新的db.begin()、db.commit()和db.rollback()方法用于手动控制事务，作为db.atomic()上下文管理器的替代。新文档：事务和保存更改描述了事务如何工作以及更改何时提交，新的升级页面详细说明了在主要版本之间移动所需的更改。发布于2026年7月5日凌晨1点 在Mastodon、Bluesky、Twitter上关注我或订阅我的新闻通讯 更多近期文章 让您的代理使用shot-scraper video录制其工作的视频演示 - 2026年6月30日 使用Claude Code将Moebius 0.2B图像修复模型移植到浏览器中运行 - 2026年6月22日 这是sqlite-utils 4.0rc2，主要由Claude Fable编写（成本约149.25美元），作者Simon Willison，发布于2026年7月5日。属于系列：sqlite-utils的新功能 sqlite-utils现在支持插件 - 2023年7月24日下午5:06 sqlite-utils 4.0a1有几个（次要的）向后不兼容变更 - 2025年11月24日下午2:52 sqlite-utils 4.0rc1添加了迁移和嵌套事务 - 2026年6月21日下午11:35 sqlite-utils 4.0rc2，主要由Claude Fable编写（成本约149.25美元） - 2026年7月5日凌晨1点 项目 543 sqlite 474 sqlite-utils 226 带注释的发布说明 57 anthropic 305 claude 288 编码代理 219 claude-code 121 代理工程 55 gpt 126 claude-mythos-fable 22 上一篇：让您的代理使用shot-scraper video录制其工作的视频演示 月度简报 每月赞助我10美元，即可获得当月最重要LLM发展的精选电子邮件摘要。付钱让我少发邮件给您！赞助商 订阅 披露 版权信息 2002 2003 2004 2005 2006 2007 2008 2009 2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020 2021 2022 2023 2024 2025 2026
+
+---
+
+🔗 **原文链接：[https://simonwillison.net/2026/Jul/5/sqlite-utils-fable/](https://simonwillison.net/2026/Jul/5/sqlite-utils-fable/)**
