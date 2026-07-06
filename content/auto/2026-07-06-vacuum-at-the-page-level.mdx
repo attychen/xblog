@@ -1,0 +1,325 @@
+---
+title: "PostgreSQL页面级真空回收：从死元组到空间释放的完整过程"
+date: "2026-07-06"
+excerpt: "在《PostgreSQL中的HOT更新》一文中，我们介绍了页面修剪如何清理HOT链——这是PostgreSQL在普通读取操作中回收死元组空间的一种优雅快捷方式，无需等待任何后台进程。但修剪本质上只是一种快捷方式：它仅适用于单个页面内的HOT更新元组。对于其他情况（涉及索引列的冷更新、普通DELETE操作、索引条目清理、空闲空间映射注册、可见性映射维护），我们需要VACUUM。本文不会重复VACUU"
+category: "database"
+tags: ["PostgreSQL","VACUUM","页面回收","死元组","存储内部"]
+original: "https://boringsql.com/posts/vacuum-at-the-page-level/"
+draft: false
+---
+
+## 1. 引言：页面修剪与VACUUM的关系
+
+在《PostgreSQL中的HOT更新》一文中，我们介绍了页面修剪如何清理HOT链——这是PostgreSQL在普通读取操作中回收死元组空间的一种优雅快捷方式，无需等待任何后台进程。但修剪本质上只是一种快捷方式：它仅适用于单个页面内的HOT更新元组。对于其他情况（涉及索引列的冷更新、普通DELETE操作、索引条目清理、空闲空间映射注册、可见性映射维护），我们需要VACUUM。本文不会重复VACUUM的操作性内容。《DELETE操作为何困难》一文涵盖了自动清理调优、工作者分配以及死元组清理的操作层面。在这里，我们将逐字节观察VACUUM的工作过程。我们将对每个阶段前后的页面进行快照，精确追踪页面头部、行指针、元组头部、空闲空间映射和可见性映射中的变化。使用的工具与之前相同：pageinspect、pg_visibility和pg_freespacemap。
+
+## 2. 设置：创建测试表与基线快照
+
+我们需要一个包含足够行数的表，以使前后对比有意义，同时还需要索引来展示完整的VACUUM周期。
+
+CREATE EXTENSION IF NOT EXISTS pageinspect;
+CREATE EXTENSION IF NOT EXISTS pg_visibility;
+CREATE EXTENSION IF NOT EXISTS pg_freespacemap;
+
+CREATE TABLE vacuum_demo (
+  id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  category text NOT NULL,
+  payload text
+);
+
+INSERT INTO vacuum_demo (category, payload)
+SELECT 'cat_' || (i % 5), repeat('x', 100)
+FROM generate_series(1, 50) AS i;
+
+五十行数据，每行包含100字节的有效载荷。主键为我们提供了一个索引，这一点很重要：当涉及索引时，VACUUM的行为会发生变化。先运行一次VACUUM，以便从干净的基线开始：
+
+VACUUM vacuum_demo;
+
+记录第0页的基线状态。首先是页面头部：
+
+SELECT lower, upper, special, pagesize
+FROM page_header(get_raw_page('vacuum_demo', 0));
+
+ lower | upper | special | pagesize
+-------+-------+---------+----------
+   224 |  1392 |    8192 |     8192
+(1 row)
+
+pd_lower为224：这是24字节的页面头部加上50个行指针（每个4字节，24 + 200 = 224）。pd_upper为1392，因此我们的元组占用字节1392到8191。空闲空间为1392 - 224 = 1168字节。剩余空间不多；那些100字节的有效载荷累积起来不少。
+
+现在查看行指针和元组头部：
+
+SELECT lp, lp_flags, lp_off, lp_len, t_xmin, t_xmax, t_ctid
+FROM heap_page_items(get_raw_page('vacuum_demo', 0))
+LIMIT 10;
+
+ lp | lp_flags | lp_off | lp_len | t_xmin | t_xmax | t_ctid
+----+----------+--------+--------+--------+--------+--------
+  1 |        1 |   8056 |    135 |    746 |      0 | (0,1)
+  2 |        1 |   7920 |    135 |    746 |      0 | (0,2)
+  3 |        1 |   7784 |    135 |    746 |      0 | (0,3)
+  4 |        1 |   7648 |    135 |    746 |      0 | (0,4)
+  5 |        1 |   7512 |    135 |    746 |      0 | (0,5)
+  6 |        1 |   7376 |    135 |    746 |      0 | (0,6)
+  7 |        1 |   7240 |    135 |    746 |      0 | (0,7)
+  8 |        1 |   7104 |    135 |    746 |      0 | (0,8)
+  9 |        1 |   6968 |    135 |    746 |      0 | (0,9)
+ 10 |        1 |   6832 |    135 |    746 |      0 | (0,10)
+(10 rows)
+
+lp_len为135，这是元组的实际字节长度，但每个元组在页面上占用MAXALIGN后的136字节槽位；注意lp_off值按136递减。这个对齐步长是下面空闲空间计算的基础。每个行指针都是LP_NORMAL（lp_flags = 1）。每个元组的t_xmax = 0：自插入以来没有人动过这些行。每个t_ctid指向自身。这是一个完全干净的页面。
+
+## 3. 创建死元组：DELETE操作后的页面状态
+
+现在删除一些行：
+
+DELETE FROM vacuum_demo WHERE id % 3 = 0;
+DELETE 16
+
+这大约删除了每三行：ID为3、6、9、12等。现在有16行已删除。在VACUUM运行之前查看页面：
+
+SELECT lp, lp_flags, lp_off, lp_len, t_xmin, t_xmax, t_ctid
+FROM heap_page_items(get_raw_page('vacuum_demo', 0))
+LIMIT 10;
+
+ lp | lp_flags | lp_off | lp_len | t_xmin | t_xmax | t_ctid
+----+----------+--------+--------+--------+--------+--------
+  1 |        1 |   8056 |    135 |    746 |      0 | (0,1)
+  2 |        1 |   7920 |    135 |    746 |      0 | (0,2)
+  3 |        1 |   7784 |    135 |    746 |    747 | (0,3)
+  4 |        1 |   7648 |    135 |    746 |      0 | (0,4)
+  5 |        1 |   7512 |    135 |    746 |      0 | (0,5)
+  6 |        1 |   7376 |    135 |    746 |    747 | (0,6)
+  7 |        1 |   7240 |    135 |    746 |      0 | (0,7)
+  8 |        1 |   7104 |    135 |    746 |      0 | (0,8)
+  9 |        1 |   6968 |    135 |    746 |    747 | (0,9)
+ 10 |        1 |   6832 |    135 |    746 |      0 | (0,10)
+(10 rows)
+
+查看第3、6和9行。它们的t_xmax现在是747，即DELETE语句的事务ID。但其他一切都没有变化。lp_flags仍然是1（LP_NORMAL）。lp_off和lp_len相同。这些元组仍然物理上存在于页面上，占用空间。页面头部也没有变化：
+
+SELECT lower, upper, special, pagesize
+FROM page_header(get_raw_page('vacuum_demo', 0));
+
+ lower | upper | special | pagesize
+-------+-------+---------+----------
+   224 |  1392 |    8192 |     8192
+(1 row)
+
+pd_lower和pd_upper与DELETE之前完全相同。PostgreSQL将这些行标记为已删除（通过打上t_xmax标记），但没有回收任何字节。这些死元组就是膨胀，它们将一直保持这种状态，直到VACUUM到来。
+
+## 4. VACUUM处理表的三阶段过程
+
+在我们运行VACUUM并观察页面变化之前，了解其运行方式将解释快照即将展示的一切。VACUUM分三遍完成工作，它们之间的划分正是已删除元组的存储在一个时刻消失而其行指针在另一个时刻消失的全部原因。请留意这个间隙：这正是本文其余部分要展示的内容。
+
+**阶段1：堆扫描——修剪、冻结、收集死TID**
+VACUUM顺序扫描每个堆页面，这第一遍所做的远不止查看。对于每个页面，它执行页面修剪（与普通读取期间机会性触发的相同heap_page_prune_and_freeze机制）。修剪是字节真正回收的地方：它移除死元组的存储，对页面进行碎片整理，并推进pd_upper。它还会机会性地冻结足够老的元组。
+
+在PostgreSQL 17之前，VACUUM将死TID存储在一个从maintenance_work_mem分配的扁平数组中。如果数组填满，VACUUM必须暂停，对已收集的批次执行索引和堆清理，然后恢复扫描。从PostgreSQL 17开始，VACUUM使用基于基数树（radix tree）的TID存储，内存效率更高，使得maintenance_work_mem成为瓶颈的可能性大大降低。
+
+但这里有一个细微之处，本文其余部分都依赖于它。修剪不能简单地将已删除元组的行指针标记为LP_UNUSED，因为索引仍然通过TID指向它。因此，对于有索引的表，已删除元组的行指针被设置为LP_DEAD：其存储已消失，但4字节的槽位保留不动，占据TID的位置，直到索引条目被移除。这些LP_DEAD TID正是VACUUM收集到其死TID存储中用于下一阶段的内容。
+
+**阶段2：索引清理**
+有了死TID列表，VACUUM扫描表上的每个索引。对于每个索引，它遍历所有索引条目并移除任何指向死TID的条目。这是代价高昂的部分。VACUUM必须读取每个索引页面，即使只有少数条目需要移除。这也是索引膨胀发生的原因。如果VACUUM无法完成此阶段（因为长时间运行的事务阻碍了可见性边界，或者表有许多索引且死TID列表超出内存），指向死元组的索引条目就会累积。我们在《VACUUM是一个谎言》一文中详细讨论了索引膨胀的影响。
+
+**阶段3：堆清理——释放行指针**
+在索引清理完成后，没有索引条目再引用那些死TID，因此保留的槽位最终可以被释放。VACUUM重新访问每个有死元组的页面，并执行阶段1中无法完成的操作：将每个收集到的LP_DEAD行指针翻转为LP_UNUSED（0），回收槽位；如果所有剩余元组对所有事务都可见，则设置可见性映射位。
+
+没有索引的表完全跳过这种拆分：由于无需担心索引条目，阶段1的修剪在单次堆遍历中直接将死行指针设置为LP_UNUSED，并且没有阶段3。这种两遍的舞蹈——先LP_DEAD，后LP_UNUSED——正是由于索引的存在。
+
+注意列表中缺少什么。元组数据已在阶段1的修剪中被移除，页面也已碎片整理完毕；那是pd_upper移动的地方。阶段3回收的是行指针槽位，而不是元组字节。如果只查看普通VACUUM前后的情况，这种区别是不可见的，所以让我们让它变得可见。
+
+让我们分两步运行VACUUM以捕获中间状态。VACUUM (INDEX_CLEANUP OFF)执行阶段1的修剪但跳过索引清理，因此也跳过了第二次堆遍历；它别无选择，只能将死行指针保留为LP_DEAD。
+
+## 5. 修剪后：LP_DEAD状态与空间回收
+
+修剪后的页面头部：
+
+SELECT lower, upper, special, pagesize
+FROM page_header(get_raw_page('vacuum_demo', 0));
+
+ lower | upper | special | pagesize
+-------+-------+---------+----------
+   224 |  3568 |    8192 |     8192
+(1 row)
+
+pd_lower仍然是224；行指针数组没有缩小。但pd_upper从1392跃升到3568。这是2176字节的回收空间（16个死元组，每个136字节对齐步长 = 2176）。页面上的空闲空间从1168增加到3344字节。而且我们还没有碰过任何索引：这一切都发生在修剪期间，在第一次堆遍历中。
+
+现在查看行指针：
+
+SELECT lp, lp_flags, lp_off, lp_len, t_xmin, t_xmax, t_ctid
+FROM heap_page_items(get_raw_page('vacuum_demo', 0))
+LIMIT 10;
+
+ lp | lp_flags | lp_off | lp_len | t_xmin | t_xmax | t_ctid
+----+----------+--------+--------+--------+--------+--------
+  1 |        1 |   8056 |    135 |    746 |      0 | (0,1)
+  2 |        1 |   7920 |    135 |    746 |      0 | (0,2)
+  3 |        3 |      0 |      0 |        |        |
+  4 |        1 |   7784 |    135 |    746 |      0 | (0,4)
+  5 |        1 |   7648 |    135 |    746 |      0 | (0,5)
+  6 |        3 |      0 |      0 |        |        |
+  7 |        1 |   7512 |    135 |    746 |      0 | (0,7)
+  8 |        1 |   7376 |    135 |    746 |      0 | (0,8)
+  9 |        3 |      0 |      0 |        |        |
+ 10 |        1 |   7240 |    135 |    746 |      0 | (0,10)
+(10 rows)
+
+行指针3、6和9现在为lp_flags = 3（LP_DEAD），而不是LP_UNUSED。它们的存储已消失（lp_off和lp_len为0），但槽位仍然存在，保留着那些TID。它们还不能被释放，因为主键仍然指向它们：
+
+SELECT live_items FROM bt_page_stats('vacuum_demo_pkey', 1);
+ live_items
+------------
+         50
+(1 row)
+
+五十个索引条目，与删除前相同。我们跳过的索引清理正是要移除那十六个过时条目的操作，在它运行之前，那些LP_DEAD槽位将一直卡住。
+
+## 6. 完整VACUUM后：LP_UNUSED状态与最终状态
+
+现在运行一个普通的VACUUM来完成工作：
+
+VACUUM vacuum_demo;
+
+SELECT lower, upper, special, pagesize
+FROM page_header(get_raw_page('vacuum_demo', 0));
+
+ lower | upper | special | pagesize
+-------+-------+---------+----------
+   224 |  3568 |    8192 |     8192
+(1 row)
+
+pd_upper不变，仍为3568。这就是关键点：第二次堆遍历不回收任何元组字节；已经没有剩余的元组字节了，修剪已经拿走了它们。它做的是释放行指针槽位，现在索引已经干净了：
+
+SELECT lp, lp_flags, lp_off, lp_len, t_xmin, t_xmax, t_ctid
+FROM heap_page_items(get_raw_page('vacuum_demo', 0))
+LIMIT 10;
+
+ lp | lp_flags | lp_off | lp_len | t_xmin | t_xmax | t_ctid
+----+----------+--------+--------+--------+--------+--------
+  1 |        1 |   8056 |    135 |    746 |      0 | (0,1)
+  2 |        1 |   7920 |    135 |    746 |      0 | (0,2)
+  3 |        0 |      0 |      0 |        |        |
+  4 |        1 |   7784 |    135 |    746 |      0 | (0,4)
+  5 |        1 |   7648 |    135 |    746 |      0 | (0,5)
+  6 |        0 |      0 |      0 |        |        |
+  7 |        1 |   7512 |    135 |    746 |      0 | (0,7)
+  8 |        1 |   7376 |    135 |    746 |      0 | (0,8)
+  9 |        0 |      0 |      0 |        |        |
+ 10 |        1 |   7240 |    135 |    746 |      0 | (0,10)
+(10 rows)
+
+行指针3、6和9已从LP_DEAD变为lp_flags = 0（LP_UNUSED）。这些槽位现在为空，可供下一个插入到此页面的INSERT重用。索引已降至34个条目；那十六个过时条目已消失：
+
+SELECT live_items FROM bt_page_stats('vacuum_demo_pkey', 1);
+ live_items
+------------
+         34
+(1 row)
+
+幸存的堆元组在修剪时已被压缩；注意lp_off值从它们在VACUUM之前的位置发生了变化，VACUUM移动了幸存的元组，以在pd_lower和pd_upper之间形成一个连续的空闲空间块。pd_lower没有变化。即使行指针3、6和9现在是LP_UNUSED，它们仍然占据数组中的槽位。下一个INSERT将重用这些槽位之一，而不是在末尾追加一个新槽位。PostgreSQL通过页面头部中的PD_HAS_FREE_LINES标志跟踪可重用槽位。
+
+## 7. 行指针生命周期与空闲空间映射
+
+让我们精确了解行指针如何在状态之间转换。这一点很重要，因为不同的代码路径会产生不同的转换：
+
+- **LP_UNUSED (0)**：槽位为空。要么从未使用过，要么VACUUM已完全回收。下一个针对此页面的INSERT将获取此槽位并分配给新元组，将其转换为LP_NORMAL。
+- **LP_NORMAL (1)**：槽位指向页面上的一个元组。该元组可能是活的（t_xmax = 0或t_xmax已中止），也可能是死的（t_xmax已提交且对所有事务不可见）。行指针本身不编码活性；这由元组头部和我们在《PostgreSQL MVCC逐字节解析》中介绍的可见性规则决定。
+- **LP_REDIRECT (2)**：槽位不指向元组，而是指向另一个行指针。这是由HOT修剪创建的：当HOT链的头部被修剪时，其行指针变为重定向，以便索引（仍然引用原始行指针编号）可以跟随重定向找到当前版本。我们在《PostgreSQL中的HOT更新》中看到了这一点。
+- **LP_DEAD (3)**：槽位已知包含一个已回收存储的死元组，但其TID可能仍被索引条目引用。遇到它的索引扫描会立即跳过它，无需进行可见性检查。在堆上，它由页面修剪设置，包括VACUUM自身第一次堆遍历中的修剪。索引侧带有相同的LP_DEAD提示，普通读取器也会设置它：当索引扫描跟随一个条目到达一个堆元组，发现该元组对所有事务都已死时，kill_prior_tuple优化会将该索引条目标记为LP_DEAD，以便后续扫描跳过它而无需访问堆——这是普通SELECT在VACUUM到来之前很久就完成的清理工作。
+
+对于有索引的表，这是普通已删除元组在修剪和索引清理之间所处的状态，正如我们上面观察到的。转换如下所示：
+
+- LP_UNUSED (0) ----INSERT---- LP_NORMAL (1)
+- 表有索引：两次堆遍历
+  - LP_NORMAL (1) --修剪（第1遍）-- LP_DEAD (3)
+  - LP_DEAD (3) --索引清理 + 第2遍-- LP_UNUSED (0)
+- 表无索引：单次堆遍历
+  - LP_NORMAL (1) --修剪-- LP_UNUSED (0)
+- HOT
+  - LP_NORMAL (1) --HOT修剪（链头部）-- LP_REDIRECT (2)
+  - LP_NORMAL (1) --HOT修剪（仅堆成员）-- LP_UNUSED (0)
+  - LP_REDIRECT (2) --VACUUM（当目标也死亡时）-- LP_UNUSED (0)
+
+已删除元组是否经过LP_DEAD取决于表是否有索引。有索引时，修剪无法释放槽位（索引条目仍引用TID），因此它将行指针置于LP_DEAD，只有第二次堆遍历（在索引清理之后）才将其变为LP_UNUSED。没有索引时，没有东西引用TID，因此修剪在单次遍历中直接将其设置为LP_UNUSED。无论哪种方式，元组的存储都在修剪期间回收；LP_DEAD只关乎4字节槽位的命运。
+
+**空闲空间映射**
+在VACUUM之前，PostgreSQL的空闲空间映射（FSM）不知道我们的页面包含可回收空间。死元组对FSM不可见；它们看起来仍然像占用的字节。VACUUM之后，回收的空间被注册：
+
+SELECT blkno, avail FROM pg_freespace('vacuum_demo');
+ blkno | avail
+-------+-------
+     0 |  3328
+(1 row)
+
+第0页现在报告有3,328字节的可用空间。这略小于原始pd_upper - pd_lower值3,344，因为FSM以大约32字节的粗略类别跟踪空闲空间并向下取整。但关键点是，此页面现在成为新INSERT的候选。如果没有这个FSM更新，PostgreSQL在插入新行时会跳过此页面，而是用新页面扩展表文件。这就是表即使内部包含大量空闲空间也会增长的方式；FSM没有更新是因为VACUUM从未运行。
+
+-- 新插入重用VACUUM释放的空间，而不是扩展文件
+INSERT INTO vacuum_demo (category, payload)
+SELECT 'cat_new', repeat('y', 100)
+FROM generate_series(1, 10) AS i;
+
+SELECT pg_relation_size('vacuum_demo') AS size;
+ size
+------
+ 8192
+(1 row)
+
+表仍然是一个8 KB的页面。这十行新数据落在了VACUUM在第0页释放的空间中；FSM直接将插入器指向它，因此没有追加新页面。如果没有中间的VACUUM，先删除后插入会讲述不同的故事：FSM仍然会报告页面已满，插入器会跳过它，文件会增长。这就是表在磁盘上不断扩展而内部半空背后的机制。
+
+## 8. 可见性映射与冻结
+
+**可见性映射**
+可见性映射跟踪每个堆页面的两个位。我们刚刚执行的十次插入在第0页上留下了新鲜的、尚未全部可见的元组，因此该位当前是清除的。再运行一次VACUUM会稳定页面，现在它被设置了：
+
+VACUUM vacuum_demo;
+
+SELECT blkno, all_visible, all_frozen
+FROM pg_visibility('vacuum_demo');
+
+ blkno | all_visible | all_frozen
+-------+-------------+------------
+     0 | t           | f
+(1 row)
+
+第0页被标记为all_visible。这意味着当前页面上的每个元组对所有事务都可见。其影响是显著的：
+- 仅索引扫描可以直接从索引返回结果，而无需获取此堆页面。
+- 可见性映射确认此页面上的任何内容都是可见的，因此索引的数据副本保证正确。
+- 未来的VACUUM遍历可以在堆扫描阶段跳过此页面，因为找不到任何死元组。
+
+可见性映射作为单独的分支文件存储在主堆文件旁边。对于base/16384/24601中的表，可见性映射是base/16384/24601_vm。它很小：每页两个位意味着一个1 GB的表（131,072页）只需要大约32 KB的可见性映射。
+
+all_frozen位仍然是false。该标志表示更强的内容：不仅所有元组都可见，而且它们的所有xmin值都已被冻结：它们将无需任何进一步关注即可存活过XID回卷。
+
+如果我们现在从此页面删除一行，all_visible位会被清除：
+
+DELETE FROM vacuum_demo WHERE id = 1;
+
+SELECT blkno, all_visible, all_frozen
+FROM pg_visibility('vacuum_demo');
+
+ blkno | all_visible | all_frozen
+-------+-------------+------------
+     0 | f           | f
+(1 row)
+
+页面上一个死元组就足以使all_visible标志失效。PostgreSQL在DELETE发生时急切地清除此位，因为它必须保守。仅索引扫描依赖此标志的正确性。
+
+**冻结**
+让我们将页面带到其最终静止状态。运行VACUUM FREEZE强制PostgreSQL冻结表上的每个元组，无论其年龄如何：
+
+VACUUM FREEZE vacuum_demo;
+
+现在检查元组：
+
+SELECT lp, t_xmin, t_infomask,
+  CASE
+    WHEN (t_infomask & 256) &lt;&gt; 0 AND (t_infomask & 512) &lt;&gt; 0 THEN 'FROZEN'
+    WHEN (t_infomask & 256) &lt;&gt; 0 THEN 'XMIN_COMMITTED'
+    ELSE 'no hint bits'
+  END AS freeze_status
+FROM heap_page_items(get_raw_page('vacuum_demo', 0))
+LIMIT 10;
+
+---
+
+🔗 **原文链接：[https://boringsql.com/posts/vacuum-at-the-page-level/](https://boringsql.com/posts/vacuum-at-the-page-level/)**

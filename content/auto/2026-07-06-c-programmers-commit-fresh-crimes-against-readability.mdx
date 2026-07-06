@@ -1,0 +1,45 @@
+---
+title: "C语言程序员再犯可读性之罪：IOCCC 2025获奖作品解析"
+date: "2026-07-06"
+excerpt: "跳转到主要内容 REG AD OFFBEAT C语言程序员再犯可读性之罪 准备好被迷惑、被愚弄——甚至被施魔法吧。Liam Proven Liam Proven 发布于2026年7月5日星期日 13:00 UTC 第29届国际混淆C代码大赛（International Obfuscated C Code Contest，简称IOCCC）再次回归，公布了2025年竞赛的结果。今年，其中一位参赛者有一"
+category: "programming"
+tags: ["IOCCC","C语言","代码混淆","模拟器","开源","编程竞赛"]
+original: "https://www.theregister.com/offbeat/2026/07/05/c-programmers-commit-fresh-crimes-against-readability/5265981"
+draft: false
+---
+
+## 1. 引言：混淆代码大赛回归
+
+跳转到主要内容 REG AD OFFBEAT C语言程序员再犯可读性之罪 准备好被迷惑、被愚弄——甚至被施魔法吧。Liam Proven Liam Proven 发布于2026年7月5日星期日 13:00 UTC 第29届国际混淆C代码大赛（International Obfuscated C Code Contest，简称IOCCC）再次回归，公布了2025年竞赛的结果。今年，其中一位参赛者有一个独特的新招数：一个有效的用例。当我们报道去年的赛事时，它刚刚从四年的中断中恢复过来，所以我们很高兴看到它这么快就回来了。在我们撰写本文时，评审工作大约在三周前结束，但尽管YouTube上有录像，时长却接近三个小时。我们花了一些时间将其剪辑成每个获奖者的单独片段，这就是我们现在报道的原因。对于许多这些程序，你必须亲眼看到它们的功能才能相信，虽然视频通常不是我们首选的格式，但在这方面效果极佳。
+
+## 2. 获奖概览：23个优胜者与帽子戏法
+
+REG AD 今年共有不少于23个获奖作品，其中包括一个帽子戏法中的帽子戏法：三位参赛者——Yusuke Endoh、Nick Craig-Wood和Don Yang——每人都有三个获奖作品。我们只能介绍其中几个个人亮点，但我们强烈建议阅读所有获奖作品——它们非常值得你花时间。REG AD IOCCC的一个特点是，评委Landon Curt Noll和Leonid A. Broukhis每次都会为每个获奖作品发明新的类别。我们使用他们的标题，所以如果小标题一开始不太有意义，阅读相关的IOCCC页面可能会解释一切……但我们不会依赖于此。
+
+## 3. 最佳虚拟模拟器：Adrian Cable的Subleq计算机
+
+IOCCC29 – 2025/cable – 最佳虚拟模拟器（Best imaginary emulator） 我们不能声称研究过每一届IOCCC的每一个结果。当第一届在1984年举办时，这只秃鹫还在上学，学习BASIC。然而，今年，Adrian Cable的Subleq计算机是最吸引我们注意力的作品。原因是我们之前已经研究过它及其功能——或者至少是一个密切相关的项目。对于IOCCC来说，不同寻常的是，它在软件保存方面有一个现实生活中的用例。永恒软件倡议（Eternal Software Initiative，简称ESI）的理念是通过实现一种专门设计为易于模拟的计算机架构，来帮助在原始硬件平台不再存在后保存软件。GitHub上有一个示例实现。CPU架构并不新；它是一种称为Subleq的单指令集计算机（One Instruction Set Computer，简称OISC）。OISC是RISC的逻辑外推：你无法将指令集进一步缩减到只剩一条指令。在这个例子中，这条指令是Subleq（如果小于或等于零则减法和分支）。这里有一个2020年的解释，而且当时它也不是新的——这里有2011年的FPGA硬件实现[PDF]。ESI已在软件中实现了Subleq，使用LLVM构建了一个针对它的C编译器，并将Linux移植到其上，同时配备了C和C++运行时库。在该Linux上运行你的模拟器，你就可以从这个微小的基础引导出任何硬件架构的可运行版本。我们说的微小是真的微小。这是该架构的IOCCC获奖实现：REG AD #include SDL3/SDL.h #define o s[1 s[t=e++]?s[t]/4:t]/4,t b,y,t,e,s[3 27],V[32],*w,**g;main(_)&#123;for(g =SDL_GetWindowSurface(w=SDL_CreateWindow(0, 800,512,!read(b,s,'frog')));_=o=y=o=o;~_?~y ?e=1 (s[y]-=_[s])?t:*s ++b 8e5?s[memcpy(3[ g],6[s]+s,25 16),b=SDL_UpdateWindowSurface (w)]=4*e,*s/4:e:e:SDL_PollEvent(V)?y[s]=6[V ]*(1537-2**V):0)_^64||timespec_get(s+_,1);&#125; 这就是全部内容。它只有366字节长。是的，它确实依赖于SDL库来显示图形，但即便如此，我们希望你会同意这相当了不起。演示视频显示它以相当合理的速度生成全彩色的曼德勃罗集（Mandelbrot set），然后玩一局乒乓球游戏（Pong），接着演示Subleq运行Linux和一些应用程序。当你观看时，试着记住你可以手写源代码在一张明信片上，并且还有足够的空间写地址和贴邮票。它只有九行代码。一个稍微可读性更好的版本仍然只有91行代码。
+
+## 4. Nick Craig-Wood的帽子戏法：真实模拟器与更多
+
+Nick Craig-Wood的帽子戏法 除了最佳虚拟模拟器，还有一个获奖的最佳真实模拟器（Best real emulator）。Nick Craig-Wood提供了一个用于原始任天堂Game Boy的工作模拟器，仅用66行C代码，并且他为比赛将其格式化为游戏机的样子。他的另一个获奖作品是最佳分数模拟器（Best fractional emulator）：一个令人难以置信的微小组合，在John Conway的FRACTRAN语言中模拟了Commodore 64模拟器（这里写着）。REG AD 他还因最佳Unicode使用（Best use of Unicode）获奖，实现了一个Forth版本，并且在C代码中包含了一个Forth程序，该程序生成一个旋转的曼德勃罗缩放动画。
+
+## 5. Yusuke Endoh的耀眼作品：辉光管模拟器与自我修复代码
+
+2025/endoh1 – 最可能令人眼花缭乱（Most likely to dazzle） Yusuke Endoh的三个获奖作品中的第一个是一个辉光管（Nixie tube）模拟器。当The Reg FOSS desk还年轻时，这是电子计算器（和一些汽油泵）显示数字的方式。辉光管是一个微小的电子管，内部有所有数字形状的灯丝堆叠在一起，通过让特定灯丝发光来显示所需的数字。今天你仍然可以购买新的辉光管——一家由Dalibor Farny经营的小型捷克公司手工制作它们。像许多IOCCC参赛作品一样，Endoh的源代码被格式化为它模拟的对象的样子。但对于这个作品，这不仅仅是一个有趣的附加想法：程序以彩色高亮显示其自身源代码中的数字，以模拟辉光管的输出。源代码本身也是输出机制。我们还被Endoh的第二个作品所吸引，它被评为最可能令人震惊（Most likely to shock），在极小的空间中生成了利希滕贝格图形（Lichtenberg figures）。大约在IOCCC开始的时候，这只秃鹫曾尝试自己实现这个，但从未成功过。Endoh的第三个获奖作品，最坚韧获奖者（Most resilient winner），反复修补自己的代码，然后重建自身，以便能够输出……它用来完成此操作的diff工具的源代码。这令人费解——至少对这只秃鹫来说——并且代表了这位日本程序员非凡且破纪录的第23次胜利。
+
+## 6. 放松与游戏：从环境音乐到乒乓球Quine
+
+在经历了第一个和第二个作品的震惊和眼花缭乱之后，评委们赞扬了Tomoya Ishida的最舒缓奖（Most soothing award winner），该作品仅用36行代码——包含消息“RELAX”——生成了一个包含五分钟环境音乐的WAV文件，并伴有合成海岸声音。2025/uellenberg – 乒乓球奖（Ping pong prize） 我们认为Endoh的自我格式化C代码从其自身源代码输出辉光管是惊人的，但随后我们看到了Jonah Uellenberg的作品。他的乒乓球游戏是一个quine：一个程序，当执行时，生成其自身的源代码作为输出。正如原始Wiki网站C2所解释的，这比听起来要困难得多。Uellenberg的程序比我们想象的更进一步。与许多其他IOCCC参赛作品一样，它在自己的源代码列表中包含了一条消息。如果你稍微眯起眼睛，可以在空白处看到一个乒乓球屏幕——两个球拍和一个球。编译并运行它，按一个键移动其中一个球拍……然后它重新格式化自己的源代码并输出一个新的、略有不同的版本，显示更新后的游戏屏幕。你通过反复编译上一次运行的输出来玩游戏。每次运行都输出下一个游戏的源代码。游戏的帧是其自身不断变化的源代码。对于更传统的游戏乐趣，三人组的最可能传送奖（Most likely to teleport winner）相对简单：一个roguelike游戏，仅用54行可爱的代码。对于《神秘博士》的粉丝来说，由一位仅被称为“jingp49”的台湾程序员创作的“谁赢了奖”（Who won award winner）看起来像TARDIS，并输出——我们不知道如何做到的——该电视剧标题序列的ASCII动画版本。
+
+## 7. 更多亮点：欧拉常数与诗歌解释
+
+我们这里只突出了几个获奖作品。它们都因各种原因而真正令人惊叹。例如，Gil Dogon的始终如一常数奖（Consistently constant award winner）输出了欧拉常数（Euler's constant）的许多位数字，但代码中仅使用了一个变量——自然命名为e。作为附加价值，评委和参赛者都用诗歌解释了该程序。感谢Landon Curt Noll和Reg读者Anthony C Howe让我们了解这个比赛。我们应该指出，Howe确实有一定的既得利益：他赢得了最可能入侵奖（Most likely to invade award），因为一个真正微小但可玩的游戏，这让我们想起了一种20世纪80年代的PC游戏，它被设计成看起来无害，以便你可以在工作时玩它。
+
+## 8. 附注与相关链接
+
+附注 混淆C竞赛（Obfuscated C Contest）不要与阴险C竞赛（Underhanded C Contest）混淆，后者将这种扭曲的天才应用于阴险的目的，而不是有趣的恶作剧。® offbeat linux open source emulation REG AD 安全 Moody Bible Institute漏洞导致230万个账户需要拯救，网络安全专家称 ShinyHunters泄露姓名、地址、出生日期等，此前基督教大学披露网络攻击 操作系统平台 安全的Unix祖先KSOS在Rust使其流行之前就实现了类型安全 基于Modula的源代码在近四十年后重新出现 在一个动荡的世界中，一致性的可持续发展政策至关重要 赞助专题：中兴通讯公布2025年里程碑 专栏作家 插入令牌继续，AI说。是的，关于那个…… Barney Rubble指向泡沫问题 Offbeat 博学者将自恋型领导视为“重返办公室”要求的真正驱动力 这与生产力无关；而是老板们想念他们日常的自我满足 软件 学徒开发者违抗命令——然后得到了一份支持她奇怪代码的工作 谁写了这些垃圾？哦…… 最受欢迎 安全 黑客为公司铲雪，获得了网络管理员访问权限 操作系统平台 前微软工程师将记事本缩小到合适大小 AI与机器学习 来自中国的新型人形机器人看起来像令人毛骨悚然的流行明星动作人偶——加上略微不靠谱的口型同步 AI与机器学习 AI泡沫如何破裂并拖垮全球经济，根据国际清算银行 安全 机密计算的核心信任机制已损坏。修复可能不存在 AI AI与机器学习 Nvidia提出双重收费数据中心融资计划 有什么比收一次钱更好？当然是收两次钱 AI与机器学习 增加更多AI的公司也增加更多员工 但这并不一定满足业务需求 AI与机器学习 软银进入GPU租赁竞赛，美国寻求AI训练支持 日本巨头需要为其正在建设的10 GW美国服务器园区找到用途 AI与机器学习 联合国警告需要全球治理以避免AI末日 科学小组认为，能力正在超越确保技术安全可靠使用的规则 AI与机器学习 Oracle概述了它可能失去AI赌注的所有方式 风险因素众多 信息安全 安全 俄罗斯人冒充Signal支持发起钓鱼攻击 附加：美国关闭伊朗宣传网站；营销公司问“我们为什么有你的信息？”等等 安全 微软补丁未能修复本地SharePoint，现正遭受零日攻击 附加：中国升级智能手机监控工具；Ring放松反窥探立场；等等 Black Hat和DEF CON DEF CON Franklin项目招募黑客加强关键基础设施 投票村报告如此成功，Jeff Moss说，整个DEF CON现在都将被包括在内 安全 EQT收购瑞士网络安全公司Acronis的多数股权 整个公司估值相当于35亿美元以上，但出售部分未具体说明 恶意软件月 自首次企业勒索软件以来十年，Mikko Hyppönen看不到尽头 从积极方面看，信息安全是长期稳定职业生涯的好选择 FOSS Collabora发布CODE 26.04，FOSS云端办公套件竞争加剧 现在支持Markdown和更智能的公式错误处理——加上集成AI，但默认关闭 过去的重现：GIMP 0.54以Flatpak形式复活 怀旧的复古计算乐趣，首次（也是最后一次）使用Motif而不是GTK Bcachefs在新的“性能发布”中退出实验状态 更多Rust，但AI垃圾问题也更多 法国的数字主权推动难以摆脱微软引力场 Nextcloud的部署表明本地控制存储是一回事；让用户离开Office是另一回事 CentOS历史：一位生物化学家的Linux业余爱好项目如何成为企业世界的默认操作系统 当Red Hat说Windows“可能是正确的产品”时，一个社区团结起来 Netflix专家创建应用以削减AI账单，然后开源 Project Headroom可能也能为你节省大笔费用 ✕
+
+---
+
+🔗 **原文链接：[https://www.theregister.com/offbeat/2026/07/05/c-programmers-commit-fresh-crimes-against-readability/5265981](https://www.theregister.com/offbeat/2026/07/05/c-programmers-commit-fresh-crimes-against-readability/5265981)**
