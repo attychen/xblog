@@ -1,0 +1,45 @@
+---
+title: "GitLost漏洞：利用提示注入攻击窃取GitHub私有仓库数据"
+date: "2026-07-08"
+excerpt: "返回博客 GitLost：我们如何欺骗GitHub的AI代理泄露私有仓库 Sasi Levi 2026年7月6日 摘要：Noma Labs在GitHub新的Agentic Workflows（代理工作流）中发现了一个严重的提示注入（prompt injection）漏洞，允许未经身份验证的攻击者通过在一个与私有仓库同属一个组织的公共仓库中发布精心构造的GitHub Issue，静默地从私有仓库中提"
+category: "security"
+tags: ["GitHub","AI安全","提示注入","漏洞披露","代理系统"]
+original: "https://noma.security/blog/gitlost-how-we-tricked-githubs-ai-agent-into-leaking-private-repos/"
+draft: false
+---
+
+## 1. 概述
+
+返回博客 GitLost：我们如何欺骗GitHub的AI代理泄露私有仓库 Sasi Levi 2026年7月6日 摘要：Noma Labs在GitHub新的Agentic Workflows（代理工作流）中发现了一个严重的提示注入（prompt injection）漏洞，允许未经身份验证的攻击者通过在一个与私有仓库同属一个组织的公共仓库中发布精心构造的GitHub Issue，静默地从私有仓库中提取数据。Noma Labs将此漏洞命名为GitLost。 https://noma.security/wp-content/uploads/GitLost-full-video-1.mp4
+
+## 2. 引言
+
+GitHub最近推出了GitHub Agentic Workflows，将GitHub Actions（GitHub的自动化系统，用于响应仓库事件运行任务）与由Claude或GitHub Copilot支持的AI代理配对。GitHub Agentic Workflows允许团队用纯Markdown编写他们的GitHub工作流，GitHub代理会自行读取Issue、调用工具并做出响应。作为一名具有安全开发背景的漏洞研究员，这次发布后我首先想到的问题既基本又直接：当GitHub代理读取了它不应该信任的内容时会发生什么？答案是教科书式的间接提示注入攻击，这种攻击会悄无声息地将私有数据发送给互联网上的任何人。提示注入是一类攻击，攻击者将恶意指令隐藏在AI代理读取的内容中。这些内容会导致代理遵循这些隐藏指令，而不是操作者预期的指令。
+
+## 3. 什么是GitHub Agentic Workflows？
+
+GitHub Agentic Workflows让团队能够使用自然语言自动化与代码仓库的交互。工作流以Markdown（.md）文件形式存在，编译为YAML（一种常见的配置文件格式）、扩展名为.yml的Actions文件，并在具有可配置权限的AI代理的帮助下运行。GitHub代理可以读取Issue、调用工具以及访问组织内的其他仓库。
+
+## 4. GitLost漏洞概述
+
+GitLost漏洞的根本原因，在代理AI系统中如今已很常见：提示注入。在大多数代理提示注入攻击中，代理将错误的内容视为可信的指令来源，并允许自己被误导或滥用。当系统未能维护系统级指令与不可信用户数据之间的严格信任边界时，就会发生这种情况。在这个具体案例中，任何恶意行为者都可以创建一个GitHub Issue，并在Issue正文中用纯英语隐藏命令，GitHub的代理会遵循这些命令。Noma Labs发现的有漏洞的GitHub Agentic Workflow配置为：在GitHub中触发issues.assigned事件；读取Issue的标题和正文；使用add-comment工具发布评论作为响应；对组织内的其他仓库（公共和私有）具有读取权限。要利用此漏洞，攻击者不需要编码技能、访问权限或凭据。只需在一个属于使用GitHub Agentic Workflow设置的组织下的公共仓库中打开一个Issue，然后等待即可。
+
+## 5. 攻击流程
+
+让我们看看Noma Labs漏洞研究人员成功实施的确切攻击流程：首先，他们精心构造了一个看起来完全无害的GitHub Issue，内容是一位销售副总裁与客户会面后提出的看似合理的请求，如下所示：在这个具体示例中，工作流操作在Issue被分配时触发，但我们的测试证实，它对其他GitHub工作流操作也以相同方式工作。然后，在GitHub自动化分配Issue后，一个事件触发的工作流导致代理从poc（公共）和testlocal（私有）仓库中获取README.md的内容。最后，GitHub代理将它们作为公共评论发布在公共仓库的Issue上，任何人都可以访问和阅读。
+
+## 6. “额外”利用
+
+GitHub设置了限制性护栏来防止这种情况，但它们未能按预期保护仓库。像攻击者一样，用变体反复测试GitHub，并添加关键词“Additionally”（此外），触发了模型中的意外行为，导致它重新构建输出而不是拒绝。本质上，通过欺骗模型，我能够确保GitHub的护栏无法按预期工作，并且没有阻止数据泄露。 https://noma.security/wp-content/uploads/github_agentic_workflows.mp4
+
+## 7. 漏洞概念验证
+
+为了完全透明，Noma Labs确认的发现，包括我们的工作流复现和实时证据，可以在这里找到：工作流运行：https://github.com/sasinomalabs/poc/actions/runs/23909666039 Issue：https://github.com/sasinomalabs/poc/issues/153 泄露的数据包括来自以下仓库的README.md内容：sasinomalabs/poc（公共仓库）、sasinomalabs/remote-ping（公共仓库，确认无README）、sasinomalabs/testlocal（私有仓库）
+
+## 8. 为何重要及建议
+
+GitLost完美地说明了每个组织在代理AI系统中面临的基本安全挑战之一。代理的上下文窗口（context window）也是其攻击面。代理读取的任何内容，无论是Issue、拉取请求（pull requests）、评论还是文件，如果代理将该内容视为指令输入，都可能被武器化。传统安全模型通常假设信任边界由代码强制执行。在代理系统中，信任边界部分由模型的行为强制执行，而模型天生遵循指令。提示注入攻击对于代理AI来说，已经变得像SQL注入对于Web应用程序一样：一种系统性的、类别级的漏洞类，需要同样系统性的策略和防御。Noma对构建者/AI安全官员的建议：永远不要将用户控制的内容视为AI代理的可信指令输入；将权限范围限制到最低要求。具有跨仓库访问权限的代理尤其具有高价值目标；限制任何代理可以公开发布的内容，特别是响应Issue内容时；在将用户输入传递给模型之前，将其与指令上下文隔离或清理。负责任披露：GitLost已负责任地披露给GitHub。漏洞详情在此经其知情分享。觉得有趣？订阅以获取Noma Labs更多关于代理AI漏洞的研究，或查看：GrafanaGhost、DockerDash、Context Crush、GeminiJack。正在寻找有效的代理AI安全解决方案？联系我们安排Noma全面解决方案的演示。5分钟阅读 分类：Noma Labs 目录 分享此内容：发现更多 这是个好问题 – Claude标签和代理身份：对IAM有何变化？2026年6月28日 Noma与Kong合作保护代理AI时代 2026年6月24日 这是个好问题 – 谁写了你的代理正在遵循的指令？2026年6月24日
+
+---
+
+🔗 **原文链接：[https://noma.security/blog/gitlost-how-we-tricked-githubs-ai-agent-into-leaking-private-repos/](https://noma.security/blog/gitlost-how-we-tricked-githubs-ai-agent-into-leaking-private-repos/)**

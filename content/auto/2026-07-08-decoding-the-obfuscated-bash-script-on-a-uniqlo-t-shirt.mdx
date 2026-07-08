@@ -1,0 +1,86 @@
+---
+title: "解码优衣库T恤上的混淆Bash脚本：Akamai的隐藏彩蛋"
+date: "2026-07-08"
+excerpt: "当我的妻子对我说“我给你看一件T恤……”时，我并不知道会看到什么，但绝对没想到是一件印有混淆Bash脚本的T恤，其设计目的是打印一条快乐的复活节彩蛋信息。我并没有标题党的习惯——我完全不知道这个网站有多少浏览量，但我敢打赌每月甚至不到两位数的人类访问量。不过，我能理解为什么副编辑们会乐在其中。严格来说，上面的标题完全准确，但可能并非你所想。这个混淆代码实际上是一个彩蛋，它通过优衣库门店供应，印在一"
+category: "programming"
+tags: ["Bash","混淆脚本","优衣库","Akamai","彩蛋","Base64解码","Linux","开源"]
+original: "https://tris.sherliker.net/blog/obfuscated-self-evaluating-bash-script-by-cdn-akamai-being-supplied-to-consumers-via-retail-stores/"
+draft: false
+---
+
+## 1. 意外发现：T恤上的混淆Bash脚本
+
+当我的妻子对我说“我给你看一件T恤……”时，我并不知道会看到什么，但绝对没想到是一件印有混淆Bash脚本的T恤，其设计目的是打印一条快乐的复活节彩蛋信息。我并没有标题党的习惯——我完全不知道这个网站有多少浏览量，但我敢打赌每月甚至不到两位数的人类访问量。不过，我能理解为什么副编辑们会乐在其中。严格来说，上面的标题完全准确，但可能并非你所想。这个混淆代码实际上是一个彩蛋，它通过优衣库门店供应，印在一件由Akamai设计的优秀T恤上，以支持他们的“Peace for All”活动。而且它非常酷！正面有一个花括号中的心形：而背面则是一个大的字母数字块：那是一个……shebang（脚本解释器标记）？！我的妻子说得对，我确实想看看它。那是一个……shebang？仔细看看这个文本块：是的，一个shebang！而且是在一件高街商店销售的T恤上。它显然是一个Base64编码的Here字符串，通过base64 --decode传递给eval。有趣。我告诉妻子“这基本上就是人们传播病毒的方式”，然后买下了它。
+
+## 2. OCR的挑战与转录过程
+
+OCR（光学字符识别）很麻烦。有好消息和坏消息：坏消息是Base64没有纠错功能，这意味着转录必须完美。唉。好消息是字符串似乎完整——至少，它以预期的填充终止，并且引号和花括号匹配。这是一件好事，因为优衣库x Akamai在同一系列中销售的另一款T恤设计明显不完整。例如，它的导入被截断，并以“retu”而不是“return”结尾。这很遗憾，因为它是一个非常好的颜色组合，并包含高度惯用的指令go doStuff(msg, work...，任何人都能理解。这是一个从更宽的文本块中截取的部分，永远无法编译。我以几种方式运行OCR：首先，使用Android上圈选搜索功能的内置OCR，这通常非常好。其次，使用Tesseract（开源OCR引擎）并调整一些选项。第三，通过Claude（AI模型）运行。在对比三个结果以查找不匹配之处，并让Claude输出一个位置表格以便快速扫描后，清理剩余部分变得琐碎但耗时。得到的字符串是：IyEvYmluL2Jhc2gKCiMgQ29uZ3JhdHVsYXRpb25zISBZb3UgZm91bmQgdGhlIGVhc3RlciBlZ2chIOKdpO+4jwojIOOBiuOCgeOBp+OBqOOBhuOBlOOBluOBhOOBvuOBme+8gemaoOOBleOCjOOBn+OCteODl+ODqeOCpOOCuuOCkuimi+OBpOOBkeOBvuOBl+OBn++8geKdpO+4jwoKIyBEZWZpbmUgdGhlIHRleHQgdG8gYW5pbWF0ZQp0ZXh0PSLimaVQRUFDReKZpUZPUuKZpUFMTOKZpVBFQUNF4pmlRk9S4pmlQUxM4pmlUEVBQ0XimaVGT1LimaVBTEzimaVQRUFDReKZpUZPUuKZpUFMTOKZpVBFQUNF4pmlRk9S4pmlQUxM4pmlIgoKIyBHZXQgdGVybWluYWwgZGltZW5zaW9ucwpjb2xzPSQodHB1dCBjb2xzKQpsaW5lcz0kKHRwdXQgbGluZXMpCgojIENhbGN1bGF0ZSB0aGUgbGVuZ3RoIG9mIHRoZSB0ZXh0CnRleHRfbGVuZ3RoPSR7I3RleHR9CgojIEhpZGUgdGhlIGN1cnNvcgp0cHV0IGNpdmlzCgojIFRyYXAgQ1RSTCtDIHRvIHNob3cgdGhlIGN1cnNvciBiZWZvcmUgZXhpdGluZwp0cmFwICJ0cHV0IGNub3JtOyBleGl0IiBTSUdJTlQKCiMgU2V0IGZyZXF1ZW5jeSBzY2FsaW5nIGZhY3RvcgpmcmVxPTAuMgoKIyBJbmZpbml0ZSBsb29wIGZvciBjb250aW51b3VzIGFuaW1hdGlvbgpmb3IgKCggdD0wOyA7IHQrPTEgKSk7IGRvCiAgICAjIEV4dHJhY3Qgb25lIGNoYXJhY3RlciBhdCBhIHRpbWUKICAgIGNoYXI9IiR7dGV4dDp0ICUgdGV4dF9sZW5ndGg6MX0iCiAgICAKICAgICMgQ2FsY3VsYXRlIHRoZSBhbmdsZSBpbiByYWRpYW5zCiAgICBhbmdsZT0kKGVjaG8gIigkdCkgKiAkZnJlcSIgfCBiYyAtbCkKCiAgICAjIENhbGN1bGF0ZSB0aGUgc2luZSBvZiB0aGUgYW5nbGUKICAgIHNpbmVfdmFsdWU9JChlY2hvICJzKCRhbmdsZSkiIHwgYmMgLWwpCgogICAgIyBDYWxjdWxhdGUgeCBwb3NpdGlvbiB1c2luZyB0aGUgc2luZSB2YWx1ZQogICAgeD0kKGVjaG8gIigkY29scyAvIDIpICsgKCRjb2xzIC8gNCkgKiAkc2luZV92YWx1ZSIgfCBiYyAtbCkKICAgIHg9JChwcmludGYgIiUuMGYiICIkeCIpCgogICAgIyBFbnN1cmUgeCBpcyB3aXRoaW4gdGVybWluYWwgYm91bmRzCiAgICBpZiAoKCB4IDwgMCApKTsgdGhlbiB4PTA7IGZpCiAgICBpZiAoKCB4ID49IGNvbHMgKSk7IHRoZW4geD0kKChjb2xzIC0gMSkpOyBmaQoKICAgICMgQ2FsY3VsYXRlIGNvbG9yIGdyYWRpZW50IGJldHdlZW4gMTIgKGN5YW4pIGFuZCAyMDggKG9yYW5nZSkKICAgIGNvbG9yX3N0YXJ0PTEyCiAgICBjb2xvcl9lbmQ9MjA4CiAgICBjb2xvcl9yYW5nZT0kKChjb2xvcl9lbmQgLSBjb2xvcl9zdGFydCkpCiAgICBjb2xvcj0kKChjb2xvcl9zdGFydCArIChjb2xvcl9yYW5nZSAqIHQgLyBsaW5lcykgJSBjb2xvcl9yYW5nZSkpCgogICAgIyBQcmludCB0aGUgY2hhcmFjdGVyIHdpdGggMjU2LWNvbG9yIHN1cHBvcnQKICAgIGVjaG8gLW5lICJcMDMzWzM4OzU7JHtjb2xvcn1tIiQodHB1dCBjdXAgJHQgJHgpIiRjaGFyXDAzM1swbSIKCiAgICAjIExpbmUgZmVlZCB0byBtb3ZlIGRvd253YXJkCiAgICBlY2hvICIiCgpkb25lCgo=
+
+## 3. 解码后的脚本：一个正弦波动画彩蛋
+
+经过Base64解码后，得到的脚本是一个友好且注释良好的彩蛋：
+
+#!/bin/bash
+# Congratulations! You found the easter egg! ❤️
+# おめでとうございます！隠されたサプライズを見つけました！❤️
+# Define the text to animate
+text="♥PEACE♥FOR♥ALL♥PEACE♥FOR♥ALL♥PEACE♥FOR♥ALL♥PEACE♥FOR♥ALL♥PEACE♥FOR♥ALL♥"
+# Get terminal dimensions
+cols=$(tput cols)
+lines=$(tput lines)
+# Calculate the length of the text
+text_length=$&#123;#text&#125;
+# Hide the cursor
+tput civis
+# Trap CTRL+C to show the cursor before exiting
+trap "tput cnorm; exit" SIGINT
+# Set frequency scaling factor
+freq=0.2
+# Infinite loop for continuous animation
+for (( t=0; ; t+=1 )); do
+    # Extract one character at a time
+    char="$&#123;text:t % text_length:1&#125;"
+    # Calculate the angle in radians
+    angle=$(echo "($t) * $freq" | bc -l)
+    # Calculate the sine of the angle
+    sine_value=$(echo "s($angle)" | bc -l)
+    # Calculate x position using the sine value
+    x=$(echo "($cols / 2) + ($cols / 4) * $sine_value" | bc -l)
+    x=$(printf "%.0f" "$x")
+    # Ensure x is within terminal bounds
+    if (( x &lt; 0 )); then x=0; fi
+    if (( x &gt;= cols )); then x=$((cols - 1)); fi
+    # Calculate color gradient between 12 (cyan) and 208 (orange)
+    color_start=12
+    color_end=208
+    color_range=$((color_end - color_start))
+    color=$((color_start + (color_range * t / lines) % color_range))
+    # Print the character with 256-color support
+    echo -ne "\033[38;5;$&#123;color&#125;m"$(tput cup $t $x)"$char\033[0m"
+    # Line feed to move downward
+    echo ""
+done
+
+## 4. 脚本效果与字体细节
+
+结果是一个连续的快乐正弦波循环，显示活动信息“Peace for All”：
+
+细节：字体选择
+我猜优衣库是通过Windows运行的：一件让我印象深刻的事情是字体，我几乎可以肯定它是Consolas（一种等宽字体）。我很幸运曾与设计师Lucas de Groot通信，涉及一个法律案件，其中有人使用他的一种字体伪造文件。他非常乐于助人，并善意地书面确认了必要的事实，尽管他并不欠我们什么。我很喜欢这种字体。注意非常浅的斜线零、1上没有衬线，以及字母如BDyg和数字2的圆润曲线。这很引人注目，因为它主要是Windows字体，所以不是我所期望的调用Bash的那种字体。
+
+## 5. Akamai的营销与设计理念
+
+Linux，互联网的语言
+Akamai在T恤发布时发布了一篇新闻稿，由于技术与营销的融合，这又是一种有趣的现象：
+
+设计信息
+25多年前，Akamai帮助实现了我们今天所知的互联网。这件T恤的设计是对那些早期在线生活的回顾。浅棕褐色参考了“米色盒子”塑料外壳，这些外壳容纳了早期的互联网计算机，而正面的心形代表了互联网在世界各地被用于善事。在T恤的背面是真正的代码。它指的是Linux，互联网的开源语言。这种共同语言将Akamai与世界顶级品牌及其服务的人们团结在一起，因为我们共同致力于实现一个更安全、更互联的世界的愿景。
+
+## 6. 并非首次发现：社区中的类似探索
+
+并非首次
+我一开始故意没有搜索剧透，但我看到我当然不是第一个被这个技术彩蛋吸引的人。Wen Chuan Lee的帖子还链接到另一个帖子（我对照它交叉检查了我的转录）。我很高兴继续这个链条。
+
+---
+
+🔗 **原文链接：[https://tris.sherliker.net/blog/obfuscated-self-evaluating-bash-script-by-cdn-akamai-being-supplied-to-consumers-via-retail-stores/](https://tris.sherliker.net/blog/obfuscated-self-evaluating-bash-script-by-cdn-akamai-being-supplied-to-consumers-via-retail-stores/)**

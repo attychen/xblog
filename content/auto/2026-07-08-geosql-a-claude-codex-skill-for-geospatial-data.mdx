@@ -1,0 +1,93 @@
+---
+title: "GeoSQL：面向地理空间数据的Claude与Codex技能"
+date: "2026-07-08"
+excerpt: "GeoSQL 是面向数据科学家和分析师的 Claude、Codex 和 GitHub Copilot 技能，专为处理 PostGIS、BigQuery、Snowflake 和 Wherobots 上的地理空间数据而设计。注意：无需 SaaS 账户。完全在本地或自托管环境中运行。通过在地图中循环，地理空间任务性能提升 4 倍。"
+category: "ai-tools"
+tags: ["地理空间数据","Claude","Codex","GitHub Copilot","PostGIS","BigQuery","Snowflake","Wherobots","Dekart","SQL"]
+original: "https://github.com/dekart-xyz/geosql"
+draft: false
+---
+
+## 1. 项目概述
+
+GeoSQL 是面向数据科学家和分析师的 Claude、Codex 和 GitHub Copilot 技能，专为处理 PostGIS、BigQuery、Snowflake 和 Wherobots 上的地理空间数据而设计。注意：无需 SaaS 账户。完全在本地或自托管环境中运行。通过在地图中循环，地理空间任务性能提升 4 倍。
+
+## 2. 快速开始
+
+使用 Python（交互模式）：
+pip install geosql
+geosql
+直接安装到支持的代理中：
+geosql install claude
+geosql install codex
+geosql install copilot
+或者在 Claude Code 中：
+/plugin marketplace add dekart-xyz/geosql
+/plugin install geosql
+安装 geosql install copilot 后，从 VS Code Copilot 或 Copilot CLI 使用 GeoSQL，提示词例如：
+/geosql Show EV charger density along major roads and render a map
+
+## 3. 安装Dekart以支持地图渲染和PostGIS
+
+GeoSQL 可选地使用 Dekart：一个开源的 Kepler.gl 后端，支持 PostGIS、BigQuery 和 Snowflake 的连接器。您可以通过一个 Docker 命令在本地运行 Dekart，在您自己的基础设施上自托管，或使用 Dekart Cloud。
+在本地运行 Dekart（跳过此步骤以使用 Dekart Cloud）：
+docker run -p 8080:8080 dekartxyz/dekart
+安装 Dekart CLI：
+pip install dekart
+dekart init
+按照 CLI 和 dekart 提示连接您的 PostGIS、BigQuery、Snowflake 或 Wherobots 数据库。
+在您的代理中尝试的示例提示词：
+房地产分析：/geosql Show buildings with low school accessibility in Ottawa, render as a map
+选址：/geosql Find the top 10 locations for Sporting Goods Store in Seattle based on POI co-location and distance to the nearest competitor. Create a map.
+电动汽车充电基础设施：/geosql create map EV charger density along major Romanian roads, highlighting how many charging stations are within 5 km of each motorway, trunk, or primary road segment.
+
+## 4. 工作原理
+
+GeoSQL 运行一个包含地图的代理循环。
+发现。该技能探索您的仓库元数据（表、列、类型），而不是猜测模式。适用于 BigQuery 和 Snowflake 上的 Overture Maps 共享数据，以及您在 PostGIS、BigQuery、Snowflake 或 Wherobots 上的私有表。
+SQL。代理使用适合您引擎的正确函数（ST_INTERSECTS、ST_DISTANCE、H3、用于分区剪枝的 bbox 重叠等）编写空间 SQL。
+成本检查。在 BigQuery 上，每个查询首先进行 dry-run 以估计扫描的字节数。默认强制执行 10 GiB 计费上限。超出预算的查询会被重写为更便宜的版本（更紧的 bbox、更低的 H3 分辨率、更多过滤器），而不是直接执行。
+几何验证。代理计算总面积（多边形）或总长度（线）作为合理性检查，并与领域知识进行交叉验证。
+地图反馈。当可用时，代理通过 Dekart 渲染结果，查看渲染图像，并纠正纯文本循环会遗漏的几何错误。这就是实现 4 倍性能提升的循环。
+该技能使用您的本地 CLI 认证（bq、snow、dekart），因此仓库凭据永远不会发送到代理。
+
+## 5. 基准测试
+
+GeoSQL 在 evals/ 目录下附带一个可重现的评估套件。每个案例断言特定行为（成本防护、验证步骤、正确结果），而不仅仅是“代理是否回答”。
+当前包含套件的结果：
+案例 断言数 通过率
+london-boroughs 4 100%
+berlin-create-map 3 100%
+paris-boundaries 1 100%
+总计 8 100%
+平均：每轮 3,085 个令牌，每轮持续时间 72 秒。
+上面的 4 倍改进图表比较了有和没有地图循环步骤的相同任务集。没有地图时，代理的纯文本验证会遗漏几何类错误（将邻域多边形误认为都市区边界、重复计算重叠要素、在坐标参考系统上选择错误的连接键）。添加渲染地图作为工具调用，让代理能够看到这些错误并自我纠正。
+自行运行套件：
+python evals/run.py
+有关设置和如何添加新案例，请参阅 evals/RUNBOOK.md。欢迎提交包含新评估的 PR。
+
+## 6. 关于项目
+
+将 Claude/Codex 转变为地理空间分析代理。
+资源
+Readme
+许可证 MIT 许可证
+贡献
+贡献
+Uh oh! 加载时出错。请重新加载此页面。
+活动
+自定义属性
+星标 135 星
+关注者 0 关注
+复刻 21 复刻
+报告仓库
+贡献者
+Uh oh! 加载时出错。请重新加载此页面。
+语言
+Python 86.2%
+Makefile 12.1%
+Shell 1.7%
+
+---
+
+🔗 **原文链接：[https://github.com/dekart-xyz/geosql](https://github.com/dekart-xyz/geosql)**

@@ -1,0 +1,21 @@
+---
+title: "自动CAD生成的基座模型：多模型文本到CAD框架与迭代优化实证研究"
+date: "2026-07-08"
+excerpt: "大型语言模型（LLMs）和视觉语言模型（VLMs）的最新进展使得从自然语言规格说明自动生成参数化3D设计成为可能。本章对用于机械零件自动计算机辅助设计（CAD）生成的基座模型（foundation models）进行了实证研究，采用统一的评估流程和包含97个工程设计问题的精选基准（benchmark）。我们提出了LLMForge，一个多模型文本到CAD框架，集成了JSON模式验证（JSON-sch"
+category: "ai-tools"
+tags: ["CAD生成","基座模型","大语言模型","视觉语言模型","文本到CAD","迭代优化","机械设计"]
+original: "https://arxiv.org/abs/2607.05573"
+draft: false
+---
+
+## 1. 研究背景与摘要
+
+大型语言模型（LLMs）和视觉语言模型（VLMs）的最新进展使得从自然语言规格说明自动生成参数化3D设计成为可能。本章对用于机械零件自动计算机辅助设计（CAD）生成的基座模型（foundation models）进行了实证研究，采用统一的评估流程和包含97个工程设计问题的精选基准（benchmark）。我们提出了LLMForge，一个多模型文本到CAD框架，集成了JSON模式验证（JSON-schema validation）、分析特征评分（analytic feature scoring）、网格合成（mesh synthesis）和多轮迭代优化（multi-round iterative refinement），并在两种批评机制（critique regimes）下进行了研究。IterTracer使用Phong着色光线追踪渲染器（Phong-shaded ray-trace renderer），配合分析视觉指标（silhouette IoU、hole visibility、edge clearance、aspect-ratio conformance），在轮次间提供轻量级几何感知反馈。IterVision将分析评分器替换为VLM语义批评器（Qwen2.5-VL-72B），通过思维链视觉推理（chain-of-thought visual reasoning）评估渲染视图，判断空间连贯性和设计意图。在一个涵盖四种典型几何族（带孔和螺栓圆的板、多特征盒、法兰圆柱和L型支架）的基准上，我们评估了七个基座模型：DeepSeek-V3.2、Qwen3-235B-A22B、Llama-3.3-70B、Gemma-3-27B、GLM-4.5、MiniMax-M2.1和INTELLECT。在IterTracer下，排名最高的四个模型形成一个紧密集群（总体均值在[0.885, 0.890]之间），网格生成成功率达98.97%，表明紧凑的指令调优模型（instruction-tuned models）可以匹配甚至超越规模更大的系统。在IterVision中，基于VLM的批评机制在领先模型上实现了100%的水密网格生成，同时揭示了在旋转对称几何体（如圆柱体）上存在的系统性困难，这些几何体上视觉评分和语义评分差异最大。我们讨论了基准设计、失败模式、面向CAD的提示工程（prompting）以及对工业工作流程和可扩展自动化机械设计的影响。
+
+## 2. 论文元数据与引用信息
+
+评论：已被收录为《全球应用人工智能进展》（G. A. Tsihrintzis, M. Virvou, N. G. Bourbakis, L. C. Jain 编辑）一书章节，认证版本将在Springer系列《学习与分析在智能系统中》出版。主题：人工智能（cs.AI）；计算工程、金融与科学（cs.CE）。引用格式：arXiv:2607.05573 [cs.AI]（或本版本arXiv:2607.05573v1 [cs.AI]）。DOI：https://doi.org/10.48550/arXiv.2607.05573。arXiv通过DataCite发布的DOI（待注册）。提交历史：来自J. De Curtò [查看电子邮件] [v1] 2026年7月6日星期一 19:17:49 UTC（1,375 KB）。全文链接：访问论文：查看PDF标题为《自动CAD生成的基座模型》的论文，作者J de Curtò、Victoria Guillén、I. de Zarzà。查看PDF HTML（实验性）。TeX源码。查看许可证。当前浏览上下文：cs.AI 上一页 | 下一页 | 新文章 | 近期 | 2026-07。切换浏览至：cs cs.CE。参考文献：NASA ADS、Google Scholar、Semantic Scholar。导出BibTeX引用。加载中... BibTeX格式引用加载中... 数据提供者：书签。书目工具：书目浏览器（什么是浏览器？）、Connected Papers（什么是Connected Papers？）、Litmaps（什么是Litmaps？）、scite.ai（什么是scite Smart Citations？）。代码、数据、媒体：与本文相关的代码、数据和媒体。alphaXiv（什么是alphaXiv？）、代码链接：CatalyzeX代码查找器（什么是CatalyzeX？）、DagsHub（什么是DagsHub？）、GotitPub（什么是GotitPub？）、Huggingface（什么是Huggingface？）、ScienceCast（什么是ScienceCast？）。演示：Replicate（什么是Replicate？）、Spaces（什么是Hugging Face Spaces？）、Spaces（什么是TXYZ.AI？）。相关论文推荐与搜索工具：Influence Flower链接（什么是Influence Flowers？）、CORE推荐器（什么是CORE推荐器？）。作者、机构、主题。关于arXivLabs：arXivLabs是与社区合作者一起进行实验性项目的框架。与arXivLabs合作的个人和组织都接受并认同我们关于开放性、社区、卓越和用户数据隐私的价值观。arXiv致力于这些价值观，并只与遵守这些价值观的合作伙伴合作。有项目想法能为arXiv社区增加价值吗？了解更多关于arXivLabs的信息。哪些作者是本文的背书人？| 禁用MathJax（什么是MathJax？）。
+
+---
+
+🔗 **原文链接：[https://arxiv.org/abs/2607.05573](https://arxiv.org/abs/2607.05573)**
