@@ -1,0 +1,33 @@
+---
+title: "上下文搜索何时有效？反思驱动推理的采样复杂度理论"
+date: "2026-07-09"
+excerpt: "通过扩展推理训练大型语言模型（LLMs）已实现了上下文搜索（in-context search），即模型迭代生成、批评并修正解决方案尝试。我们通过将上下文搜索建模为对推理轨迹（reasoning traces）的近似推断（approximate inference）来提供其理论分析，其中基础模型定义了先验（prior），自我反思（self-reflection）为后验更新（posterior up"
+category: "ai-tools"
+tags: ["大语言模型","上下文搜索","反思驱动推理","采样复杂度","强化学习"]
+original: "https://arxiv.org/abs/2607.06720"
+draft: false
+---
+
+## 1. 摘要
+
+通过扩展推理训练大型语言模型（LLMs）已实现了上下文搜索（in-context search），即模型迭代生成、批评并修正解决方案尝试。我们通过将上下文搜索建模为对推理轨迹（reasoning traces）的近似推断（approximate inference）来提供其理论分析，其中基础模型定义了先验（prior），自我反思（self-reflection）为后验更新（posterior updates）提供反馈，并研究由此产生的推理时采样复杂度（inference-time sampling complexity）——即实现高成功概率所需的顺序尝试次数。我们证明，当反思能够可靠地定位早期错误时，上下文搜索可以比基础模型产生指数级改进，仅需多项式数量的顺序尝试即可解决零样本通过率（zero-shot pass rates）呈指数级小的问题；而当这一属性失效时，基于过去尝试的条件化（conditioning）相比并行采样（parallel sampling）没有渐近优势。我们进一步证明，这些增益是稳健且可学习的：近似后验更新就足够了，并且对搜索轨迹（search rollouts）进行交叉熵训练（cross-entropy training）能以多项式样本复杂度恢复所需行为。最后，我们证明，在具有可验证奖励（verifiable rewards）的强化学习（reinforcement learning）的阶段式抽象（stagewise abstraction）下，最优策略扩展（optimal policy extension）实现了相同的后验重加权规则（posterior reweighting rule）。我们在真实的大型推理模型上验证了该理论的关键定性预测。
+
+## 2. 研究背景与问题
+
+本文由Yotam Wolf、Noam Wies和Amnon Shashua撰写，标题为《When Does In-Context Search Help? A Sampling-Complexity Theory of Reflection-Driven Reasoning》，提交于2026年7月7日。研究聚焦于人工智能（Artificial Intelligence, cs.AI）与计算与语言（Computation and Language, cs.CL）领域。论文通过建模上下文搜索为近似推断，系统分析了反思驱动推理的采样复杂度，旨在回答“上下文搜索何时有效”这一核心问题。
+
+## 3. 核心理论框架
+
+论文将上下文搜索视为一种推理时过程，其中模型通过迭代生成、批评和修正解决方案来探索推理轨迹。基础模型提供先验分布，而自我反思机制则通过反馈更新后验。研究重点在于推理时的采样复杂度，即达到高成功概率所需的顺序尝试次数。理论表明，当反思能有效定位早期错误时，上下文搜索可带来指数级性能提升，使模型能以多项式顺序尝试解决零样本通过率极低的问题。反之，若反思不可靠，则条件化过去尝试无渐近优势。
+
+## 4. 关键理论结果
+
+论文证明了上下文搜索的增益是稳健且可学习的：即使仅使用近似后验更新，也能保持性能；通过交叉熵训练搜索轨迹，模型能以多项式样本复杂度学习到所需行为。此外，在具有可验证奖励的强化学习阶段式抽象下，最优策略扩展等价于后验重加权规则。这些结果揭示了上下文搜索的理论基础，并提供了可操作的训练指导。
+
+## 5. 实验验证与结论
+
+研究在真实大型推理模型上验证了理论的关键定性预测，表明反思驱动推理在特定条件下能显著提升性能。论文通过理论分析与实验结合，为理解上下文搜索的机制和局限性提供了新视角，对LLM的推理能力优化具有重要指导意义。
+
+---
+
+🔗 **原文链接：[https://arxiv.org/abs/2607.06720](https://arxiv.org/abs/2607.06720)**
