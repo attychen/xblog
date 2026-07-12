@@ -1,0 +1,41 @@
+---
+title: "Mindwalk：在代码库3D地图上回放编码代理会话的可视化工具"
+date: "2026-07-12"
+excerpt: "Mindwalk 是一款可视化工具，能够在代码库的 3D 地图上回放编码代理（coding-agent）会话。它通过一个 30 秒的演示视频（需开启声音）展示了核心功能。"
+category: "ai-tools"
+tags: ["可视化工具","编码代理","3D地图","会话回放","开源"]
+original: "https://github.com/cosmtrek/mindwalk"
+draft: false
+---
+
+## 1. 项目概述
+
+Mindwalk 是一款可视化工具，能够在代码库的 3D 地图上回放编码代理（coding-agent）会话。它通过一个 30 秒的演示视频（需开启声音）展示了核心功能。
+
+## 2. 问题与理念
+
+问题在于：会话日志记录了代理做了什么，但并未体现它如何理解任务——它认为仓库的哪些部分相关、在行动前探索了哪些区域、其足迹是否与你预期的范围匹配。逐行阅读原始 JSONL 文件无法回答这些问题。理念是：将仓库绘制成夜间地图，并以光点移动的方式回放会话——代理搜索、读取和编辑的地方会发光，其余部分保持黑暗。这样，代理对任务的理解就变成了一种一目了然的形状。
+
+## 3. 快速开始与使用方式
+
+一个 Go 二进制文件即可读取 Claude Code 和 Codex 会话日志，完全本地运行，不会泄露任何会话数据。快速安装命令：`curl -fsSL https://raw.githubusercontent.com/cosmtrek/mindwalk/master/scripts/install.sh | sh`，然后设置路径 `export PATH="$HOME/.local/bin:$PATH"`，最后运行 `mindwalk`。安装程序会通过 checksums.txt 验证二进制文件，并安装到 ~/.local/bin（可通过 INSTALL_DIR 覆盖，使用 VERSION 指定版本）。Windows 归档文件可在 GitHub Releases 页面获取。从源码构建：运行 `make setup` 和 `make build` 生成 bin/mindwalk。无参数运行时，mindwalk 会扫描 ~/.claude/projects 和 ~/.codex/sessions，在随机本地端口启动 UI 并打开浏览器。其他命令包括：`mindwalk serve [--port N] [--no-open] [--claude-dir DIR] [--codex-dir DIR]`、`mindwalk open [--no-open] session.jsonl`（打开特定会话）、`mindwalk build repo [-o out]`（写入仓库城市地图 JSON）、`mindwalk trace session [-o out]`（写入标准化追踪 JSON）。
+
+## 4. 可视化界面解读
+
+树状/地形视图（Tree / Terrain views）将仓库呈现为径向树（radial tree）或简单的树图（treemap），发光强度与文件被触及的深度和频率成正比。触摸状态（Touch states）显示每个文件的最深触摸：已见（苔藓绿）、已读（月光白）、已编辑（暖琥珀色）、未访问（暗色）。HUD 将摩擦信号（friction signals）——错误率、变动文件、最后一次验证后的编辑——整合为审查条（review strip）。回放面板（Playback deck）允许在运行的分桶直方图（bucketed histogram）上擦洗或播放会话。条形图位于冷/暖光谱上：观察（搜索、读取、执行）保持冷色，变异（编辑、验证）呈现暖色，因此编辑阶段一目了然。时间线标记（Timeline marks）包括：◇ 上下文压缩、○ 子代理启动、› 用户转向；每个标记都是可点击跳转的目标。检查器（Inspector）允许点击文件以固定其访问历史，点击访问行可将播放头跳转到该时刻。键盘快捷键：Space 播放/暂停、←/→ 步进（⇧ ×10）、Home/End 跳转至首尾、S 速度、E 下一个编辑、X 下一个错误、M 下一个标记、⌘B 会话轨道。
+
+## 5. 底层架构
+
+两个工件被刻意分离：追踪（trace）——将会话日志标准化为文件触摸事件的有序流（位于 internal/adapter，每种代理格式对应一个适配器）；城市地图（citymap）——仓库的确定性布局（位于 internal/citymap）；相同的树总是生成相同的地图，因此回放可在不同会话间进行比较。一个本地 Go 服务器（位于 internal/server）将两者结合，并提供 React/Three.js 前端（位于 web）。schema/ 目录镜像了导出的 JSON 契约。
+
+## 6. 贡献与开发指南
+
+欢迎提交 Issue 和 Pull Request。要搭建开发环境：运行 `make setup`（安装前端依赖）、`make serve`（在 :8765 启动开发服务器，从工作树提供 web/dist）、`make test`（运行 Go 测试 + 前端构建——在发送 PR 前执行）、`make build`（重新生成嵌入资源和 bin/mindwalk）。基本规则（完整架构说明见 AGENTS.md）：保持边界清晰——适配器不关心渲染，城市地图生成不依赖回放，服务器仅连接两者；保持 Go 代码符合 gofmt 格式；切勿手动编辑 internal/server/static——应通过 `make build` 重新生成；当追踪或城市地图 JSON 格式发生变化时，在同一变更中更新 schema/ 和相关测试。
+
+## 7. 项目信息
+
+Mindwalk 是一款在代码库 3D 地图上回放编码代理会话的可视化工具。资源包括 Readme。活动数据：78 颗星、0 位关注者、5 个分支。最新版本为 v0.1.0（2026 年 7 月 11 日）。语言构成：Go 49.4%、TypeScript 40.5%、CSS 8.0%、HTML 1.3%、其他 0.8%。
+
+---
+
+🔗 **原文链接：[https://github.com/cosmtrek/mindwalk](https://github.com/cosmtrek/mindwalk)**
