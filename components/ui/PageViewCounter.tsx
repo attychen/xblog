@@ -1,19 +1,25 @@
 ﻿'use client';
 import { useEffect, useState } from 'react';
 
-const PV_KEY = 'fazhouji_pv';
-const BASE_PV = 12680; // Seed value
+const FALLBACK_PV = 12680;
 
 export default function PageViewCounter() {
-  const [pv, setPv] = useState(BASE_PV);
+  const [pv, setPv] = useState(FALLBACK_PV);
 
   useEffect(() => {
-    // Read stored count
-    const stored = localStorage.getItem(PV_KEY);
-    const count = stored ? parseInt(stored, 10) : 0;
-    const newCount = count + 1;
-    localStorage.setItem(PV_KEY, String(newCount));
-    setPv(BASE_PV + newCount);
+    // Increment and get count from API
+    fetch('/api/pv', { method: 'POST' })
+      .then(r => r.json())
+      .then(data => {
+        if (data.pv > 0) setPv(data.pv);
+      })
+      .catch(() => {
+        // Fallback to localStorage
+        const stored = localStorage.getItem('fazhouji_pv');
+        const count = stored ? parseInt(stored, 10) : 0;
+        localStorage.setItem('fazhouji_pv', String(count + 1));
+        setPv(FALLBACK_PV + count + 1);
+      });
   }, []);
 
   return (
