@@ -1,4 +1,5 @@
 ﻿import Link from "next/link";
+import PageViewCounter from "@/components/ui/PageViewCounter";
 
 const FOOTER_LINKS = [
   { label: "AI动态", href: "/blog" },
@@ -12,32 +13,27 @@ export default function Footer() {
     <footer className="mt-12 md:mt-20">
       {/* Mobile: subtle */}
       <div className="md:hidden px-4 py-6">
-        <div className="h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-800 to-transparent mb-5" />
-        <p className="text-center text-[11px] text-gray-400 dark:text-gray-500">
-          法舟记 @attychen
-        </p>
+        <div className="h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-800 to-transparent mb-4" />
+        <div className="flex items-center justify-center gap-3 text-[11px] text-gray-400 dark:text-gray-500">
+          <span>法舟记 @attychen</span>
+          <span>·</span>
+          <PageViewCounter />
+        </div>
       </div>
 
       {/* Desktop: glass footer */}
       <div className="hidden md:block px-4 lg:px-8 pb-8">
-        <div className="max-w-6xl mx-auto liquid-glass rounded-2xl p-8">
+        <div className="max-w-5xl mx-auto liquid-glass rounded-2xl p-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             <div className="space-y-2">
-              <Link href="/" className="text-xl font-bold text-gray-800 dark:text-gray-200">
-                法舟记
-              </Link>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                汇聚AI前沿自留地
-              </p>
+              <Link href="/" className="text-xl font-bold text-gray-800 dark:text-gray-200">法舟记</Link>
+              <p className="text-sm text-gray-500 dark:text-gray-400">汇聚AI前沿自留地</p>
             </div>
             <div className="space-y-3">
               <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">导航</h4>
               <div className="flex flex-col gap-2">
                 {FOOTER_LINKS.map((link) => (
-                  <Link key={link.href} href={link.href}
-                    className="text-sm text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors">
-                    {link.label}
-                  </Link>
+                  <Link key={link.href} href={link.href} className="text-sm text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors">{link.label}</Link>
                 ))}
               </div>
             </div>
@@ -45,27 +41,20 @@ export default function Footer() {
               <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">联系方式</h4>
               <div className="flex flex-col gap-2">
                 <span className="text-sm text-gray-500 dark:text-gray-400">微信: attychen</span>
-                <a href="https://github.com/attychen" target="_blank" rel="noopener noreferrer"
-                   className="text-sm text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors">
-                  GitHub
-                </a>
+                <a href="https://github.com/attychen" target="_blank" rel="noopener noreferrer" className="text-sm text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors">GitHub</a>
               </div>
             </div>
             <div className="space-y-3">
               <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">链接</h4>
               <div className="flex flex-col gap-2">
-                <a href="https://github.com/attychen/xblog" target="_blank" rel="noopener noreferrer"
-                   className="text-sm text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors">
-                  GitHub 仓库
-                </a>
-                <Link href="/blog" className="text-sm text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors">
-                  全部文章
-                </Link>
+                <a href="https://github.com/attychen/xblog" target="_blank" rel="noopener noreferrer" className="text-sm text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors">GitHub 仓库</a>
+                <Link href="/blog" className="text-sm text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors">全部文章</Link>
               </div>
             </div>
           </div>
-          <div className="mt-8 pt-6 border-t border-black/[0.06] dark:border-white/[0.08] text-center text-xs text-gray-400 dark:text-gray-500">
-            © {new Date().getFullYear()} 法舟记 · 以代码为舟，渡技术之海
+          <div className="mt-8 pt-6 border-t border-black/[0.06] dark:border-white/[0.08] flex items-center justify-between text-xs text-gray-400 dark:text-gray-500">
+            <span>© {new Date().getFullYear()} 法舟记 · 以代码为舟，渡技术之海</span>
+            <PageViewCounter />
           </div>
         </div>
       </div>
