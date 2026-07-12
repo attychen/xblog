@@ -1,4 +1,4 @@
-// Hugging Face 开源大模型排行榜 — 服务端获取
+﻿// Hugging Face 开源大模型排行榜 — 服务端获取
 export interface HFModel {
   id: string;
   author: string;
@@ -19,7 +19,7 @@ export async function fetchTopModels(): Promise<HFModel[]> {
       "https://huggingface.co/api/models?sort=downloads&direction=-1&limit=50&filter=text-generation&full=true";
     const res = await fetch(url, {
       headers: { "User-Agent": "Fazhouji/1.0" },
-      next: { revalidate: 86400 },
+      next: { revalidate: 3600 },
     });
     if (!res.ok) return [];
     const data = await res.json();
