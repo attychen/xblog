@@ -1,0 +1,50 @@
+<view class="blog-page">
+  <view class="container" style="padding-bottom:140rpx;">
+    <view style="margin-bottom:24rpx;">
+      <text class="text-2xl font-bold text-primary block">法舟记</text>
+      <text class="text-sm text-muted block" style="margin-top:6rpx;">AI 大模型与前沿技术</text>
+    </view>
+
+    <scroll-view scroll-x style="white-space:nowrap;margin-bottom:20rpx;" show-scrollbar="{{false}}">
+      <view class="flex gap-md">
+        <view wx:for="{{categories}}" wx:key="name" class="glass-pill" bindtap="onCategoryTap" data-category="{{item.name}}">
+          <text class="text-xs">{{item.name}}</text>
+        </view>
+      </view>
+    </scroll-view>
+
+    <view wx:if="{{loading}}" class="text-center" style="padding:80rpx 0;">
+      <text class="text-muted">加载中...</text>
+    </view>
+
+    <view wx:if="{{!loading && filteredPosts.length === 0}}" class="text-center" style="padding:80rpx 0;">
+      <text class="text-muted">暂无文章</text>
+    </view>
+
+    <view wx:if="{{!loading}}">
+      <view wx:for="{{filteredPosts}}" wx:key="slug">
+        <view bindtap="onArticleTap" data-slug="{{item.slug}}" style="padding:20rpx 0;">
+          <view class="flex items-center gap-md" style="margin-bottom:10rpx;">
+            <text wx:if="{{item.category}}" class="text-xs text-muted" style="padding:3rpx 10rpx;background:rgba(255,255,255,0.06);border-radius:6rpx;">{{item.category}}</text>
+            <text class="text-xs text-muted">{{item.dateFormatted}}</text>
+          </view>
+          <text class="text-base font-semibold text-primary block" style="line-height:1.4;">{{item.title}}</text>
+          <text wx:if="{{item.excerpt}}" class="text-sm text-muted line-clamp-2 block" style="margin-top:8rpx;line-height:1.5;">{{item.excerpt}}</text>
+          <view class="read-more-wrap" style="margin-top:14rpx;">
+            <text class="read-more-text">阅读全文</text>
+            <text class="read-more-arrow">→</text>
+          </view>
+        </view>
+        <view wx:if="{{index < filteredPosts.length - 1}}" class="divider"></view>
+      </view>
+
+      <view wx:if="{{hasMore}}" style="padding:28rpx 0;">
+        <view class="glass-pill" style="width:100%;justify-content:center;display:flex;" bindtap="onLoadMore">
+          <text class="text-sm text-muted">加载更多</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <bottom-nav />
+</view>

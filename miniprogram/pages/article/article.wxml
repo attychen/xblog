@@ -1,0 +1,36 @@
+<view class="article-page">
+  <view wx:if="{{loading}}" class="text-center" style="padding:120rpx 0;">
+    <text class="text-muted">加载中...</text>
+  </view>
+
+  <view wx:if="{{!loading}}">
+    <view class="article-header">
+      <view class="flex items-center gap-md" style="margin-bottom:16rpx;">
+        <text wx:if="{{category}}" class="category-badge">{{category}}</text>
+        <text class="text-xs text-muted">{{date}}</text>
+      </view>
+      <text class="article-title">{{title}}</text>
+      <view wx:if="{{tags.length}}" class="flex gap-md flex-wrap" style="margin-top:16rpx;">
+        <text wx:for="{{tags}}" wx:key="*this" class="article-tag">#{{item}}</text>
+      </view>
+    </view>
+
+    <view class="article-divider"></view>
+
+    <view class="article-body">
+      <rich-text nodes="{{content}}"></rich-text>
+    </view>
+
+    <view class="article-footer">
+      <view class="divider" style="margin-bottom:24rpx;"></view>
+      <view class="flex items-center justify-between">
+        <text class="text-xs text-muted">法舟记 · AI前沿探索</text>
+        <view class="copy-link-btn" bindtap="onCopyLink">
+          <text class="text-xs">复制链接</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <bottom-nav />
+</view>

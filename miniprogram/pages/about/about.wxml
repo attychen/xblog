@@ -1,0 +1,57 @@
+<view class="about-page">
+  <view class="container" style="padding-bottom:140rpx;">
+    <view style="margin-bottom:24rpx;">
+      <text class="text-2xl font-bold text-primary block">关于我</text>
+    </view>
+
+    <view class="glass-card mb-lg">
+      <view class="flex items-center gap-lg" style="margin-bottom:20rpx;">
+        <view style="width:112rpx;height:112rpx;border-radius:50%;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;">
+          <text class="text-2xl font-bold text-primary">法</text>
+        </view>
+        <view>
+          <text class="text-xl font-bold text-primary block">法舟记</text>
+          <text class="text-sm text-muted block" style="margin-top:6rpx;">大模型 · 智能体 · 前沿技术</text>
+        </view>
+      </view>
+      <view class="flex gap-md flex-wrap">
+        <text wx:for="{{tags}}" wx:key="*this" class="text-xs" style="padding:6rpx 16rpx;border-radius:999rpx;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.6);">{{item}}</text>
+      </view>
+    </view>
+
+    <view class="glass-card mb-lg">
+      <text class="text-base text-secondary italic block">"{{quote.text}}"</text>
+      <text class="text-xs text-muted text-right block" style="margin-top:12rpx;">— {{quote.author}}</text>
+    </view>
+
+    <view class="glass-card mb-lg">
+      <text class="text-xs text-muted uppercase tracking-wider block" style="margin-bottom:10rpx;">今日冷知识</text>
+      <text class="text-sm text-secondary" style="line-height:1.7;">{{fact}}</text>
+    </view>
+
+    <view class="glass-card mb-lg">
+      <text class="text-sm text-secondary" style="line-height:1.7;">这里记录我关注的技术方向——大模型、智能体、开源项目，还有一些动手实践的笔记。</text>
+      <view class="flex gap-md flex-wrap" style="margin-top:20rpx;">
+        <text wx:for="{{techs}}" wx:key="*this" class="text-xs font-mono" style="padding:5rpx 14rpx;border-radius:6rpx;background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.5);">{{item}}</text>
+      </view>
+    </view>
+
+    <view class="glass-card">
+      <text class="text-xs text-muted uppercase tracking-wider block" style="margin-bottom:14rpx;">加入社群</text>
+      <view class="flex items-center gap-lg">
+        <view style="width:72rpx;height:72rpx;border-radius:14rpx;background:#22c55e;display:flex;align-items:center;justify-content:center;">
+          <text class="text-base font-bold" style="color:#fff;">微</text>
+        </view>
+        <view class="flex-1">
+          <text class="text-base font-medium text-primary font-mono block">attychen</text>
+          <text class="text-xs text-muted block" style="margin-top:6rpx;">添加时备注 AI博客</text>
+        </view>
+        <view class="glass-pill" bindtap="onCopy">
+          <text class="text-sm text-primary">{{copied ? "已复制" : "复制"}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <bottom-nav />
+</view>

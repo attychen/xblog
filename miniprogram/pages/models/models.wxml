@@ -1,0 +1,35 @@
+<view class="models-page">
+  <view class="container" style="padding-bottom:140rpx;">
+    <view style="margin-bottom:24rpx;">
+      <text class="text-2xl font-bold text-primary block">大模型榜</text>
+      <text class="text-sm text-muted block" style="margin-top:6rpx;">HuggingFace 下载量排名</text>
+    </view>
+
+    <view class="glass-card" style="padding:14rpx 20rpx;margin-bottom:20rpx;">
+      <input style="color:#ffffff;width:100%;font-size:28rpx;" placeholder="搜索模型名称..." placeholder-style="color:rgba(255,255,255,0.4);" bindinput="onSearch" value="{{search}}" />
+    </view>
+
+    <text class="text-xs text-muted block" style="margin-bottom:14rpx;">共 {{filtered.length}} 个模型</text>
+
+    <view wx:if="{{loading}}" class="text-center" style="padding:80rpx 0;">
+      <text class="text-muted">加载中...</text>
+    </view>
+
+    <view wx:if="{{!loading}}">
+      <view wx:for="{{filtered}}" wx:key="id" bindtap="onModelTap" data-id="{{item.id}}" style="padding:16rpx 0;">
+        <view class="flex items-center gap-md">
+          <text class="text-xs text-muted font-medium" style="width:48rpx;text-align:right;">#{{index + 1}}</text>
+          <text class="text-sm font-semibold text-accent flex-1 truncate">{{item.id}}</text>
+        </view>
+        <view class="flex items-center gap-lg" style="padding-left:48rpx;margin-top:6rpx;">
+          <text class="text-xs text-muted">{{item.likesFormatted}} ⭐</text>
+          <text class="text-xs text-muted">{{item.downloadsFormatted}} 📥</text>
+          <text class="text-xs text-muted">{{item.category}}</text>
+        </view>
+        <view wx:if="{{index < filtered.length - 1}}" class="divider" style="margin-top:16rpx;"></view>
+      </view>
+    </view>
+  </view>
+
+  <bottom-nav />
+</view>

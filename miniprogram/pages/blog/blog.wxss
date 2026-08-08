@@ -1,0 +1,27 @@
+.blog-page {
+  min-height: 100vh;
+}
+
+.read-more-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 8rpx 0;
+}
+
+.read-more-text {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #00d4ff;
+  letter-spacing: 0.5rpx;
+}
+
+.read-more-arrow {
+  font-size: 24rpx;
+  color: #00d4ff;
+  transition: transform 0.2s ease;
+}
+
+.read-more-wrap:active .read-more-arrow {
+  transform: translateX(6rpx);
+}

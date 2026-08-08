@@ -1,0 +1,5 @@
+.about-page { min-height: 100vh; }
+.sticky-header { position: fixed; top: 0; left: 0; right: 0; z-index: 998; padding: 12rpx 20rpx 0; }
+.glass-header { background: rgba(18,18,26,0.65); backdrop-filter: blur(40px) saturate(200%); -webkit-backdrop-filter: blur(40px) saturate(200%); border: 1rpx solid rgba(255,255,255,0.1); border-radius: 24rpx; padding: 16rpx 28rpx; box-shadow: 0 4rpx 24rpx rgba(0,0,0,0.2), inset 0 1rpx 0 rgba(255,255,255,0.06); }
+.header-title { font-size: 36rpx; font-weight: 700; color: #ffffff; display: block; line-height: 1.2; }
+.header-subtitle { font-size: 22rpx; color: rgba(255,255,255,0.5); display: block; margin-top: 4rpx; }

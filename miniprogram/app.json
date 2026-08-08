@@ -1,0 +1,17 @@
+{
+  "pages": [
+    "pages/blog/blog",
+    "pages/skill/skill",
+    "pages/models/models",
+    "pages/about/about",
+    "pages/article/article"
+  ],
+  "window": {
+    "backgroundTextStyle": "dark",
+    "navigationBarBackgroundColor": "#0a0a0f",
+    "navigationBarTitleText": "法舟记",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#0a0a0f"
+  },
+  "sitemapLocation": "sitemap.json"
+}

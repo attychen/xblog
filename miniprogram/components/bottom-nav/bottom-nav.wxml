@@ -1,0 +1,10 @@
+<view class="nav-wrap">
+  <view class="nav-bar">
+    <view wx:for="{{tabs}}" wx:key="path" class="nav-item" bindtap="onTap" data-path="{{item.path}}">
+      <text class="nav-text">{{item.label}}</text>
+      <view class="nav-dot-wrap">
+        <view wx:if="{{current === item.path}}" class="nav-dot"></view>
+      </view>
+    </view>
+  </view>
+</view>

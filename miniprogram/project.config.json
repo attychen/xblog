@@ -1,0 +1,16 @@
+{
+  "description": "法舟记微信小程序",
+  "setting": {
+    "urlCheck": false,
+    "es6": true,
+    "postcss": true,
+    "minified": true,
+    "autoAudits": false,
+    "coverView": true,
+    "lazyloadPlaceholderEnable": true
+  },
+  "compileType": "miniprogram",
+  "libVersion": "3.3.4",
+  "appid": "wx2cdfbaa2cb5b7747",
+  "projectname": "fazhouji-miniprogram"
+}

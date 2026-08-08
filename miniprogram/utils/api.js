@@ -1,4 +1,4 @@
-var BASE_URL = "https://blog.zachchan.com"
+var BASE_URL = "https://www.chatgpt.us.kg"
 
 function fetchPosts(callback) {
   wx.request({
@@ -12,9 +12,7 @@ function fetchPosts(callback) {
         callback([])
       }
     },
-    fail() {
-      callback([])
-    }
+    fail() { callback([]) }
   })
 }
 
@@ -30,33 +28,23 @@ function fetchPost(slug, callback) {
         callback(null)
       }
     },
-    fail() {
-      callback(null)
-    }
+    fail() { callback(null) }
   })
 }
 
 function fetchModels(callback) {
   wx.request({
-    url: "https://huggingface.co/api/models?sort=downloads&direction=-1&limit=50&filter=text-generation",
+    url: BASE_URL + "/api/models",
     method: "GET",
+    header: { "Accept": "application/json" },
     success(res) {
-      var models = (res.data || []).map(function(m) {
-        return {
-          id: m.id || "",
-          author: m.author || "",
-          likes: m.likes || 0,
-          downloads: m.downloads || 0,
-          pipeline_tag: m.pipeline_tag || "text-generation",
-          tags: m.tags || [],
-          description: m.description || ""
-        }
-      })
-      callback(models)
+      if (res.statusCode === 200 && Array.isArray(res.data)) {
+        callback(res.data)
+      } else {
+        callback([])
+      }
     },
-    fail() {
-      callback([])
-    }
+    fail() { callback([]) }
   })
 }
 
@@ -70,7 +58,7 @@ function formatDate(dateStr) {
   if (!dateStr) return ""
   var d = new Date(dateStr)
   if (isNaN(d.getTime())) return dateStr
-  return (d.getMonth() + 1) + "月" + d.getDate() + "日"
+  return (d.getMonth() + 1) + "\u6708" + d.getDate() + "\u65e5"
 }
 
 module.exports = { fetchPosts: fetchPosts, fetchPost: fetchPost, fetchModels: fetchModels, formatNum: formatNum, formatDate: formatDate }
