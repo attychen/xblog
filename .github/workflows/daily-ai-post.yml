@@ -1,4 +1,4 @@
-name: Daily AI Post
+﻿name: Daily AI Post
 
 on:
   schedule:
@@ -24,7 +24,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          npm ci
+          npm install -g pnpm && pnpm install --no-frozen-lockfile
 
       - name: Run AI fetch script
         env:
@@ -48,3 +48,4 @@ jobs:
           else
             echo "no changes"
           fi
+
