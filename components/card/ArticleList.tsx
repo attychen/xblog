@@ -5,53 +5,59 @@ import ArticleCard from "./ArticleCard";
 import type { Post } from "@/types";
 
 const PAGE_SIZE = 9;
-const MOBILE_PAGE_SIZE = 4;
 
 export default function ArticleList({ posts }: { posts: Post[] }) {
   const [page, setPage] = useState(1);
-  const [mobileCount, setMobileCount] = useState(1);
+  const [mobileCount, setMobileCount] = useState(PAGE_SIZE);
+  const totalPages = Math.max(1, Math.ceil(posts.length / PAGE_SIZE));
+  const start = (page - 1) * PAGE_SIZE;
+  const paged = posts.slice(start, start + PAGE_SIZE);
+  const mobilePosts = posts.slice(0, mobileCount);
+  const hasMore = mobileCount < posts.length;
 
-  // 桌面端分页
-  const totalPages = Math.ceil(posts.length / PAGE_SIZE);
-  const displayedPosts = posts.slice(0, page * PAGE_SIZE);
-  const hasMore = page < totalPages;
-
-  // 移动端加载更多
-  const mobileDisplayedPosts = posts.slice(0, mobileCount * MOBILE_PAGE_SIZE);
-  const mobileHasMore = mobileDisplayedPosts.length < posts.length;
+  if (posts.length === 0) {
+    return (
+      <div className="p-12 text-center">
+        <p className="text-gray-400 dark:text-gray-500 text-sm">暂无文章</p>
+      </div>
+    );
+  }
 
   return (
     <div>
-      {/* 桌面端网格 */}
-      <div className="hidden md:grid grid-cols-3 gap-6">
-        {displayedPosts.map((post) => (
-          <ArticleCard key={post.slug} post={post} />
+      {/* Desktop */}
+      <div className="hidden md:block space-y-3">
+        {paged.map((post) => (
+          <div key={post.slug} className="pui-glass-card p-5">
+            <ArticleCard post={post} />
+          </div>
         ))}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-1 pt-4">
+            <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}
+              className="px-3 py-1.5 text-xs rounded-lg text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white disabled:opacity-30 transition-colors">
+              ← 上一页
+            </button>
+            <span className="text-xs text-gray-400 dark:text-gray-500 mx-2 font-mono">{page} / {totalPages}</span>
+            <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}
+              className="px-3 py-1.5 text-xs rounded-lg text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white disabled:opacity-30 transition-colors">
+              下一页 →
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* 桌面端分页 */}
-      {hasMore && (
-        <div className="hidden md:flex justify-center mt-8">
-          <button
-            onClick={() => setPage((p) => p + 1)}
-            className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-          >
-            加载更多
-          </button>
-        </div>
-      )}
-
-      {/* 移动端列表 */}
-      <div className="md:hidden space-y-4">
-        {mobileDisplayedPosts.map((post) => (
-          <ArticleCard key={post.slug} post={post} />
+      {/* Mobile - list view with glass cards */}
+      <div className="md:hidden px-4 space-y-3">
+        {mobilePosts.map((post) => (
+          <div key={post.slug} className="liquid-glass rounded-xl p-4">
+            <ArticleCard post={post} compact />
+          </div>
         ))}
-        {mobileHasMore && (
-          <div className="flex justify-center mt-4">
-            <button
-              onClick={() => setMobileCount((c) => c + 1)}
-              className="px-5 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition"
-            >
+        {hasMore && (
+          <div className="pt-2">
+            <button onClick={() => setMobileCount((c) => c + PAGE_SIZE)}
+              className="w-full py-3 text-[13px] font-medium text-gray-500 dark:text-gray-400 liquid-glass-strong rounded-xl active:scale-[0.98] transition-all">
               加载更多
             </button>
           </div>
