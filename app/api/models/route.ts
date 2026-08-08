@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 
-export const revalidate = 3600;
+export const revalidate = 604800;
 
 export async function GET() {
   try {
     const res = await fetch(
       "https://huggingface.co/api/models?sort=downloads&direction=-1&limit=50&filter=text-generation&full=true",
-      { next: { revalidate: 3600 } }
+      { next: { revalidate: 604800 } }
     );
     if (!res.ok) return NextResponse.json([]);
     const data = await res.json();
