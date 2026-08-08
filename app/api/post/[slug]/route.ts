@@ -4,7 +4,7 @@ import { getPostBySlug } from "@/lib/post";
 export const revalidate = 3600;
 
 export async function GET(
-  request: Request,
+  _request: Request,
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params;
