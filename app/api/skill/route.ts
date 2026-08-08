@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-export const revalidate = 3600;
+export const revalidate = 259200;
 
 export async function GET() {
   try {
@@ -12,7 +12,7 @@ export async function GET() {
           "Accept": "application/vnd.github.v3+json",
           "User-Agent": "Fazhouji-Skill",
         },
-        next: { revalidate: 3600 },
+        next: { revalidate: 259200 },
       }
     );
     if (!res.ok) return NextResponse.json([]);
