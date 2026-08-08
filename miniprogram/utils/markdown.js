@@ -3,7 +3,7 @@ function markdownToHtml(md) {
   var html = md
 
   // Code blocks with line numbers
-  html = html.replace(/```(\w*)\n([\s\S]*?)```/g, function(match, lang, code) {
+  html = html.replace(/```(\w*)\n([\s\S]*?)```/g, function(match, _lang, code) {
     var lines = code.trim().split("\n")
     var codeHtml = lines.map(function(line, i) {
       var num = String(i + 1)

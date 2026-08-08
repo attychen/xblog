@@ -1,11 +1,9 @@
 import { NextResponse } from "next/server";
 import { getPostBySlug } from "@/lib/post";
-import { renderMDX } from "@/lib/mdx";
 
 export const revalidate = 3600;
 
 export async function GET(
-  request: Request,
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params;
@@ -15,15 +13,6 @@ export async function GET(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  let html = "";
-  try {
-    const MDXContent = await renderMDX(post.content);
-    // For mini program, return raw markdown content
-    html = post.content;
-  } catch {
-    html = post.content;
-  }
-
   return NextResponse.json(
     {
       title: post.frontmatter.title,
@@ -31,7 +20,7 @@ export async function GET(
       category: post.frontmatter.category,
       tags: post.frontmatter.tags,
       excerpt: post.frontmatter.excerpt,
-      content: html,
+      content: post.content,
     },
     {
       headers: {

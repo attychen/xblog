@@ -5,29 +5,26 @@ import nextTs from "eslint-config-next/typescript";
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
-  // Override default ignores of eslint-config-next.
   globalIgnores([
-    // Default ignores of eslint-config-next:
     ".next/**",
     "out/**",
     "build/**",
     "next-env.d.ts",
-    // 手写题子模块与备份、测试 fixture 不参与博客 ESLint
     "practice/**",
     "practice.backup/**",
     "tests/fixtures/**",
+    "miniprogram/**",
   ]),
   {
     rules: {
-      // 未使用的变量报错
       "@typescript-eslint/no-unused-vars": [
         "error",
         {
-          args: "all", // 检查所有参数
-          argsIgnorePattern: "^_", // 以 _ 开头的参数忽略
-          varsIgnorePattern: "^_", // 以 _ 开头的变量忽略
-          caughtErrors: "all", // 检查 catch 中的错误变量
-          caughtErrorsIgnorePattern: "^_", // 以 _ 开头的 catch 错误变量忽略
+          args: "all",
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrors: "all",
+          caughtErrorsIgnorePattern: "^_",
         },
       ],
     },

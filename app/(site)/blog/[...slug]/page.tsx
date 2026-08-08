@@ -1,8 +1,8 @@
-﻿import { renderMDX } from "@/lib/mdx";
+import { renderMDX } from "@/lib/mdx";
 import { getAllPosts, getPostBySlug, normalizeTags } from "@/lib/post";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Calendar, Clock } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { mdxComponents } from "@/components/ui/MdxContent";
 import ReadingEnhancements from "@/components/ui/ReadingEnhancements";
 import CodeCopyButton from "@/components/ui/CodeCopyButton";
