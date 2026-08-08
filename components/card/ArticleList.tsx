@@ -25,11 +25,12 @@ export default function ArticleList({ posts }: { posts: Post[] }) {
 
   return (
     <div>
-      {/* Desktop */}
-      <div className="hidden md:block space-y-3">
-        {paged.map((post) => (
-          <div key={post.slug} className="pui-glass-card p-5">
+      {/* Desktop - one per line */}
+      <div className="hidden md:block">
+        {paged.map((post, i) => (
+          <div key={post.slug} className="py-4 px-2">
             <ArticleCard post={post} />
+            {i < paged.length - 1 && <div className="divider mt-4"></div>}
           </div>
         ))}
         {totalPages > 1 && (
