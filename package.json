@@ -11,7 +11,7 @@
     "new-post": "node scripts/new-post.mjs",
     "generate:ai": "node scripts/fetch-ai-posts.mjs",
     "practice:sync": "git submodule update --init --remote practice && git add practice",
-    "test": "node --test --experimental-strip-types tests/post.test.ts tests/practice.test.ts",
+    "test": "node --test --import tsx tests/post.test.ts tests/practice.test.ts",
     "prepare": "husky"
   },
   "dependencies": {
