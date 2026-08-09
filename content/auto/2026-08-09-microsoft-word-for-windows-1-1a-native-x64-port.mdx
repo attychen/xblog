@@ -1,0 +1,109 @@
+---
+title: "微软Word 1.1a原生x64移植版"
+date: "2026-08-09"
+excerpt: "本项目是微软Word for Windows 1.1a的完整原生Windows x64移植版，其历史代号为“Opus”。它结合了原始的Word源代码和资源，并针对16位汇编、分段内存和Win16平台边界提供了现代替代方案。最终成果是原始Word应用程序及其用户体验，以64位Windows可执行文件的形式运行。这并非模拟器，也未使用现代编辑器控件进行重新实现。"
+category: "programming"
+tags: ["微软Word","x64移植","Win16","CMake","Visual Studio"]
+original: "https://github.com/jmarshall23/msword"
+draft: false
+---
+
+## 1. 项目概述
+
+本项目是微软Word for Windows 1.1a的完整原生Windows x64移植版，其历史代号为“Opus”。它结合了原始的Word源代码和资源，并针对16位汇编、分段内存和Win16平台边界提供了现代替代方案。最终成果是原始Word应用程序及其用户体验，以64位Windows可执行文件的形式运行。这并非模拟器，也未使用现代编辑器控件进行重新实现。
+
+## 2. 系统要求
+
+64位Windows系统；Visual Studio 2022，需包含“使用C++的桌面开发”工作负载；通过Visual Studio安装Windows 10或Windows 11 SDK；CMake 3.25或更高版本；PowerShell。
+
+## 3. 构建与运行
+
+克隆仓库，配置附带的CMake预设，并从PowerShell提示符构建：
+
+```
+git clone https://github.com/jmarshall23/msword.git
+Set-Location msword\src
+cmake --preset x64-debug
+cmake --build --preset x64-debug
+..\bin\WORD1.exe
+```
+
+如需优化构建，请改用发布预设：
+
+```
+cmake --preset x64-release
+cmake --build --preset x64-release
+..\bin\WORD1.exe
+```
+
+预设使用Visual Studio 2022 x64生成器。配置后，生成的解决方案也可直接从`out\MicrosoftWordX64Port.sln`打开；请将WORD1设为启动项目。
+
+## 4. 测试
+
+从仓库根目录运行完整的Debug测试套件：
+
+```
+ctest --test-dir .\out -C Debug --output-on-failure
+```
+
+或者，当当前目录为`src`时：
+
+```
+ctest --test-dir ..\out -C Debug --output-on-failure
+```
+
+对于发布构建，请将`Debug`替换为`Release`。该套件涵盖移植的x64运行时、原始Word数据结构和命令表、进程启动，以及自动化UI工作流，包括输入、选择、格式化、对话框和保存。
+
+## 5. 项目结构
+
+路径及其用途如下：
+
+- `src/Opus/`：原始Microsoft Word/Opus应用程序源代码和资源。
+- `src/OpusEtAl/`：原始支持工具、库和构建输入。
+- `src/OpusProg/`：历史程序文档。
+- `src/port/original/`：x64兼容层、翻译例程和测试。
+- `src/port/tools/`：历史构建工具的原生替代品。
+- `src/cmake/`：资源和源代码生成辅助工具。
+- `out/`：CMake缓存和生成的Visual Studio解决方案。
+- `build/`：中间工具、测试、探针、PDB和诊断信息。
+- `bin/`：最终可执行文件和运行时文件。
+
+`out`、`build`和`bin`在配置和编译过程中在本地生成。
+
+## 6. 移植工作原理
+
+原始C和资源文件仍是权威实现。移植仅添加了在64位Windows上安全构建和运行该代码所需的平台工作：
+
+- 16位x86汇编入口点被翻译为固定宽度的C或C++。
+- 分段和双重间接内存句柄映射到x64安全的原生运行时。
+- Win16特有的启动、消息传递、图形、文件和资源行为适配到当前Win32 API。
+- 原始命令、对话框、光标、位图和其他生成资源由原生主机工具在CMake图中重建。
+- 单元测试、运行时测试、冒烟测试和UI测试守护与原始算法和应用程序行为的兼容性。
+
+CMake对旧汇编树进行清单管理，但不将这些模块编译到原生目标中。这使历史实现作为参考保留，同时确保所有发布的代码对AMD64有效。
+
+## 7. 有用目标
+
+以下目标可用：
+
+- `WORD1`：原生x64 Microsoft Word可执行文件。
+- `opus_original_engine`：为x64编译的原始Word应用程序引擎。
+- `opus_x64_runtime`：原生运行时和翻译的汇编行为。
+- `opus_word1_ui_test`：自动化端到端UI测试驱动程序。
+- `legacy_sources`：IDE可见的原始汇编参考集合。
+
+使用以下命令构建特定目标：
+
+```
+cmake --build --preset x64-debug --target WORD1
+```
+
+## 8. 贡献与版权
+
+更改应保留原始Word行为，同时确保所有原生接口指针宽度安全。优先对历史例程进行源代码等效翻译，在移植边界隔离不可避免的Windows API适配，并为新翻译的行为添加针对性测试。
+
+历史源文件保留其原始Microsoft和第三方版权声明。本仓库目前不包含顶层许可证文件；在重新分发源代码或二进制文件前，请审查适用的权利。
+
+---
+
+🔗 **原文链接：[https://github.com/jmarshall23/msword](https://github.com/jmarshall23/msword)**
