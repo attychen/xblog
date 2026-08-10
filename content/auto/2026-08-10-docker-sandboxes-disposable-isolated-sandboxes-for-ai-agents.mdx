@@ -1,0 +1,45 @@
+---
+title: "Docker沙盒：为AI代理提供安全隔离的运行环境"
+date: "2026-08-10"
+excerpt: "Docker沙盒（Docker Sandboxes）——在本地沙盒中安全运行AI代理。为Claude Code、Gemini CLI、Copilot CLI、Codex、OpenCode和Kiro等AI代理提供一次性、隔离的沙盒环境，满足它们安全、无人值守执行的需求。macOS安装命令：brew trust docker/tap && brew install docker/tap/sbx；Win"
+category: "ai-tools"
+tags: ["Docker","AI代理","沙盒","安全隔离","开发工具"]
+original: "https://www.docker.com/products/docker-sandboxes/"
+draft: false
+---
+
+## 1. 产品概述
+
+Docker沙盒（Docker Sandboxes）——在本地沙盒中安全运行AI代理。为Claude Code、Gemini CLI、Copilot CLI、Codex、OpenCode和Kiro等AI代理提供一次性、隔离的沙盒环境，满足它们安全、无人值守执行的需求。macOS安装命令：brew trust docker/tap && brew install docker/tap/sbx；Windows安装命令：winget install Docker.sbx。免费开始使用，观看演示。
+
+## 2. 实际应用演示
+
+观看实际运行中的沙盒。观看一个代理安装软件包、运行Docker、修改配置并无人值守执行任务，然后通过一条命令销毁沙盒。点击“运行演示”即可开始。立即开始使用，只需几秒钟。macOS安装命令：brew trust docker/tap && brew install docker/tap/sbx；Windows安装命令：winget install Docker.sbx。阅读文档了解更多。
+
+## 3. 为什么需要沙盒
+
+赋予代理完成工作所需的自主权，同时确保安全。代理在拥有自由时表现最佳。沙盒让它们快速运行而不失控，使速度和安全性不再需要权衡。涉及文件系统、网络和凭据控制。如果需要在全团队范围内实施这些控制，可以使用Docker AI治理（Docker AI Governance）。
+
+## 4. 核心能力
+
+安全地启用YOLO模式。每个代理在专用的微虚拟机（microVM）中运行，仅挂载你的开发环境和项目工作区。代理可以安装软件包、修改配置并启动自己的Docker容器，而你的主机系统不受影响。无需手动审查、无需权限提示、无需监督。可自定义的安全执行：你定义的网络和文件系统控制，可通过Docker AI治理在全组织范围内强制执行。微虚拟机隔离：与主机形成硬性安全边界。快速启动、轻松拆除：默认一次性使用，比传统虚拟机更快。代理也可使用Docker：代理可以在沙盒内启动容器。真实开发环境：安装软件包、运行服务、无人值守工作。
+
+## 5. 兼容性与用户评价
+
+一个沙盒适用于所有编码代理：Claude Code、Gemini CLI、Copilot CLI、Codex、Kiro、OpenCode。默认使用--dangerously-skip-permissions模式，可以放心使用宽松模式，事实上这是默认设置。与主流编码代理兼容：每个团队都将拥有自己的AI代理团队来执行实际工作，问题在于能否安全实现。NanoClaw的创建者Gavriel Cohen表示：“NanoClaw的构建原则是，你不应该信任代理的安全性，而应该为它们建立围墙。Docker在这方面一直走在前列。Docker沙盒正是这一理念在基础设施层面的体现，使组织能够在不影响安全性的前提下从代理中获得全部价值。”Warp的工程负责人Ben Navetta表示：“Docker沙盒让代理能够自主执行长期任务而不牺牲安全性。我们很高兴将沙盒集成到Warp中，这样开发人员就可以在一致的环境中自由运行代理，无论代理是在本地还是云端运行。”
+
+## 6. 行动号召
+
+给代理自由，保护重要资产。macOS安装命令：brew trust docker/tap && brew install docker/tap/sbx；Windows安装命令：winget install Docker.sbx。阅读文档开始使用。
+
+## 7. 常见问题解答
+
+什么是AI编码代理沙盒？沙盒是一个微虚拟机隔离环境，保护你的文件系统和网络免受在沙盒内运行的代理的影响。支持哪些编码代理？开箱即用地支持Claude Code、Gemini CLI、Copilot CLI、Codex、OpenCode、Kiro，你也可以创建自己的代理。“YOLO模式”是什么意思，安全吗？YOLO模式（--dangerously-skip-permissions）赋予代理自主权，无需审批提示。这对速度至关重要，但如果没有防护措施则存在风险。沙盒通过将每个代理隔离在专用的微虚拟机中使其安全。沙盒与虚拟机有何不同？沙盒在微虚拟机中完全隔离运行，提供更强的隔离性，同时无需承担运行虚拟机的全部成本。这使得它们可以安全地执行需要更多权限的操作，例如运行额外的Docker容器。我可以配置哪些安全控制？要一次性定义并在每个开发者的机器上强制执行，请参阅Docker AI治理。使用沙盒需要Docker Desktop吗？不需要。如果我需要额外的管理控制怎么办？安装沙盒涵盖核心功能。对于团队范围内的集中控制，如网络策略、文件系统规则、MCP治理，请使用Docker AI治理。
+
+## 8. 高级控制与联系
+
+需要对沙盒进行更多控制？使用Docker沙盒，你的开发者可以获得隔离的环境，自由安全地运行代理。当你的团队需要进一步限制网络访问、文件系统策略和集中管理控制时，我们可以帮助你配置合适的设置。Docker AI治理增加了网络访问策略、文件系统控制和全组织范围的MCP治理：一次定义，处处执行。与我们讨论：沙盒环境的网络访问策略、文件系统访问控制和限制、团队的管理级配置。与专家交谈。感谢你的关注，Docker团队将与你联系。
+
+---
+
+🔗 **原文链接：[https://www.docker.com/products/docker-sandboxes/](https://www.docker.com/products/docker-sandboxes/)**
