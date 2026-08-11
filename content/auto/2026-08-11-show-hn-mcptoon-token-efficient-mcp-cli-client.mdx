@@ -1,0 +1,45 @@
+---
+title: "Mcptoon：高效令牌的MCP命令行客户端"
+date: "2026-08-11"
+excerpt: "Mcptoon 是一个令牌高效的 MCP（模型上下文协议）命令行客户端。MCP 工具发现通常消耗超过 10,000 个令牌，而 mcptoon 仅需 350 个。它为每个 AI 代理提供一个 MCP 客户端，支持跨平台，且零依赖。如果这个工具能为您节省令牌，请给仓库加星，以帮助更多人发现它。支持英文和中文文档，可报告问题或请求功能。"
+category: "ai-tools"
+tags: ["MCP","CLI","令牌优化","AI代理","零依赖"]
+original: "https://github.com/activeing123/mcptoon"
+draft: false
+---
+
+## 1. 项目概览
+
+Mcptoon 是一个令牌高效的 MCP（模型上下文协议）命令行客户端。MCP 工具发现通常消耗超过 10,000 个令牌，而 mcptoon 仅需 350 个。它为每个 AI 代理提供一个 MCP 客户端，支持跨平台，且零依赖。如果这个工具能为您节省令牌，请给仓库加星，以帮助更多人发现它。支持英文和中文文档，可报告问题或请求功能。
+
+## 2. 问题陈述
+
+每次启用 MCP 的对话都会在语法上浪费令牌，而非数据处理。例如，您的代理连接到 5 个 MCP 服务器，列出它们的工具大约需要 10,000 个令牌的 JSON。您的代理调用 20 个工具，每个工具返回 500 到 3,000 个令牌，包裹在 &#123;"content":[&#123;"type":"text","text":"..."&#125;]&#125; 结构中。总的 MCP 开销在真正思考之前就达到 40,000 到 70,000 个令牌。在 128K 的上下文窗口中，这占用了 30% 到 55% 的空间，而这些空间并非用于实际工作，而是浪费在语法上。
+
+## 3. 解决方案
+
+mcptoon 是一个 CLI 客户端，可以连接到任何 MCP 服务器（stdio 或 HTTP），并输出 TOON（令牌优化对象表示法）而不是 JSON。操作对比：工具发现（96 个工具）JSON 约 2,000 个令牌，mcptoon 约 60 个，节省 97%；工具结果（结构化数据）JSON 约 800 个令牌，mcptoon 约 350 个，节省 56%；工具结果（原始 HTML/文本）JSON 约 1,000 个令牌，mcptoon 约 900 个，节省 10%。零依赖，纯 Python，体积 50KB，适用于所有 AI 代理，如 Claude Code、Codex、OpenCode、Cursor、CatPaw 等任何能运行 shell 命令的工具。
+
+## 4. TOON 格式说明
+
+TOON 是一种紧凑的表示法，用管道符替代花括号、引号和冒号，用空格替代方括号和逗号，用 T/F 表示布尔值，用 ∅ 表示 null，用 ↲ 表示换行，并支持递归压缩。例如，JSON 的 &#123;"name":"search","count":3&#125; 在 TOON 中表示为 name:search|count:3。输出格式包括 --toon（紧凑表示法，完整语义，比 JSON 少 40-60% 令牌）、--compact（仅工具名，空格分隔，比 JSON 少 97%）、--json（标准 JSON，用于脚本和 CI）、--raw（原始响应，不解析）、--head N（仅前 N 项）、--max-chars N（硬截断）、--full（禁用默认 4000 字符截断）。设置 MCPTOON_AGENT_TYPE=claude 可自动选择 --toon。
+
+## 5. 与其他 MCP 客户端对比
+
+mcptoon 在令牌节省方面显著优于其他客户端：清单节省 97%，结果节省 40-60%，而 mcp-cli、mcporter 和原始 MCP SDK 均为 0%。mcptoon 支持所有代理（Claude Code、Codex、OpenCode、Cursor 等），而 mcp-cli 和 mcporter 仅支持 Claude。mcptoon 为所有代理提供统一配置，输出格式多样（TOON + JSON + compact），依赖为零，而其他客户端依赖 5-20 个 npm 包或 3-8 个包。mcptoon 还提供危险操作阻断、本地使用跟踪、模式缓存（5 分钟 TTL），安装体积约 50KB，支持 Windows、macOS 和 Linux，而其他客户端仅支持 Linux/macOS 或 macOS。
+
+## 6. 使用指南
+
+mcptoon 是一个 CLI 工具，只要代理能运行 shell 命令，就能使用它。例如，Claude Code 可以在 SKILL.md 文件中编写 mcptoon 命令，Codex 可以将其添加到 AGENTS.md，OpenCode 使用自定义命令，Cursor 添加到 .cursorrules，CatPaw 在技能文件中编写。配置 MCP 服务器一次在 ~/.mcptoon/config.json 中，所有代理共享相同的服务器、工具和令牌节省。快速开始：pip install mcptoon，然后使用 mcptoon init 生成配置，mcptoon add 添加服务器，mcptoon manifest --toon 列出工具，mcptoon call 调用工具。还提供 Python API，支持自定义处理器绕过 MCP。
+
+## 7. 安全与隐私
+
+mcptoon 会阻止匹配危险模式（如 delete、drop、purge、wipe、kill 等）的操作，除非传递 --destructive 参数。使用跟踪功能记录调用次数、成功率和令牌估算，存储在本地 ~/.cache/mcptoon/usage.json，绝不传输。架构包括 CLI 入口、客户端、路由器、配置、清单、输出、缓存、使用跟踪和错误处理，共约 1,700 行代码，零第三方导入。无遥测、无分析、无崩溃报告、无回传，不存储凭据，API 密钥通过配置或环境变量传递。零依赖，纯 Python 标准库，无供应链审计需求。发现漏洞请联系 security@activeing123.github.io。
+
+## 8. 许可与贡献
+
+mcptoon 采用 Apache 2.0 许可证。贡献指南：克隆仓库，安装开发依赖，运行测试（98 个测试，0.09 秒）。零依赖是硬性规则，新功能需要测试。mcptoon 是独立的第三方 MCP 客户端，与 Anthropic 无关。如果觉得有用，请给仓库加星以帮助他人发现。
+
+---
+
+🔗 **原文链接：[https://github.com/activeing123/mcptoon](https://github.com/activeing123/mcptoon)**
