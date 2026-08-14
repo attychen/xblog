@@ -1,0 +1,97 @@
+---
+title: "Ruby 4.0 通用反序列化远程代码执行利用链"
+date: "2026-08-14"
+excerpt: "2026年8月5日，OpenAI披露，一组正在接受评估的AI代理突破了其沙箱，并取得了其运行集群的管理员控制权。实现这一目标的部分方式是利用Ruby反序列化漏洞来执行命令。这引起了我们的注意，因为早在2018年，我们就发布了首个完全基于标准库、无任何依赖的Ruby通用RCE反序列化利用链。然而，该利用链仅适用于2.6.10及更早版本的Ruby，而最近公开的利用链也仅支持到3.4-rc版本。本文发布"
+category: "programming"
+tags: ["Ruby","反序列化","安全漏洞","RCE","Gadget Chain"]
+original: "https://www.elttam.com/blog/ruby-4-0-universal-rce-deserialization-gadget-chain"
+draft: false
+---
+
+## 1. 引言
+
+2026年8月5日，OpenAI披露，一组正在接受评估的AI代理突破了其沙箱，并取得了其运行集群的管理员控制权。实现这一目标的部分方式是利用Ruby反序列化漏洞来执行命令。这引起了我们的注意，因为早在2018年，我们就发布了首个完全基于标准库、无任何依赖的Ruby通用RCE反序列化利用链。然而，该利用链仅适用于2.6.10及更早版本的Ruby，而最近公开的利用链也仅支持到3.4-rc版本。本文发布了一个新的通用利用链，它能够将一次简单的Marshal.load调用转化为在Ruby 4.0.6（撰写本文时的最新版本）上的命令执行，并且该利用链无需修改即可回溯至3.3版本。该利用链结合了从未被利用过的数据源中发现的新gadget，以及对旧gadget的新用法。
+
+## 2. 背景：序列化与反序列化
+
+序列化是将对象转换为字节序列的过程，这些字节可以存储于文件系统、数据库或通过网络传输。这些字节包含了重建原始对象所需的全部信息，而重建过程则被称为反序列化。每种编程语言通常都有其原生的序列化格式，并可能使用不同的术语来指代此过程。在Ruby中，通常使用术语“marshalling”和“unmarshalling”，对应的操作由Marshal.dump和Marshal.load提供。
+
+## 3. Ruby反序列化攻击的十三年历程
+
+通用的Ruby反序列化利用链始于2018年，其基础是早期针对Ruby on Rails的特定应用链研究，而这项通用研究又反过来促进了后续特定应用链的发展。以下里程碑事件为本次利用链的构建提供了关键组件：
+- 2013年1月10日 - Hailey Somerville发现Rails 3.2.10远程代码执行漏洞
+- 2013年1月31日 - Hailey Somerville提交Ruby bug追踪器问题
+- 2016年5月6日 - joernchen（Phenoelit）发表《攻击Ruby on Rails应用》
+- 2018年11月8日 - Luke Jahnke (elttam) 发布Ruby 2.x通用RCE反序列化利用链
+- 2019年1月2日 - ooooooo_q发现CVE-2019-5420
+- 2019年3月2日 - Etienne Stalmans实现Ruby YAML.load通用RCE
+- 2019年6月20日 - Sivathmican Sivakumaran和Pengsu Cheng（趋势科技安全研究团队）发现Ruby on Rails Active Storage不安全反序列化导致的远程代码执行
+- 2021年1月7日 - William Bowling发布Ruby 2.x-3.x通用反序列化gadget
+- 2021年1月9日 - Etienne Stalmans实现Ruby YAML.load（2.7版本）通用RCE
+- 2022年3月28日 - httpvoid发布《Ruby反序列化 - Rails上的Gadget》
+- 2022年4月4日 - William Bowling发布《第二轮：Ruby 2.x-3.x更新版通用反序列化gadget》
+- 2022年5月17日 - Ben Lincoln (Bishop Fox) 发表《Ruby漏洞：利用危险的Open、Send和反序列化操作》
+- 2024年3月13日 - Alex Leahu (Include Security) 发表《在Ruby领域发现反序列化Gadget链》
+- 2024年6月20日 - Peter Stöckli (GitHub) 发表《通过发送JSON执行命令？了解Ruby项目中不安全反序列化漏洞的工作原理》
+- 2024年10月17日 - Leonardo Giovannini (Doyensec) 发布更新版Ruby marshal加载gadget
+- 2024年11月24日 - Luke Jahnke发布Ruby 3.4通用RCE反序列化利用链
+- 2024年12月3日 - Luke Jahnke发现Gem::SafeMarshal逃逸
+- 2025年8月20日 - Matt Schwager (Trail of Bits) 发表《Marshal疯狂：Ruby反序列化漏洞简史》
+- 2026年8月5日 - OpenAI在Black Hat USA 2026大会上披露自主AI代理在野利用Ruby (JRuby) 反序列化漏洞
+- 2026年 - Luke Jahnke (elttam) 发布Ruby 4.0通用RCE反序列化利用链（本文）
+
+## 4. 3.4利用链为何失效
+
+最近公开的利用链（2024年末发布）通过以下载荷在Ruby 3.4-rc上实现了命令执行：
+Marshal.dump( [ Gem::SpecFetcher, to_s_wrapper( call_url_and_create_folder( "rubygems.org/quick/Marshal.4.8/bundler-2.2.27.gemspec.rz" ) ), to_s_wrapper(exec_gadget) ] )
+在其发布十天后，RubyGems中引入了两个提交，移除了该利用链所依赖的gadget，并且都引用了该分析文章作为动机。这两个提交都包含在Ruby 3.4.0中，这就是为什么该利用链在发布候选版上有效，但在正式版上失效的原因。
+第一个提交（62b49465f8）标题为“改进marshal_load方法中的类型检查”，并指出这“使得将这些类用作gadget变得更加困难”。Gem::Version#marshal_load之前未经验证就将反序列化的值直接传递给构造函数，而Gem::Version.correct?会对该值调用to_s方法：
+def marshal_load(array)
+- initialize array[0]
++ string = array[0]
++ raise TypeError, "wrong version string" unless string.is_a?(String)
++
++ initialize string
+end
+第二个提交（89ad04db86）标题为“停止在实例变量中存储可执行文件名”，并指出这“移除了将这些类用作ACE gadget的功能”。Gem::Source::Git和Gem::Resolver::GitSet之前将git可执行文件名存储在实例变量中，Marshal会直接恢复该变量，并且该变量随后会被传递给进程生成函数：
+- @git = ENV["git"] || "git"
+现在，该名称在使用时直接从环境中读取，因此没有可设置的实例变量。
+这两个提交破坏了to_s_wrapper和exec_gadget，但Gem::SpecFetcher和call_url_and_create_folder未受影响，并且在Ruby 4.0中仍然有效。
+
+## 5. 构建新利用链：扩展可用Gadget集
+
+该利用链以Gem::SpecFetcher开头，并非因为该类执行了任何操作，而是因为Marshal.load必须解析该常量，而解析该常量会触发RubyGems的自动加载机制，该机制会加载定义它的文件，进而加载其依赖的文件，依此类推。因此，一个裸的Ruby进程开始时只有一小部分可通过利用链访问的类，但在引用单个常量后，就会获得一个更大的类集来挑选gadget，包括Gem::URI::Generic、Gem::RequestSet::Lockfile和Gem::StubSpecification，本利用链的其余部分都依赖这些类。
+
+## 6. 构建新利用链：寻找新的代码执行目的地
+
+Gem::Specification.load提供了一个合适的exec_gadget替代品，其中Gem.open_file解析为File.open：
+class Gem::Specification
+  def self.load(filename)
+    file = nil
+    open_file(filename) do |f|
+      file = eval(f.read, binding, filename)
+    end
+    ...
+  end
+end
+此方法从磁盘读取文件，并将其内容直接传递给eval，因此，如果一个利用链能够同时控制传递给Gem::Specification.load的文件名以及该文件的内容，就能实现任意代码执行。
+
+## 7. 构建新利用链：调用load方法
+
+现有的gadget集中没有提供形式为@controlled.load(@also_controlled)的灵活gadget，但Gem::StubSpecification通过调用hash方法提供了一条间接调用Gem::Specification.load(loaded_from)的途径。这是可行的，因为loaded_from是一个attr_accessor，其值存储在@loaded_from中，可以通过反序列化进行设置：
+def eval_file_gadget(filename)
+  stub_specification = Gem::StubSpecification.allocate
+  stub_specification.instance_variable_set(:@loaded_from, filename)
+  return stub_specification
+end
+这就留下了一个问题：在反序列化过程中，hash是如何被调用的。
+
+## 8. 构建新利用链：触发hash方法调用
+
+每当对象在Hash中被用作键时，Ruby都会对其调用hash方法。Marshal.load通过插入键来重建哈希，因此，将精心构造的Gem::StubSpecification作为键放置在载荷中的某处，就足以触发hash调用。
+Java爱好者会认出这一点。HashMap.readObject会对其恢复的每个键调用hashCode方法，这是ysoserial中大量利用链的入口点。
+这个触发机制并非维护者可以悄悄收紧的特定marshal_load覆盖，而是语言两个基本特性（即对象哈希和在反序列化期间重建Hash）之间的交互。移除它意味着改变核心数据结构的行为方式，这正是那种使用gadget成本低而禁止成本高的权衡。
+
+---
+
+🔗 **原文链接：[https://www.elttam.com/blog/ruby-4-0-universal-rce-deserialization-gadget-chain](https://www.elttam.com/blog/ruby-4-0-universal-rce-deserialization-gadget-chain)**
