@@ -1,0 +1,45 @@
+---
+title: "Big Pickle在SWE Atlas上的代码库问答基准测试结果"
+date: "2026-08-16"
+excerpt: "Big Pickle在SWE Atlas上的代码库问答任务解决率为50.8%（63/124）。Big Pickle是OpenCode Zen上的免费隐身模型，使用mini-swe-agent脚手架在Scale AI的SWE Atlas代码库问答基准测试中进行了评估。本次运行于2026年8月11日，使用了官方的开源工具集、任务数据和评判模型。"
+category: "ai-tools"
+tags: ["SWE Atlas","Big Pickle","代码库问答","基准测试","AI模型"]
+original: "https://github.com/PhillipChaffee/big-pickle-swe-atlas"
+draft: false
+---
+
+## 1. 概述与结果
+
+Big Pickle在SWE Atlas上的代码库问答任务解决率为50.8%（63/124）。Big Pickle是OpenCode Zen上的免费隐身模型，使用mini-swe-agent脚手架在Scale AI的SWE Atlas代码库问答基准测试中进行了评估。本次运行于2026年8月11日，使用了官方的开源工具集、任务数据和评判模型。
+
+## 2. 结果对比
+
+与官方SWE Atlas问答排行榜（更新于2026年7月28日）相比：Opus 5（Claude Code，xHigh）的任务解决率为63.17%，Opus 4.8（Claude Code，xHigh）为57.26%，big-pickle（Mini-SWE-Agent）本次运行为50.81%，GLM 5.2（Mini-SWE-Agent）为48.12%，GPT-5.6-Sol（Codex，xHigh）为46.00%，GPT 5.5（Codex，xHigh）为45.43%。在Mini-SWE-Agent脚手架类别内（即同类比较），本次运行超过了官方排行榜上的所有条目，并且也超过了使用Codex脚手架的GPT条目。只有两个在原生Claude Code脚手架上运行的Claude模型得分更高。在将此视为与排行榜等效的数字之前，请注意下面的注意事项。
+
+## 3. 按语言和类别细分
+
+按语言划分：TypeScript解决率为58.1%（18/31），Python为55.2%（16/29），Go为50.0%（19/38），C为38.5%（10/26）。按类别划分：代码入门（Code Onboarding）解决率为60.7%（17/28），架构系统设计（Architecture system design）为52.3%（23/44），根本原因分析（Root-cause analysis）为45.9%（17/37），安全（Security）为45.5%（5/11），API库使用/集成（API library usage / integration）为25.0%（1/4）。
+
+## 4. 方法
+
+所有内容都尽可能严格遵循Scale发布的协议，在预算允许的范围内：任务：使用了scaleapi/SWE-Atlas（Apache-2.0）中的所有124个代码库问答任务，未做修改，包括Scale提供的mswea_qa_config.yaml代理配置（系统/实例模板，step_limit: 250）。工具集：使用Harbor v0.18.0和Modal沙箱，按照SWE-Atlas README的说明。脚手架：mini-swe-agent固定为2.4.6版本，这是Scale在排行榜上为非第一方模型使用的最简bash-only脚手架。模型：通过OpenCode Zen的OpenAI兼容端点（https://opencode.ai/zen/v1）使用big-pickle，litellm路由为openai/big-pickle。总消耗：6.74亿输入/430万输出令牌，费用为0美元（该模型在隐身期间免费）。评判：claude-opus-4-5-20251101，这是Scale指定的确切评判模型，通过Anthropic的OpenAI兼容端点（https://api.anthropic.com/v1）访问，并将EVAL_MODEL覆盖为裸Anthropic模型ID。评分：使用基准测试自带的基于规则的验证器，未做修改。只有当所有评分的必须规则都通过时，任务才算解决。
+
+## 5. 注意事项
+
+在引用此数字之前，请阅读以下内容：每个任务仅单次试验（-k 1）。官方协议运行3次试验并报告平均值。在n=124时，单次试验的标准误差约为±4.5个百分点，与排行榜自身报告的错误条（±5）相当。沙箱资源减少。任务声明需要16个CPU/16GB内存；本次运行使用了4个CPU/8GB，以适应个人预算。较慢的命令执行只会降低代理的得分（通过命令超时或OOM终止），而不会提高得分。根据经验，这似乎没有影响：对全部124个代理轨迹的扫描发现零命令超时和零exit-137终止，没有命令达到900秒的上限或内存限制。自我报告。Scale没有运行或验证此评估。本仓库中的完整逐任务验证器日志允许独立审计，并且可以使用此处的配置加上公开的SWE-Atlas仓库重现此运行。模型身份未知。big-pickle尚未官方确认；泄露的提供商错误和API响应签名表明它目前由DeepSeek基础设施提供服务。底层模型可能随时更改，因此此结果是2026年8月11日该别名背后任何内容的快照。数据暴露。OpenCode声明，在免费期间发送给big-pickle的提示可能用于改进模型。基准测试的任务内容（已经公开，由Scale标记了金丝雀）必然被发送到该端点。两个已解决的任务有未评分的规则。在task-...ba9ad（11条规则中的5条）和task-...baa1d（1条规则）上，评判模型在所有8次重试中返回了无法解析的输出；基准测试的验证器按设计将未评分的规则排除在通过计算之外。如果将未评分视为失败，则严格下限为61/124 = 49.2%，仍然高于排行榜上的每个Mini-SWE-Agent条目。所有验证器日志都包含在内，以便您应用任一约定。
+
+## 6. 复现步骤
+
+git clone https://github.com/scaleapi/SWE-Atlas; cd SWE-Atlas; git clone --branch v0.18.0 --depth 1 https://github.com/laude-institute/harbor.git; uv tool install ./harbor --with modal; uv tool install modal; modal setup; 然后从本仓库复制run_config/qa、run_config/tw、run_config/rf到SWE-Atlas/run_config/（保留子目录，因为脚本相对于自身位置解析.env和Scale的mswea_*_config.yaml），将preflight.sh和.env.example复制到SWE-Atlas根目录，从.env.example创建.env，然后运行：./preflight.sh; bash run_config/qa/big-pickle_smoke.sh（先进行3任务冒烟测试）; bash run_config/qa/big-pickle_miniswe.sh（完整124任务运行）。配置已处理的棘手问题：不要将--ak reasoning_effort与openai/前缀的模型一起传递，因为Harbor会静默地将mini-swe-agent切换到OpenAI Responses API，而像Zen这样的仅聊天补全端点不提供该API。保持代理和评判凭证分离。评判模型读取主机上的OPENAI_API_KEY / OPENAI_API_BASE（通过每个任务的[verifier.env]）；代理的Zen凭证通过--ae按代理覆盖传递。将秘密传递给--ae时使用$&#123;VAR&#125;模板，而不是字面量。Harbor在持久化作业状态时将字面量秘密编辑为****，这会破坏harbor job resume并导致即时401错误。模板可以往返并重新从主机环境解析。预计会有百分之几的试验因Modal的“Failed to read exec stdio stream”错误而失败；harbor job resume -f ErrorType ...可以干净地重新运行它们。完整问答运行的近似成本：约70美元的Modal计算（在减少的沙箱资源下；在声明的16 CPU/16 GB下大约为2-3倍），约25美元的Anthropic API用于评判，模型费用为0美元。
+
+## 7. 仓库内容与归属
+
+仓库内容：results/per_task_results.csv包含任务ID、类别、语言、是否解决、聚合规则分数、通过的规则/总数；results/summary.json包含头条数字和细分；results/verifier_logs/包含每个任务的评判模型完整逐规则输出（审计跟踪）。像（从raw=0翻转）这样的注释是基准测试自带的验证器逻辑（evaluate_answer.py反转标记为负极性的规则），而不是事后重新评分。run_config/包含使用的确切Harbor运行脚本（问答冒烟测试和完整运行，以及未测试的测试编写/重构变体）；preflight.sh包含模型和评判的端点/认证检查。归属：SWE Atlas基准测试© Scale AI，Apache-2.0，论文：arXiv:2605.08366。根据作者的要求，请将SWE Atlas视为进展的保留信号，而不是训练目标。Harbor（Laude Institute）和mini-swe-agent（SWE-agent团队）。big-pickle由OpenCode Zen提供服务。本仓库中的评估配置和结果采用MIT许可证。
+
+## 8. 关于
+
+big-pickle（OpenCode Zen隐身模型）在Scale AI的SWE Atlas代码库问答上得分50.8%——包含完整结果、验证器日志和复现配置。资源：Readme、MIT许可证、活动：1星、0关注、1分叉。
+
+---
+
+🔗 **原文链接：[https://github.com/PhillipChaffee/big-pickle-swe-atlas](https://github.com/PhillipChaffee/big-pickle-swe-atlas)**
