@@ -1,0 +1,54 @@
+---
+title: "Seed：最小化自修改代理框架"
+date: "2026-08-21"
+excerpt: "Seed 是一个种子代理：一个代理可以从其成长的最小起点。这里没有框架。整个冻结层是 seed.py —— 一个小的循环，将语言模型连接到恰好一个工具（exec，运行 bash），并从代理自己拥有且可以重写的文件中加载其系统提示。代理通常从框架获得的一切——工具、记忆、技能、约定——必须由代理自己，在每次会话中，逐步成长到其 self/ 目录中。"
+category: "ai-tools"
+tags: ["AI代理","自修改","最小化设计","开源工具","语言模型"]
+original: "https://github.com/vivekhaldar/seed"
+draft: false
+---
+
+## 1. 项目概述
+
+Seed 是一个种子代理：一个代理可以从其成长的最小起点。这里没有框架。整个冻结层是 seed.py —— 一个小的循环，将语言模型连接到恰好一个工具（exec，运行 bash），并从代理自己拥有且可以重写的文件中加载其系统提示。代理通常从框架获得的一切——工具、记忆、技能、约定——必须由代理自己，在每次会话中，逐步成长到其 self/ 目录中。
+
+## 2. 快速开始
+
+种植一个：
+mkdir my-agent
+cd my-agent
+uvx --from git+https://github.com/vivekhaldar/seed.git seed
+
+首次运行会将 seed.py 和 run_seed.sh 复制到当前目录（从不覆盖已存在的文件），生成 self/SELF.md，并在新 git 仓库中一起提交这些文件——循环是这个个体历史的一部分，而不仅仅是 self/。然后它会带你进入一个 REPL。开始对话。代理想要保留的一切都必须写入 self/——会话是短暂的，其他什么都不保留。
+
+使用本地运行器回到同一个代理——无需再次使用 uvx：
+./run_seed.sh
+./run_seed.sh -m gemini-2.5-pro
+
+每次会话的逐字记录都会保存到 self/sessions/*.json（每轮后更新）。这是一个飞行记录器，而不是记忆：代理在启动时从不加载它，但你可以阅读它——代理也可以成长出工具来研究自己的过去。
+
+一个种子，多个个体：你种植的每个目录都会成长出不同的代理，根据其经历而分化。
+
+## 3. 配置
+
+模型和密钥完全由 llm（Simon Willison 的库）处理。默认模型是 openai-codex/gpt-5.6-sol，它使用 Codex CLI 的 ChatGPT 登录：
+
+codex login # 每台机器一次
+./run_seed.sh # 使用 openai-codex/gpt-5.6-sol
+./run_seed.sh -m gemini-2.5-pro # 或为单个会话覆盖
+
+捆绑的提供商：通过 Codex 订阅或 API 密钥的 OpenAI、Anthropic、Gemini 和 OpenRouter（一个 OpenRouter 密钥解锁数百个模型）。
+
+## 4. 设计理念
+
+为什么这样设计——McCarthy 的元循环求值、同像性、先前艺术，以及我们有意识接受的风险：docs/DESIGN.md。
+
+## 5. 关于
+
+一个种子代理：一个代理可以从其成长的最小起点。
+
+资源：README、活动、星标 13、关注 0、分叉 0、报告仓库、发布、包、贡献者、语言。
+
+---
+
+🔗 **原文链接：[https://github.com/vivekhaldar/seed](https://github.com/vivekhaldar/seed)**

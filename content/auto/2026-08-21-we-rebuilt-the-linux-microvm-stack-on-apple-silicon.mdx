@@ -1,0 +1,159 @@
+---
+title: "在Apple Silicon上重建Linux微虚拟机技术栈"
+date: "2026-08-21"
+excerpt: "Encore负责构建和部署后端应用，自2022年年中以来，每次构建都在Firecracker微虚拟机内运行。Firecracker将模拟硬件精简到Linux内核所需的最低限度，为每次构建提供了虚拟机的隔离性，同时启动开销接近容器。Firecracker依赖KVM，因此需要带有/dev/kvm的Linux主机，而Mac不具备此条件，且Encore的大多数工程师都在Mac上开发。维护者没有计划改变这一"
+category: "programming"
+tags: ["Firecracker","Apple Silicon","微虚拟机","macOS","虚拟化"]
+original: "https://encore.dev/blog/firecracker-apple-silicon"
+draft: false
+---
+
+## 1. 背景：构建系统的远程困境
+
+Encore负责构建和部署后端应用，自2022年年中以来，每次构建都在Firecracker微虚拟机内运行。Firecracker将模拟硬件精简到Linux内核所需的最低限度，为每次构建提供了虚拟机的隔离性，同时启动开销接近容器。Firecracker依赖KVM，因此需要带有/dev/kvm的Linux主机，而Mac不具备此条件，且Encore的大多数工程师都在Mac上开发。维护者没有计划改变这一状况，因为他们拒绝了基于Apple的Virtualization.framework构建的工作原型，并表示短期内不打算支持macOS。因此，四年来，在构建系统上工作意味着要在其他地方进行。我们希望在笔记本电脑上运行相同的构建系统，同时在生产环境中保留Firecracker，因此我们构建了crackling，一个统一的微虚拟机API，在Linux上驱动Firecracker，在macOS上驱动Apple的hypervisor；在两者上启动相同的镜像需要重建大部分Linux镜像工具链以在macOS上运行。
+
+## 2. 共享远程机器的开发体验
+
+我们为每位工程师提供了一个一次性运行的脚本进行入职。该脚本以root身份SSH到共享构建机器，从https://github.com/you.keys拉取你的公钥并创建用户，然后将你添加到kvm和docker组，以便访问hypervisor和运行容器。它将虚拟机镜像复制到你的~/images目录，并将firecracker二进制文件硬链接到你的~/binaries目录，因为每个用户都需要在自己的目录树下使用它。最终，你在数据中心拥有一个个人环境，可通过Tailscale访问，与其他人的环境相邻。将更改部署到该环境需要第二个脚本，该脚本从CUE配置中读取你的用户名和端口，这些信息存储在每个工程师的gitignored文件中，因为我们共享同一台主机，必须避免冲突。二进制文件是容易的部分：我们使用GOOS=linux GOARCH=amd64进行交叉编译，通过rsync传输结果，并计算传输的文件数来确定是否需要重启。镜像则是困难的部分，因为Firecracker启动块设备，而Docker产生层。我们找不到现成的工具将Docker层转换为Firecracker可启动的块设备，因此我们自己构建了转换过程，一半在笔记本电脑上，一半通过SSH进行：
+
+# tools/dev-builder/deploy-dev-builder.sh
+docker save -o "$imagesdir/$name.tar" "$docker_image"
+tar -C "$layersdir" -xf "$imagesdir/$name.tar" # 解包层
+tar -C "$dst/" -xf "$imagesdir/$name.tar" manifest.json
+rsync -azP $layersdir $&#123;username&#125;@builder:~/images/
+rsync -azP "$dst" $&#123;username&#125;@builder:~/images/
+ssh $&#123;username&#125;@builder -- "bash -l -s squash_layers \"images/$&#123;outputdir&#125;\" \"images/$&#123;name&#125;\"" &lt; $scriptpath
+
+最后一行将一个shell函数通过管道传输到远端的登录shell并在那里执行。该bash脚本后来用Go重写，但管道和主机没有改变。squash_layers按manifest顺序重新提取每一层，使用find删除.wh..wh..opq白out标记（因为tar不会为我们应用它们），写入硬编码的/etc/resolv.conf（否则VM没有DNS），使用jq从Docker配置中提取镜像的环境变量，最后调用mksquashfs生成Firecracker可启动的内容。我们以Docker镜像ID为键进行缓存，匹配时跳过整个路径。每当你更改镜像中的任何内容时，它都会运行，如果你在guest端工作，大多数情况下都会如此。重启需要第三个SSH，杀死你的容器并启动替代品：
+
+docker run --privileged \
+  -v ~/socks:/var/lib/buildsvc/socks:rw -v ~/logs:/tmp/encore-builds:rw \
+  -v ~/.keys:/.keys:ro -v ~/binaries:/usr/local/bin:ro \
+  -v ~/images:/usr/lib/buildsvc/images:ro \
+  --env-file service-envs \
+  --device /dev/kvm --device /dev/net/tun \
+  -p $port:9060 --name "$&#123;username&#125;-builder" -d -t buildsvc-tester
+
+Firecracker在Docker容器内运行，因此我们必须传递--privileged、/dev/kvm和/dev/net/tun，因为该容器内的进程将创建tap设备并启动自己的虚拟机。Firecracker期望这些tap设备连接到主机桥接器，而在Docker容器内没有主机桥接器。因此，我们在buildsvc（构建服务本身）启动之前，通过一个shell脚本构建了一个桥接器：
+
+# tools/dev-builder/container/start.sh
+ip link add docker0 type bridge
+ip link set eth0 master docker0
+addr=$(ip address show eth0 | grep inet | xargs | cut -d " " -f2)
+ip address del $addr dev eth0
+ip address add $addr dev docker0 broadcast 172.17.255.255
+ip link set docker0 up
+ip r add default via 172.17.0.1 dev docker0
+
+该脚本在容器内构建一个名为docker0的桥接器，将容器自身的eth0绑定到它，然后将IP地址从eth0移到桥接器上。这样tap设备就有了一个看起来足够像真实Docker主机的连接点。
+
+## 3. 构建系统在除笔记本电脑外的所有地方运行
+
+这个设置是有效的，这就是为什么它从2022年一直持续到我们最终替换它。其代价在一家以“后端开发应该顺畅”为卖点的公司中难以合理化：你应该能够编写应用、在本地运行，基础设施应该从代码中生成，而不是手动维护一堆YAML。与此同时，我们产品中将git push转化为运行应用的部分，却是我们无法在编写软件的机器上运行的部分。由于构建系统是远程的，本地断点永远不会触发，读取日志意味着通过SSH跟踪文件。附加分析器首先需要将其复制到机器上。每个guest端更改也都要经过docker save和rsync解包镜像，然后在共享主机上进行提取和mksquashfs，而其他工程师也在那里运行自己的构建。循环足够长，以至于你在尝试推测性操作前会三思，而我们想要的是在Mac上原生运行构建系统，启动相同的镜像，就在我们面前的那台机器上。
+
+## 4. 一个API，两个几乎无共同点的hypervisor
+
+我们首先研究了现有方案，在macOS上运行Linux VM有几种可行的实现：Apple自己的容器今年六月达到1.0，Lima和Tart已经做了多年，podman也可以通过libkrun实现。你甚至可以在M3或更高版本、运行macOS 15的Linux VM中获得/dev/kvm，从而无需修改即可运行Firecracker。然而，它们都没有跨越两个主机，而且嵌套路由仍然让你停留在支持它的笔记本电脑子集内的Linux VM中。采用其中任何一个都会给我们留下第二种行为不同的构建方式，且仅存在于笔记本电脑上。Crackling是一个守护进程和CLI，可在两个平台上将OCI镜像启动为轻量级Linux VM，guest内有一个代理，两种方式都由一个协议驱动。在Linux上，Firecracker仍然是后端，在macOS上则是Apple的Virtualization.framework（简称VZ），这是其导出的所有类型的前缀。我们保持核心crate独立于任一hypervisor。它通过MachineSpec描述机器，该结构包含vcpus、mem、kernel、rootfs、extra_disks、nics、vsock以及每个后端的额外参数，而MachineState在运行时跟踪它。两个后端都实现MachineBackend：start、shutdown、pause、resume、snapshot、wait、dispose以及（在可用时）connect_vsock。后端分发是静态的，因为给定目标只能存在一个，而trait为两个实现提供了共享契约，并允许测试替换为内存后端。它们的能力仍然不同：Firecracker有主机tap设备和MMDS元数据服务，而Apple的框架有内置NAT设备、virtiofs目录共享和Rosetta翻译，用于在arm64 guest中运行x86二进制文件。每个后端返回一个错误，指出其无法实现的任何请求功能：
+
+// crates/crackling-core/src/backend.rs
+pub enum Feature &#123;
+    Snapshot, /// 从先前捕获的快照创建机器。
+    /// 与`Snapshot`不同：VZ可以捕获（如果权限允许）
+    /// 但crackling从不恢复，而Firecracker两者都做。
+    SnapshotRestore,
+    Mmds,
+    VirtioFs,
+    Rosetta, // Firecracker / VZ / VZ
+    /// 主机tap网络设备（Firecracker）。
+    TapNetwork,
+    /// 内置NAT网络设备（VZ）。
+    NatNetwork,
+    MemoryBalloon,
+    Entropy,
+    Vsock,
+    /// 机器比控制进程存活更久，可以重新附加
+    /// （Firecracker）。VZ机器在进程内，永远无法采用。
+    Adoption,
+&#125;
+
+每个后端在任何机器存在之前报告当前主机支持的内容，允许守护进程在create之前调整spec。对不可用网络模式、采用或快照恢复的请求在API边界失败，并指明不支持的功能。在Linux上，每个VM都是一个独立的firecracker子进程，通过Unix套接字上的REST API驱动，由为那个有限API面编写的小型HTTP/1.1客户端控制。这些进程可以比守护进程存活更久。一个临时的systemd scope防止服务管理器回收它们，我们持久化PID和其启动时间，这样PID重用不会使旧记录指向无关进程。重启时，守护进程打开pidfd并通过API套接字检查实例ID。任何无法识别的都保持运行。VZ机器在我们的进程内，并随其结束，因此在macOS上Adoption返回错误。两个后端在每个拉取请求上构建和测试，Firecracker在x86_64 Ubuntu runner上，VZ在arm64 macOS runner上。守护进程的后端无关逻辑在每个runner上针对mock后端运行，VZ测试不需要hypervisor、代码签名或guest镜像。
+
+## 5. Apple框架坚持的单线程约束
+
+实现VZ后端带来了严格的线程约束：VZVirtualMachine、VZVirtualMachineConfiguration和框架的设备对象是!Send + !Sync，而每个VM调用和完成处理程序必须在创建VM的串行调度队列上运行。守护进程的其余部分是tokio，它会在工作线程之间随意移动future，因此没有任何安排能在await点持有VM对象并同时满足两个约束。我们在一个进程全局的串行DispatchQueue上创建和访问每个VM，VM注册表仅对调度到该队列的闭包可用，因此访问保持串行化，对象永远不会到达tokio的线程。异步部分是一个普通的Send + Sync + Clone句柄，它调度一个仅携带Send数据的闭包，然后等待回复：
+
+// crates/crackling-vz/src/reactor.rs
+reactor().queue.exec_async(move || &#123;
+    match build_configuration(&cfg) &#123;
+        Ok(vm_cfg) =&gt; &#123;
+            // SAFETY: 我们传递reactor自己的串行队列；VM存储
+            // 并从此仅在该队列上使用。
+            let vm = unsafe &#123;
+                VZVirtualMachine::initWithConfiguration_queue(
+                    VZVirtualMachine::alloc(),
+                    &vm_cfg,
+                    &reactor().queue
+                )
+            &#125;;
+            let id = shared.id;
+            if let Ok(mut g) = reactor().state.vms.lock() &#123;
+                g.insert(id, ReactorVm &#123; vm, shared &#125;);
+            &#125;
+            let _ = reply.send(Ok(()));
+        &#125;
+        Err(e) =&gt; &#123;
+            /* 标记失败，然后： */
+            let _ = reply.send(Err(e));
+        &#125;
+    &#125;
+&#125;);
+
+调度API要求Send + 'static闭包，因此编译器防止捕获!Send VM对象。注册表和持有它的reactor仍然需要手写的Send和Sync实现；队列不变量依赖于这两个实现。VZVirtualMachineConfiguration也是!Send，因此我们将降低分为两个阶段：MachineSpec在tokio上变成一个仅包含Send数据的结构，然后该结构在队列上变成VZVirtualMachineConfiguration。完成处理程序接收一个原始NSError指针，该指针仅在块期间有效，因此我们在回复前在队列上将其转换为拥有的错误。丢弃机器的最后一个句柄会调度dispose，因为框架要求在其自己的队列上释放。
+
+## 6. 在没有Linux的情况下构建可启动的Linux镜像
+
+VZ后端现在可以创建和控制VM，但启动一个仍然需要替换仅限Linux的镜像管道。将OCI镜像转换为可启动的根文件系统通常需要root和循环挂载，这两者在macOS上都不存在，而构建initramfs通常调用cpio二进制文件。内核树自己的extract-vmlinux是为x86 bzImage编写的，无法解包arm64内核。两个hypervisor在拥有未压缩的内核镜像之前都无法启动任何东西，而arm64发行版附带的vmlinuz通常是EFI zboot文件，这是一个小的EFI可执行文件，包装了固件通常在启动时解压缩的压缩负载。这里没有固件，因此我们自己解包。MZ和zimg签名标识格式，头部给出负载的偏移、大小和压缩方式：
+
+// crates/crackling-image/src/kernel.rs
+// EFI zboot: 偏移0处为"MZ"，偏移4处为"zimg"签名。
+if bytes.len() &gt; 64 && &bytes[0..2] == b"MZ" && &bytes[4..8] == b"zimg" &#123;
+    let payload_offset = u32::from_le_bytes(bytes[8..12].try_into().unwrap()) as usize;
+    let payload_size = u32::from_le_bytes(bytes[12..16].try_into().unwrap()) as usize;
+    let comp_end = bytes[24..32].iter().position(|&b| b == 0).unwrap_or(8);
+    let compression = std::str::from_utf8(&bytes[24..24 + comp_end]).unwrap_or("");
+    let end = payload_offset
+        .checked_add(payload_size)
+        .filter(|&e| e &lt;= bytes.len())
+        .ok_or_else(|| ImageError::Kernel("zboot payload out of range".into()))?;
+    let raw = match compression &#123;
+        "gzip" =&gt; gunzip(&bytes[payload_offset..end])?,
+        other =&gt; return Err(ImageError::Kernel(format!("unsupported zboot compression: &#123;other:?&#125;"))),
+    &#125;;
+&#125;
+
+将压缩内核交给Virtualization.framework会在启动时失败，并显示通用内部错误，没有附加细节。虚拟化权限是我们的第一个怀疑对象，我们浪费了一个下午重新签名二进制文件，然后才查看内核。我们现在检查偏移0x38处的ARMd签名，它标识原始arm64 Image，并在尝试启动之前报告压缩内核。内核需要一个根文件系统来启动，因此我们完全在用户空间应用OCI层，并像squash_layers使用find那样处理.wh.白out条目，但在进程内且之后没有清理过程。拉取镜像还需要自定义平台解析器，因为默认键基于主机操作系统，永远不会匹配来自Mac的linux/arm64镜像请求。从RAM启动rootfs需要initramfs：gzip流中的newc格式cpio归档。我们完全用Rust生成两层，默认情况下rootfs保留在内存中直到VM停止。我们解包并规范化一次镜像，写入.built哨兵文件，并通过原子重命名发布完成的输出，这样崩溃会留下现有缓存不变。每个VM使用APFS上的clonefile、支持它的Linux文件系统上的每文件FICLONE reflink或其他地方的普通复制来克隆缓存的rootfs，RAM路径将该克隆重新打包到VM自己的initramfs中。
+
+## 7. 在VM内获取shell
+
+一旦内核和rootfs启动，crackling需要一种在guest内运行命令和移动数据的方法。两个平台都提供vsock，Alpine的virt内核将AF_VSOCK作为可加载模块提供，因此guest /init在监听之前加载vsock、vmw_vsock_virtio_transport_common和vmw_vsock_virtio_transport等模块。这些模块带有必须与运行内核完全匹配的vermagic字符串，不匹配会在加载时失败，下游没有有用的信息：VM启动，代理永远不会出现，主机等待永远不会到达的连接。我们从同一个linux-virt包中获取内核及其模块，以保持它们同步。挂载ext4即使禁用校验和也会引入crc32c哈希，因此必须加载crc32c_generic和libcrc32c，而交互式shell需要在openpty工作之前挂载/dev/pts。每个VM运行相同的代理，这是一个静态musl二进制文件，在Mac上为aarch64-unknown-linux-musl构建，在amd64主机上为x86_64-unknown-linux-musl构建。它监听AF_VSOCK并使用小型帧协议：8字节头部后跟编码的控制帧或原始字节用于批量数据，每个操作一个连接。该协议支持exec（流式stdout和stderr）、PTY上的交互式shell、双向cp以及forward（将连接转换为到guest内端口的隧道）。代理使用vsock进行控制，使guest无需手动网络配置或由crackling安装SSH守护进程。出站网络是单独的选择加入，而入站访问仅通过控制平面forward可用，并使用启动时生成的每VM令牌进行身份验证。在macOS上，该传输的主机端是VZVirtioSocketDevice连接，其文件描述符必须立即dup(2)，因为框架在其Objective-C对象释放时关闭原始文件。在Linux上，它是一个带有文本握手的Unix套接字，回复必须逐字节读取：
+
+// crates/crackling-firecracker/src/machine.rs
+// 逐字节读取回复，以免吞掉换行符后的负载字节
+// （使用缓冲读取时这是一个真正的风险）。
+stream.write_all(format!("CONNECT &#123;port&#125;\n").as_bytes()).await?;
+let mut line = Vec::with_capacity(16);
+loop &#123;
+    let b = stream.read_u8().await.map_err(Error::Io)?;
+    if b == b'\n' &#123; break; &#125;
+    line.push(b);
+&#125;
+
+macOS和Linux实现不同，但都返回连接到代理的字节流，用于crackling shell、exec和cp。
+
+## 8. Apple不允许第三方快照VM
+
+Firecracker通过PUT /snapshot/create原生捕获内存和设备状态，携带restore_from的spec会生成新的VMM，检查快照的主机指纹，加载暂停的快照并恢复而不启动。上游只恢复到匹配的架构和Firecracker版本，因此指纹检查在我们挂起空闲沙箱并在另一主机上恢复时保护操作。Apple的框架似乎提供相同的功能，因为VZVirtualMachine暴露了saveMachineStateToURL，配置上的validateSaveRestoreSupport询问是否符合条件。我们编写了实现，验证器成功返回，但保存失败并显示VZErrorInternal。即使在仅带vsock设备的最小VM上也会失败，这使得不可序列化设备不太可能是原因。运行VM需要com.apple.security.virtualization，任何开发人员都可以签名，而保存还需要com.apple.private.virtualization，Apple不授予第三方应用程序。由于验证器没有
+
+---
+
+🔗 **原文链接：[https://encore.dev/blog/firecracker-apple-silicon](https://encore.dev/blog/firecracker-apple-silicon)**
