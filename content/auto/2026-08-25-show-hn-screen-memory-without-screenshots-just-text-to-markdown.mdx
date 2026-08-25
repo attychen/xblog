@@ -1,0 +1,45 @@
+---
+title: "屏幕记忆新方式：无需截图，仅需文本转Markdown"
+date: "2026-08-25"
+excerpt: "Ambient Context 是一款 macOS 菜单栏应用，它持续记录你的工作内容，并以文字形式保存，供你自己的 LLM（大型语言模型）阅读。当菜单栏中的眼睛图标处于开启状态时，Ambient Context 会读取当前聚焦窗口的文本（通过 macOS 辅助功能树，每隔几秒读取一次），并将其追加到一个纯文本 Markdown 文件中：每天一个文件，存放在你选择的文件夹中。你可以将 Claude"
+category: "ai-tools"
+tags: ["macOS","AI","Markdown","隐私保护","开源工具"]
+original: "https://github.com/dragthelake/ambient-context"
+draft: false
+---
+
+## 1. 项目概览
+
+Ambient Context 是一款 macOS 菜单栏应用，它持续记录你的工作内容，并以文字形式保存，供你自己的 LLM（大型语言模型）阅读。当菜单栏中的眼睛图标处于开启状态时，Ambient Context 会读取当前聚焦窗口的文本（通过 macOS 辅助功能树，每隔几秒读取一次），并将其追加到一个纯文本 Markdown 文件中：每天一个文件，存放在你选择的文件夹中。你可以将 Claude Code 或任何其他智能代理指向该文件夹，它就能回答“我周二做了什么？”，建立关于你项目的记忆，或者为你撰写站会报告。
+
+## 2. 核心特性
+
+无需截图或视频。它仅通过辅助功能 API 读取文本，不涉及其他内容。所有数据均保留在你的设备上，不会上传。没有账户、服务器、遥测或内置模型。此版本完全不进行网络调用；签名版本将添加一次针对 GitHub 的更新检查。文件归你所有。纯文本 Markdown 文件存放在你选择的文件夹中，你可以移动、搜索或删除它们。写入前进行编辑。密码管理器和隐私浏览窗口永远不会被捕获。密码字段在源头被跳过，凭据、API 密钥和卡号等敏感信息在写入磁盘前会被清除。专为 LLM 阅读而设计。跨天去重行，过滤界面垃圾信息，每个块记录其来源文档路径或 URL，以便你的代理可以打开真实文件，而不是依赖片段。文件夹中包含一个 AGENTS.md 文件，向任何读取者说明格式。
+
+## 3. 系统要求与状态
+
+需要 macOS 14+ 和 Apple Silicon 芯片。项目处于早期阶段，尚未签名。目前还没有经过公证的下载版本（Apple Developer 注册正在进行中），因此你需要自行构建，大约需要两分钟。
+
+## 4. 构建与运行指南
+
+你需要安装 Node、Rust 和 Xcode 命令行工具。执行以下命令：git clone https://github.com/dragthelake/ambient-context，cd ambient-context，npm install，npm run tauri build。应用将生成在 src-tauri/target/release/bundle/macos/ 目录下。将 Ambient Context.app 拖入应用程序文件夹并打开。开发模式下，运行 npm run tauri dev 可实现热重载。
+
+## 5. 首次运行与使用
+
+首次运行时，设置窗口会自动打开。请授予辅助功能权限：这是应用读取窗口文本所必需的，没有它一切无法工作。选择保存位置。默认位置为 ~/Ambient Context，特意放在 ~/Documents 之外，以避免 iCloud 将你的记录同步到其他设备。设置完成后，录制自动开始，并随应用启动。点击菜单栏中的眼睛图标可停止录制；停止状态会被记住，直到你再次启动。眼睛睁开表示录制中，闭上表示未录制。右键点击图标可访问今日文件、文件夹和设置。
+
+## 6. 日文件格式示例
+
+--- date: 2026-08-25 captured_by: Ambient Context 0.1.0 --- ## 09:41–10:05 · Chrome · Tauri tray documentation url: https://v2.tauri.app/learn/system-tray/ text seen in that window, first time it appeared today 块标题是当天的时间线。正文行每天只写入一次，无论看到多少次，因此文件保持足够小，可以整体交给 LLM。捕获文件夹中的 AGENTS.md 文件记录了格式和最佳阅读方式。
+
+## 7. 测试者注意事项
+
+Chromium 和 Electron 应用（如 Chrome、Slack、VS Code、Obsidian、Figma 等）仅在请求时才构建辅助功能树，因此这些应用在捕获的前几秒内容较少，后续会逐渐填充。Chrome 在启用时可能会出现轻微的窗口大小调整动画异常，这是该机制的已知代价。GPU 渲染的终端（如 Kitty、Alacritty）暴露的文本很少或没有。Terminal.app 和 iTerm2 可以正常工作。请记录你的发现：哪些应用返回丰富、部分或空内容，这正是有助于改进的反馈（docs/census.md 中有模板）。运行测试：cd src-tauri，cargo test。
+
+## 8. 隐私模型与项目信息
+
+隐私模型，一句话概括：应用只读取聚焦窗口，从不读取后台窗口、其他显示器或最小化的窗口，也绝不在屏幕锁定时读取。它完全排除密码管理器和隐私浏览，在辅助功能级别跳过安全输入字段，并在写入前通过模式匹配清除秘密。它产生的所有内容都是你磁盘上的纯文本，并且捕获文件夹被排除在捕获范围之外，因此它无法观察自身。如果你发现任何漏洞，请提交 issue。关于：一款菜单栏应用，记录你的工作内容。资源：Readme、Activity、Stars 56、Watchers 1、Forks 1、报告仓库、Releases、Packages、贡献者、语言。
+
+---
+
+🔗 **原文链接：[https://github.com/dragthelake/ambient-context](https://github.com/dragthelake/ambient-context)**
